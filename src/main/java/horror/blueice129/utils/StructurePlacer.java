@@ -35,8 +35,12 @@ public class StructurePlacer {
                         int maxDistance) {
                 int attempts = 100;
                 for (int i = 0; i < attempts; i++) {
-                        int x = center.getX() + random.nextInt(maxDistance - minDistance) + minDistance;
-                        int z = center.getZ() + random.nextInt(maxDistance - minDistance) + minDistance;
+                        // Choose a random radius between minDistance and maxDistance (inclusive of min)
+                        int radius = minDistance + random.nextInt(Math.max(1, maxDistance - minDistance + 1));
+                        // Choose a random angle and convert to x/z offsets so sampling is symmetric around the center
+                        double angle = random.nextDouble() * Math.PI * 2.0;
+                        int x = center.getX() + (int) Math.round(Math.cos(angle) * radius);
+                        int z = center.getZ() + (int) Math.round(Math.sin(angle) * radius);
                         
                         // Make sure the chunk at this position is loaded before checking block states
                         BlockPos checkPos = new BlockPos(x, world.getBottomY() + (world.getTopY() - world.getBottomY()) / 2, z);

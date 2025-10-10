@@ -3,6 +3,7 @@ package horror.blueice129;
 import horror.blueice129.command.DebugCommands;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.HomeEventScheduler;
+import horror.blueice129.scheduler.SmallStructureScheduler;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ public class HorrorMod129 implements ModInitializer {
 		// Register schedulers
 		CaveMinerScheduler.register();
 		HomeEventScheduler.register();
+		SmallStructureScheduler.register();
 		
 		
 		// Register debug commands

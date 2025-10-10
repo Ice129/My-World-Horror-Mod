@@ -23,8 +23,8 @@ public class SmallStructureEvent {
             { "crafting_table", "10" },
             { "furnace", "5" },
             { "cobblestone_pillar", "7" },
-            { "single_torch", "20" },
-            { "torched_area", "10" },
+            { "single_torch", "10" },
+            { "torched_area", "15" },
             { "tree_mined", "14" },
             // { "deforestation", "6" },
             { "flower_patch", "3" },
@@ -74,7 +74,9 @@ public class SmallStructureEvent {
         if (structureId == null) {
             return false; // No structure selected
         }
+        System.out.println("[SmallStructureEvent] Attempting structure '" + structureId + "' for player " + player.getName().getString() + " at " + player.getBlockPos());
         boolean success = placeStructureNearPlayer(server, player, structureId);
+        System.out.println("[SmallStructureEvent] Structure '" + structureId + "' for player " + player.getName().getString() + " completed: " + success);
 
         return success;
     }
@@ -100,7 +102,10 @@ public class SmallStructureEvent {
         if (structureId == null) {
             return false; // No structure selected
         }
-        return placeStructureNearPlayer(server, player, structureId);
+        System.out.println("[SmallStructureEvent] Attempting structure '" + structureId + "' for player " + player.getName().getString() + " at " + player.getBlockPos());
+        boolean success = placeStructureNearPlayer(server, player, structureId);
+        System.out.println("[SmallStructureEvent] Structure '" + structureId + "' for player " + player.getName().getString() + " completed: " + success);
+        return success;
     }
 
     /**
@@ -378,6 +383,7 @@ public class SmallStructureEvent {
     }
     private static boolean chunkDeletionEvent(MinecraftServer server, ServerPlayerEntity player) {
         // find a far away chunk, 100-200 blocks away
+        // FIXME: MAKE SURE CHUNK CANT DELETE IF IT HAS CHESTS OR BEDS OR OTHER STORAGE BLOCKS
         BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100, 200);
         if (pos == null) {
             return false; // No suitable location found

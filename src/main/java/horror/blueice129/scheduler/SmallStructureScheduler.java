@@ -79,4 +79,13 @@ public class SmallStructureScheduler {
         }
     }
 
+    /**
+     * Debug / test helper to set the small structure timer directly (in ticks).
+     */
+    public static void setTimer(MinecraftServer server, int ticks) {
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        state.setTimer(TIMER_ID, Math.max(ticks, 1));
+        HorrorMod129.LOGGER.info("SmallStructureScheduler timer set to " + state.getTimer(TIMER_ID) + " ticks via debug command");
+    }
+
 }
