@@ -406,8 +406,25 @@ public class SmallStructureEvent {
         return true;
     }
     private static boolean burningForestEvent(MinecraftServer server, ServerPlayerEntity player) {
-        
-        return false; // TODO implement
+        // find random tree location 50-100 blocks away
+        // spwn fire in a 5 block radius around the tree, randomly, only on air blocks
+        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 50, 100);
+        if (pos == null) {
+            return false; // No suitable location found
+        }
+        BlockPos[] treePositions = SurfaceFinder.findTreePositions(server.getOverworld(), pos, 13);
+        if (treePositions.length == 0) {
+            return false; // No trees found
+        }
+        BlockPos treePos = treePositions[random.nextInt(treePositions.length)];
+        int fireCount = 10 + random.nextInt(20);
+        for (int i = 0; i < fireCount; i++) {
+            BlockPos firePos = treePos.add(random.nextInt(5) - 2, random.nextInt(5) - 2, random.nextInt(5) - 2);
+            if (server.getOverworld().getBlockState(firePos).isAir()) {
+                server.getOverworld().setBlockState(firePos, Blocks.FIRE.getDefaultState());
+            }
+        }
+        return true;
     }
 
 }
