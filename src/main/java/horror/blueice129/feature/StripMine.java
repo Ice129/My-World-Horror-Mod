@@ -18,7 +18,7 @@ public class StripMine {
      * @param startZ starting Z coordinate
      * @param length length of the strip mine
      * @return array of coordinates for the strip mine [[x1, z1, y1, blockType1], [x2, z2, y2, blockType2], ...]
-     * blockType: 0 = stairs , 1 = main tunnel entrance, 2 = main tunnel, 3 = side tunnel entrance , 4 = side tunnel main
+     * blockType: 0 = stairs , 1 = main tunnel entrance, 2 = main tunnel, 3 = side tunnel entrance , 4 = side tunnel main, 5 = stair support
      */
     public static int[][] generateStripMine(MinecraftServer server, int startX, int startZ, int length) {
         int[][] coordinates = new int[length][4];
@@ -57,20 +57,36 @@ public class StripMine {
             BlockPos rightSide = leftSide.east();
             coordinates = addBlockToCoordinatesArray(leftSide, 0, coordinates);
             coordinates = addBlockToCoordinatesArray(rightSide, 0, coordinates);
-            for (int j = 1; j <= 3; j++) { // each plane will be 3 blocks long, y plane, 3d printer style
+            for (int j = 1; j <= 4; j++) { // each plane will be 3 blocks long, y plane, 3d printer style, with 1 block as support
                 BlockPos lStep = leftSide.north(j);
                 BlockPos rStep = rightSide.north(j);
-                coordinates = addBlockToCoordinatesArray(lStep, 0, coordinates);
-                coordinates = addBlockToCoordinatesArray(rStep, 0, coordinates); // TEST: this function
+                int blockType = 0;
+                if (j == 1){
+                    blockType = 5; // support block
+                }
+                coordinates = addBlockToCoordinatesArray(lStep, blockType, coordinates);
+                coordinates = addBlockToCoordinatesArray(rStep, blockType, coordinates); // TEST: this function
             }
         }
         return stairCoordinates; // TODO: make a tester to visualize the coordinates in game
     }
 
     private static int[][] generateMainTunnel(MinecraftServer server, int[][] stairBottomBlocks, int length) {
-        ServerWorld overworld = server.getWorld(ServerWorld.OVERWORLD);
         int[][] coordinates = new int[length*4][4]; // x, z, y, blockType (1 = main tunnel entrance, 2 = main tunnel)
-        return coordinates; // FIXME: implement main tunnel generation
+        BlockPos lStartPos = new BlockPos(stairBottomBlocks[0][0], stairBottomBlocks[0][2], stairBottomBlocks[0][1]).south(2);
+        BlockPos rStartPos = lStartPos.east();
+        for (int i = 0; i < length; i++) {
+
+            int blockType = 2; // main tunnel
+            if (i <= 5){
+                blockType = 1; // main tunnel entrance
+            }
+            coordinates = addBlockToCoordinatesArray(lStartPos.north(i), blockType, coordinates);
+            coordinates = addBlockToCoordinatesArray(lStartPos.north(i).up(), blockType, coordinates);
+            coordinates = addBlockToCoordinatesArray(rStartPos.north(i), blockType, coordinates);
+            coordinates = addBlockToCoordinatesArray(rStartPos.north(i).up(), blockType, coordinates);
+        }
+        return coordinates;
     }
 
     private static int[][] addBlockToCoordinatesArray(BlockPos pos, int blockType, int[][] coordinates) {
@@ -92,6 +108,4 @@ public class StripMine {
         newArray[array.length] = newElement;
         return newArray;
     }
-
-
 }
