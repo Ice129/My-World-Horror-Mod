@@ -135,12 +135,12 @@ public class StripMine {
                     sideTunnels = addBlockToCoordinatesArray(entrancePos, 3, sideTunnels);
                     sideTunnels = addBlockToCoordinatesArray(entrancePos.up(), 3, sideTunnels);
                     // main side tunnel
-                    for (int j = 1; j <= sideTunnelLength; j++) {
+                    for (int t = 1; t <= sideTunnelLength; t++) {
                         BlockPos tunnelPos;
                         if (toLeft) {
-                            tunnelPos = entrancePos.west(j);
+                            tunnelPos = entrancePos.west(t);
                         } else {
-                            tunnelPos = entrancePos.east(j);
+                            tunnelPos = entrancePos.east(t);
                         }
                         sideTunnels = addBlockToCoordinatesArray(tunnelPos, 4, sideTunnels);
                         sideTunnels = addBlockToCoordinatesArray(tunnelPos.up(), 4, sideTunnels);
