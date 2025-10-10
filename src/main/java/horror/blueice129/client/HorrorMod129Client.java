@@ -8,8 +8,6 @@ import horror.blueice129.HorrorMod129;
  * Handles client-side initialization.
  */
 public class HorrorMod129Client implements ClientModInitializer {
-    
-    // TODO: find out if i need to use client side code for anything
 
     @Override
     public void onInitializeClient() {

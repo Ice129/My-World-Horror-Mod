@@ -7,7 +7,6 @@ public class HorrorMod129DataGenerator implements DataGeneratorEntrypoint {
 	// data providers are a way to generate data such as recipes, loot tables, block states, item models, etc.
 	// using code instead of manually creating json files.
 	// this is useful for large mods with many items/blocks, as it can save a lot of time and effort.
-	// TODO: find out what data generation is and if its needed for this mod
 	@Override
 	public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
 
