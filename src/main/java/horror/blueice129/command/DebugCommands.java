@@ -18,6 +18,7 @@ import net.minecraft.block.Blocks;
 import com.mojang.brigadier.Command;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.server.MinecraftServer;
+import horror.blueice129.data.HorrorModPersistentState;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -47,6 +48,8 @@ public class DebugCommands {
                                     .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
                                     .then(literal("homevisitor")
                                             .executes(DebugCommands::triggerHomeVisitor))
+                    .then(literal("schedule_homevisitor")
+                        .executes(DebugCommands::scheduleHomeVisitor))
                                     .then(literal("place_diamond_pillars")
                                             .executes(context -> placeDiamondPillars(context.getSource())))));
             dispatcher.register(CommandManager.literal("debug_event")
@@ -118,6 +121,39 @@ public class DebugCommands {
             source.sendError(Text.literal("This command must be run by a player"));
             return 0;
         }
+    }
+
+    /**
+     * Schedules the HomeVisitorEvent to be ready for the next time the player logs in after being away.
+     * This sets the event ready flag and forces the timer to 0 so the event will trigger on next qualifying reconnect.
+     */
+    private static int scheduleHomeVisitor(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+
+        MinecraftServer server = source.getServer();
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+
+    // Set the event ready flag and zero the timer so it triggers on next qualifying reconnect
+    state.setIntValue("homeEventReady", 1);
+    state.setTimer("homeEventTimer", 0);
+
+    // Also set the player's logout time to more than MIN_ABSENCE_TIME seconds ago so the condition
+    // for triggering on reconnect is satisfied immediately on next login. HomeEventScheduler uses
+    // a MIN_ABSENCE_TIME of 600 seconds, so we backdate by 601 seconds.
+    long currentTime = System.currentTimeMillis() / 1000L;
+    String playerLogoutKey = "playerLogoutTime" + player.getUuidAsString();
+    state.setIntValue(playerLogoutKey, (int)(currentTime - 601));
+
+        source.sendFeedback(() -> Text.literal("Scheduled HomeVisitorEvent for next qualifying login."), true);
+        HorrorMod129.LOGGER.info("Scheduled HomeVisitorEvent via debug command for player: " + player.getName().getString());
+
+        return 1;
     }
 
     private static int placeDiamondPillars(ServerCommandSource source) {

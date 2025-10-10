@@ -12,6 +12,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import net.minecraft.util.math.random.Random;
+import java.util.ArrayList;
+import java.util.UUID;
 
 public class HomeEventScheduler {
     private static final Random random = Random.create();
@@ -20,7 +22,11 @@ public class HomeEventScheduler {
     private static final String TIMER_ID = "homeEventTimer";
     private static final String LOGOUT_TIME_ID = "playerLogoutTime";
     private static final String EVENT_READY_ID = "homeEventReady";
-    private static final int MIN_ABSENCE_TIME = 600; // 10 minutes in seconds
+    // private static final int MIN_ABSENCE_TIME = 600; // 10 minutes in seconds
+    private static final int MIN_ABSENCE_TIME = 1; // 1 second for testing // HACK
+    private static final String PENDING_PREFIX = "homeEventPending_";
+    private static final String BED_POS_PREFIX = "homeEventBed_";
+    private static final int PENDING_DELAY_TICKS = 40; // ~2 seconds delay to allow chunks to load
 
     /**
      * Registers the tick event to handle the home event scheduling.
@@ -73,16 +79,22 @@ public class HomeEventScheduler {
                 // Only trigger if event is ready AND player has been gone long enough
                 if (eventReady && timeDifference > MIN_ABSENCE_TIME) {
                     HorrorMod129.LOGGER.info("Player " + player.getName().getString() + 
-                        " reconnected after " + timeDifference + " seconds, triggering home event");
-                    
+                        " reconnected after " + timeDifference + " seconds, scheduling home event after delay");
+
                     // get respawn point
                     if (player.getSpawnPointPosition() != null) {
                         BlockPos bedPos = player.getSpawnPointPosition();
-                        triggerHomeEvent(server, player, bedPos);
-                        state.setIntValue(EVENT_READY_ID, 0); // Reset ready flag
+                        // Schedule the event to run after a short delay so chunks/player are fully loaded
+                        String pendingId = PENDING_PREFIX + player.getUuidAsString();
+                        String bedPosId = BED_POS_PREFIX + player.getUuidAsString();
+                        state.setTimer(pendingId, PENDING_DELAY_TICKS);
+                        state.setPosition(bedPosId, bedPos);
+                        // Reset ready flag so it doesn't retrigger
+                        state.setIntValue(EVENT_READY_ID, 0);
+                        HorrorMod129.LOGGER.info("Home event for player " + player.getName().getString() + " scheduled in " + PENDING_DELAY_TICKS + " ticks");
                     } else {
                         HorrorMod129.LOGGER.warn("Player " + player.getName().getString() + 
-                            " has no spawn point set, cannot trigger home event");
+                            " has no spawn point set, cannot schedule home event");
                         // Reset timer anyway if no spawn point
                         state.setTimer(TIMER_ID, getRandomDelay(false));
                     }
@@ -110,6 +122,37 @@ public class HomeEventScheduler {
                 // Mark that the event is ready to trigger on next login after absence
                 state.setIntValue(EVENT_READY_ID, 1);
                 HorrorMod129.LOGGER.info("HomeEventScheduler timer reached zero, event is now ready for next extended log off.");
+            }
+        }
+
+        // Process any pending per-player home event timers that were scheduled on join
+        var timerIds = new ArrayList<>(state.getTimerIds());
+        for (String tid : timerIds) {
+            if (!tid.startsWith(PENDING_PREFIX)) continue;
+            int remaining = state.decrementTimer(tid, 1);
+            if (remaining == 0) {
+                try {
+                    String uuidStr = tid.substring(PENDING_PREFIX.length());
+                    UUID playerUuid = UUID.fromString(uuidStr);
+                    ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerUuid);
+                    BlockPos bedPos = state.getPosition(BED_POS_PREFIX + uuidStr);
+
+                    if (player != null && bedPos != null) {
+                        HorrorMod129.LOGGER.info("Pending home event firing for player: " + player.getName().getString());
+                        triggerHomeEvent(server, player, bedPos);
+                    } else {
+                        HorrorMod129.LOGGER.warn("Pending home event fired but player or bed position not found: " + tid);
+                    }
+                } catch (Exception e) {
+                    HorrorMod129.LOGGER.error("Error processing pending home event " + tid, e);
+                } finally {
+                    // Clean up stored timer and position
+                    state.removeTimer(tid);
+                    try {
+                        String uuidStr = tid.substring(PENDING_PREFIX.length());
+                        state.removePosition(BED_POS_PREFIX + uuidStr);
+                    } catch (Exception ignored) {}
+                }
             }
         }
     }

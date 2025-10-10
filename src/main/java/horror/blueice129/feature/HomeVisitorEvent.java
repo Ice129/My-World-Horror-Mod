@@ -307,11 +307,11 @@ public class HomeVisitorEvent {
 
                 if (isAreaClear) {
                     world.setBlockState(pos, Blocks.TRAPPED_CHEST.getDefaultState());
-                    // put a writtten paper in the chest that says "this is singleplayer"
+                    // put a writtten paper in the chest that says "stop playing on my world"
                     var chestEntity = world.getBlockEntity(pos);
                     if (chestEntity instanceof ChestBlockEntity) {
                         var itemStack = new ItemStack(Items.PAPER);
-                        itemStack.setCustomName(Text.literal("this is singleplayer"));
+                        itemStack.setCustomName(Text.literal("stop playing on my world"));
                         ((ChestBlockEntity) chestEntity).setStack(13, itemStack);
                     }
                     var tntBlock = Blocks.TNT.getDefaultState();
