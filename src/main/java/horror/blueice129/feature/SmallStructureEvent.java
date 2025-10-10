@@ -61,7 +61,11 @@ public class SmallStructureEvent {
      * @param player The player to trigger the event for
      * @return boolean indicating if the event was successfully triggered
      */
-    public static boolean triggerEvent(MinecraftServer server, ServerPlayerEntity player) {
+    public static boolean triggerEvent(MinecraftServer server) {
+        ServerPlayerEntity player = server.getPlayerManager().getPlayerList().get(random.nextInt(server.getPlayerManager().getPlayerList().size()));
+        if (player == null) {
+            return false; // No player found
+        }
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         // adjust weights based on player agro meter
         adjustWeightsBasedOnAgro(state);
