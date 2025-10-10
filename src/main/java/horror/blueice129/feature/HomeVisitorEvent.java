@@ -56,39 +56,58 @@ public class HomeVisitorEvent {
         int maxItemsToSteal = 7; // Limit the number of items stolen per event
         var world = server.getOverworld(); // Use overworld directly as specified
 
-        // Iterate through blocks in the defined radius, if chest, itterate through
-        // contents
+        // Iterate through blocks in the defined radius, if chest, iterate through
+        // contents. Note: this can be expensive; bail out early when we've stolen
+        // enough item types (global limit).
         for (BlockPos pos : BlockPos.iterate(bedPos.add(-searchRadius, -searchRadius, -searchRadius),
                 bedPos.add(searchRadius, searchRadius, searchRadius))) {
+            // Make sure the chunk is loaded before accessing blocks/tiles
+            if (!ChunkLoader.loadChunksInRadius(world, pos, 1)) {
+                continue;
+            }
+
             var blockState = world.getBlockState(pos);
             if (blockState.getBlock() instanceof net.minecraft.block.ChestBlock) {
-
                 var chestEntity = world.getBlockEntity(pos);
                 if (chestEntity instanceof net.minecraft.block.entity.ChestBlockEntity chest) {
                     for (int i = 0; i < chest.size(); i++) {
                         var itemStack = chest.getStack(i);
-                        if (wantedItems.contains(itemStack.getItem()) && !itemStack.isEmpty()) {
 
-                            if (random.nextDouble() > 0.3) {
-                                continue;
-                            }
+                        // skip empty slots immediately
+                        if (itemStack.isEmpty()) continue;
 
-                            int numberOfItemsToSteal = Math.min(itemStack.getCount(),
-                                    random.nextBetween(1, itemStack.getCount() + 1));
-                            itemStack.decrement(numberOfItemsToSteal);
+                        var item = itemStack.getItem();
+                        if (!wantedItems.contains(item)) continue;
 
-                            itemsStolen += numberOfItemsToSteal;
-                            itemTypeStolen++;
-                            HorrorMod129.LOGGER.info("Stole " + numberOfItemsToSteal + " of "
-                                    + itemStack.getItem().getName().getString() + " from chest at " + pos);
+                        if (random.nextDouble() > 0.3) {
+                            continue;
+                        }
 
-                            if (itemTypeStolen >= maxItemsToSteal) {
-                                break; // Stop stealing if we've reached the limit
-                            }
+                        int numberOfItemsToSteal = Math.min(itemStack.getCount(),
+                                random.nextBetween(1, itemStack.getCount() + 1));
+
+                        if (numberOfItemsToSteal <= 0) continue;
+
+                        // Capture name before decrementing so logs don't show AIR when we
+                        // remove the whole stack
+                        String stolenName = item.getName().getString();
+
+                        itemStack.decrement(numberOfItemsToSteal);
+
+                        // mark chest dirty so changes persist / sync
+                        chest.markDirty();
+
+                        itemsStolen += numberOfItemsToSteal;
+                        itemTypeStolen++;
+                        HorrorMod129.LOGGER.info("Stole " + numberOfItemsToSteal + " of "
+                                + stolenName + " from chest at " + pos);
+
+                        // Stop completely when we've stolen enough different item types
+                        if (itemTypeStolen >= maxItemsToSteal) {
+                            return itemsStolen;
                         }
                     }
                 }
-
             }
         }
         return itemsStolen;
