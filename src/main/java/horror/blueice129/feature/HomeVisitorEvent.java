@@ -23,7 +23,7 @@ public class HomeVisitorEvent {
     private static final Random random = Random.create();
 
     public static void triggerEvent(MinecraftServer server, ServerPlayerEntity player, BlockPos bedPos) {
-        int itemsStolen = chestStealer(server, bedPos); // BUG: sometimes takes air??
+        int itemsStolen = chestStealer(server, bedPos);
         int doorsOpened = doorOpener(server, player, bedPos);
         int signsPlaced = signPlacer(server, player, bedPos);
         int flowersPlanted = flowerPlanter(server, player, bedPos);
