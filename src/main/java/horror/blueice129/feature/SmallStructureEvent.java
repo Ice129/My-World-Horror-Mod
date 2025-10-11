@@ -433,24 +433,57 @@ public class SmallStructureEvent {
 
     private static boolean burningForestEvent(MinecraftServer server, ServerPlayerEntity player) {
         // find random tree location 50-100 blocks away
-        // spwn fire in a 5 block radius around the tree, randomly, only on air blocks
+        // We need to include snow when finding a surface location to work with snowy areas
         BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 50,
-                100, false);
+                100, true); // Changed to include snow
         if (pos == null) {
             return false; // No suitable location found
         }
+        
+        // Find trees, properly handling snow-covered ones
         BlockPos[] treePositions = SurfaceFinder.findTreePositions(server.getOverworld(), pos, 13);
         if (treePositions.length == 0) {
             return false; // No trees found
         }
-        int numberOfTreesToBurn = Math.max(1, treePositions.length);
+        
+        int numberOfTreesToBurn = Math.max(1, Math.min(3, treePositions.length)); // Limit to max 3 trees
         for (int x = 0; x < numberOfTreesToBurn; x++) {
             BlockPos treePos = treePositions[random.nextInt(treePositions.length)];
-            int fireCount = 10 + random.nextInt(20);
-            for (int i = 0; i < fireCount; i++) {
-                BlockPos firePos = treePos.add(random.nextInt(5) - 2, random.nextInt(5) - 2, random.nextInt(5) - 2);
-                if (server.getOverworld().getBlockState(firePos).isAir()) {
-                    server.getOverworld().setBlockState(firePos, Blocks.FIRE.getDefaultState());
+            
+            // Get the actual log positions of this tree for more targeted fire placement
+            BlockPos[] treeLogPositions = SurfaceFinder.getTreeLogPositions(server.getOverworld(), treePos);
+            if (treeLogPositions.length == 0) {
+                continue; // Skip if no log positions found
+            }
+            
+            // Place fire on and around logs
+            for (BlockPos logPos : treeLogPositions) {
+                // Try to place fire directly on the log sometimes (logs themselves are flammable)
+                if (random.nextInt(100) < 40) { // 40% chance to place fire on log
+                    // Clear snow if present and place fire
+                    BlockPos fireOnLogPos = logPos.add(0, 1, 0);
+                    if (server.getOverworld().getBlockState(fireOnLogPos).getBlock() == Blocks.SNOW) {
+                        server.getOverworld().setBlockState(fireOnLogPos, Blocks.AIR.getDefaultState());
+                    }
+                    if (server.getOverworld().getBlockState(fireOnLogPos).isAir()) {
+                        server.getOverworld().setBlockState(fireOnLogPos, Blocks.FIRE.getDefaultState());
+                    }
+                }
+                
+                // Place fire around logs, clearing snow if needed
+                int fireAroundLogCount = 3 + random.nextInt(4); // 3-6 fires around each log
+                for (int i = 0; i < fireAroundLogCount; i++) {
+                    BlockPos firePos = logPos.add(random.nextInt(3) - 1, random.nextInt(2), random.nextInt(3) - 1);
+                    
+                    // Clear snow if present
+                    if (server.getOverworld().getBlockState(firePos).getBlock() == Blocks.SNOW) {
+                        server.getOverworld().setBlockState(firePos, Blocks.AIR.getDefaultState());
+                    }
+                    
+                    // Place fire on air or replace snow layers
+                    if (server.getOverworld().getBlockState(firePos).isAir()) {
+                        server.getOverworld().setBlockState(firePos, Blocks.FIRE.getDefaultState());
+                    }
                 }
             }
         }
