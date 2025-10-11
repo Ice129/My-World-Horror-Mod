@@ -4,6 +4,7 @@ import horror.blueice129.data.HorrorModPersistentState;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.BedBlock;
 import net.minecraft.item.Items;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.util.math.BlockPos;
@@ -332,32 +333,6 @@ public class SmallStructureEvent {
         return true;
     }
 
-    // private static boolean deforestationEvent(MinecraftServer server,
-    // ServerPlayerEntity player) {
-    // // get random location near player
-    // BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(),
-    // player.getBlockPos(), player, 30, 50);
-    // if (pos == null) {
-    // return false; // No suitable location found
-    // }
-    // BlockPos[] treePositions =
-    // SurfaceFinder.findTreePositions(server.getOverworld(), pos, 13);
-    // if (treePositions.length == 0) {
-    // return false; // No trees found
-    // }
-    // for (BlockPos treePos : treePositions) {
-    // if (random.nextInt(100) < 30) { // 30% chance to skip a tree
-    // continue;
-    // }
-    // BlockPos[] treeLogs =
-    // SurfaceFinder.getTreeLogPositions(server.getOverworld(), treePos);
-    // for (BlockPos logPos : treeLogs) {
-    // server.getOverworld().breakBlock(logPos, false, null);
-    // }
-    // }
-    // return true;
-    // }
-
     private static boolean flowerPatchEvent(MinecraftServer server, ServerPlayerEntity player) {
         // get random location near player
         BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 30, 50);
@@ -395,9 +370,6 @@ public class SmallStructureEvent {
     }
 
     private static boolean chunkDeletionEvent(MinecraftServer server, ServerPlayerEntity player) {
-        // find a far away chunk, 100-200 blocks away
-        // FIXME: MAKE SURE CHUNK CANT DELETE IF IT HAS CHESTS OR BEDS OR OTHER STORAGE
-        // BLOCKS
         BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100,
                 200);
         if (pos == null) {
@@ -417,6 +389,50 @@ public class SmallStructureEvent {
         BlockPos chunkPos = new BlockPos(startX, worldBottomY + (worldTopY - worldBottomY) / 2, startZ);
         if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), chunkPos, 1)) {
             return false; // Chunk couldn't be loaded
+        }
+
+        boolean hasStorageOrSpawnPoint = false;
+        // Check for chests, beds, or spawn points in the chunk
+        for (int x = startX; x <= endX; x++) {
+            for (int z = startZ; z <= endZ; z++) {
+                for (int y = worldBottomY; y < worldTopY; y++) {
+                    BlockPos blockPos = new BlockPos(x, y, z);
+                    // Check for beds or storage blocks
+                    if (server.getOverworld().getBlockState(blockPos).getBlock() instanceof net.minecraft.block.ChestBlock
+                            || server.getOverworld().getBlockState(blockPos).getBlock() instanceof net.minecraft.block.TrappedChestBlock
+                            || server.getOverworld().getBlockState(blockPos).getBlock() instanceof net.minecraft.block.BarrelBlock
+                            || server.getOverworld().getBlockState(blockPos).getBlock() instanceof BedBlock) {
+                        hasStorageOrSpawnPoint = true;
+                        break;
+                    }
+                    // Check if this is the player's spawn point
+                    if (blockPos.equals(player.getSpawnPointPosition())) {
+                        hasStorageOrSpawnPoint = true;
+                        break;
+                    }
+                }
+                if (hasStorageOrSpawnPoint) {
+                    break;
+                }
+            }
+            if (hasStorageOrSpawnPoint) {
+                break;
+            }
+        }
+
+        if (hasStorageOrSpawnPoint) {
+            return false; // Abort deletion if any storage blocks or spawn points are found
+        }
+
+        // return false if chunk is within 3 chunks of players spawn point
+        BlockPos spawnPos = player.getSpawnPointPosition();
+        if (spawnPos != null) {
+            int spawnChunkX = spawnPos.getX() >> 4;
+            int spawnChunkZ = spawnPos.getZ() >> 4;
+            if (chunkX >= spawnChunkX - 3 && chunkX <= spawnChunkX + 3 &&
+                    chunkZ >= spawnChunkZ - 3 && chunkZ <= spawnChunkZ + 3) {
+                return false;
+            }
         }
 
         // delete all blocks in chunk
