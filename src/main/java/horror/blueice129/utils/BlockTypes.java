@@ -79,6 +79,4 @@ public class BlockTypes {
         return block == Blocks.OAK_LOG || block == Blocks.SPRUCE_LOG || block == Blocks.BIRCH_LOG
                 || block == Blocks.JUNGLE_LOG || block == Blocks.ACACIA_LOG || block == Blocks.DARK_OAK_LOG;
     }
-
-    // TODO: add more block type checks as needed
 }

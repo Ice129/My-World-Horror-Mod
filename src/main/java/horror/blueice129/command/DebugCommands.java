@@ -47,6 +47,8 @@ public class DebugCommands {
                                     .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
                                     .then(literal("homevisitor")
                                             .executes(DebugCommands::triggerHomeVisitor))
+                    .then(literal("smallstructure10s")
+                        .executes(context -> setSmallStructure10s(context.getSource())))
                                     .then(literal("place_diamond_pillars")
                                             .executes(context -> placeDiamondPillars(context.getSource())))));
             dispatcher.register(CommandManager.literal("debug_event")
@@ -151,5 +153,18 @@ public class DebugCommands {
             source.sendError(Text.literal("Failed to trigger event: " + eventId));
         }
         return success ? 1 : 0;
+    }
+
+    private static int setSmallStructure10s(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            // 10 seconds = 200 ticks
+            horror.blueice129.scheduler.SmallStructureScheduler.setTimer(server, 200);
+            source.sendFeedback(() -> Text.literal("Set small structure timer to 10 seconds (200 ticks)."), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set small structure timer: " + e.getMessage()));
+            return 0;
+        }
     }
 }

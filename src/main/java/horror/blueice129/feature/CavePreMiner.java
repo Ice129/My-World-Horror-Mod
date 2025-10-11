@@ -87,8 +87,8 @@ public class CavePreMiner {
             for (net.minecraft.util.math.Direction direction : net.minecraft.util.math.Direction.values()) {
                 BlockPos neighborPos = currentPos.offset(direction);
 
-                // Check if neighbor is within 50 blocks of start position
-                if (neighborPos.getSquaredDistance(startPos) > 2500) { // 50^2 = 2500
+                // Check if neighbor is within 200 blocks of start position
+                if (neighborPos.getSquaredDistance(startPos) > 200 * 200) {
                     continue;
                 }
                 // Skip anything above the hard cutoff
@@ -101,11 +101,11 @@ public class CavePreMiner {
                     if (!neighborState.isOf(Blocks.CAVE_AIR) && !neighborState.isOf(Blocks.AIR)) {
                         continue;
                     }
-                    // Only check 5 blocks up from the ground of the cave, takes into
+                    // Only check 10 blocks up from the ground of the cave, takes into
                     // account slope and inclines of cave floor
-                    // if solid block within 5 blocks below, add to queue
+                    // if solid block within 10 blocks below, add to queue
                     boolean hasSolidBelow = false;
-                    for (int i = 1; i <= 5; i++) {
+                    for (int i = 1; i <= 10; i++) { 
                         BlockPos belowPos = currentPos.down(i);
                         if (belowPos.getY() > 55)
                             continue; // don't test surface blocks

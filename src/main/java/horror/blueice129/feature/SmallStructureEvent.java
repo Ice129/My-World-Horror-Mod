@@ -4,6 +4,7 @@ import horror.blueice129.data.HorrorModPersistentState;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.BedBlock;
 import net.minecraft.item.Items;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.util.math.BlockPos;
@@ -23,8 +24,8 @@ public class SmallStructureEvent {
             { "crafting_table", "10" },
             { "furnace", "5" },
             { "cobblestone_pillar", "7" },
-            { "single_torch", "20" },
-            { "torched_area", "10" },
+            { "single_torch", "10" },
+            { "torched_area", "15" },
             { "tree_mined", "14" },
             // { "deforestation", "6" },
             { "flower_patch", "3" },
@@ -61,7 +62,12 @@ public class SmallStructureEvent {
      * @param player The player to trigger the event for
      * @return boolean indicating if the event was successfully triggered
      */
-    public static boolean triggerEvent(MinecraftServer server, ServerPlayerEntity player) {
+    public static boolean triggerEvent(MinecraftServer server) {
+        ServerPlayerEntity player = server.getPlayerManager().getPlayerList()
+                .get(random.nextInt(server.getPlayerManager().getPlayerList().size()));
+        if (player == null) {
+            return false; // No player found
+        }
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         // adjust weights based on player agro meter
         adjustWeightsBasedOnAgro(state);
@@ -70,7 +76,11 @@ public class SmallStructureEvent {
         if (structureId == null) {
             return false; // No structure selected
         }
+        System.out.println("[SmallStructureEvent] Attempting structure '" + structureId + "' for player "
+                + player.getName().getString() + " at " + player.getBlockPos());
         boolean success = placeStructureNearPlayer(server, player, structureId);
+        System.out.println("[SmallStructureEvent] Structure '" + structureId + "' for player "
+                + player.getName().getString() + " completed: " + success);
 
         return success;
     }
@@ -78,8 +88,8 @@ public class SmallStructureEvent {
     /**
      * Triggers the small structure event for a player with a specific structure ID.
      * 
-     * @param server The Minecraft server instance
-     * @param player The player to trigger the event for
+     * @param server      The Minecraft server instance
+     * @param player      The player to trigger the event for
      * @param structureId The ID of the structure to trigger
      * @return boolean indicating if the event was successfully triggered
      */
@@ -96,7 +106,12 @@ public class SmallStructureEvent {
         if (structureId == null) {
             return false; // No structure selected
         }
-        return placeStructureNearPlayer(server, player, structureId);
+        System.out.println("[SmallStructureEvent] Attempting structure '" + structureId + "' for player "
+                + player.getName().getString() + " at " + player.getBlockPos());
+        boolean success = placeStructureNearPlayer(server, player, structureId);
+        System.out.println("[SmallStructureEvent] Structure '" + structureId + "' for player "
+                + player.getName().getString() + " completed: " + success);
+        return success;
     }
 
     /**
@@ -161,8 +176,8 @@ public class SmallStructureEvent {
                 success = treeMinedEvent(server, player);
                 break;
             // case "deforestation":
-            //     success = deforestationEvent(server, player);
-            //     break;
+            // success = deforestationEvent(server, player);
+            // break;
             case "flower_patch":
                 success = flowerPatchEvent(server, player);
                 break;
@@ -275,7 +290,7 @@ public class SmallStructureEvent {
         if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), pos, 1)) {
             return false; // Chunk couldn't be loaded
         }
-        
+
         // find 5-15 random positions within 15 block radius and place torches
         int torchCount = 5 + random.nextInt(11);
         for (int i = 0; i < torchCount; i++) {
@@ -318,28 +333,6 @@ public class SmallStructureEvent {
         return true;
     }
 
-    // private static boolean deforestationEvent(MinecraftServer server, ServerPlayerEntity player) {
-    //     // get random location near player
-    //     BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 30, 50);
-    //     if (pos == null) {
-    //         return false; // No suitable location found
-    //     }
-    //     BlockPos[] treePositions = SurfaceFinder.findTreePositions(server.getOverworld(), pos, 13);
-    //     if (treePositions.length == 0) {
-    //         return false; // No trees found
-    //     }
-    //     for (BlockPos treePos : treePositions) {
-    //         if (random.nextInt(100) < 30) { // 30% chance to skip a tree
-    //             continue;
-    //         }
-    //         BlockPos[] treeLogs = SurfaceFinder.getTreeLogPositions(server.getOverworld(), treePos);
-    //         for (BlockPos logPos : treeLogs) {
-    //             server.getOverworld().breakBlock(logPos, false, null);
-    //         }
-    //     }
-    //     return true;
-    // }
-
     private static boolean flowerPatchEvent(MinecraftServer server, ServerPlayerEntity player) {
         // get random location near player
         BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 30, 50);
@@ -363,18 +356,22 @@ public class SmallStructureEvent {
         }
         return true;
     }
+
     private static boolean watchtowerEvent(MinecraftServer server, ServerPlayerEntity player) {
         return false; // TODO implement
     }
+
     private static boolean starterBaseEvent(MinecraftServer server, ServerPlayerEntity player) {
         return false; // TODO implement
     }
+
     private static boolean pitfallTrapEvent(MinecraftServer server, ServerPlayerEntity player) {
         return false; // TODO implement
     }
+
     private static boolean chunkDeletionEvent(MinecraftServer server, ServerPlayerEntity player) {
-        // find a far away chunk, 100-200 blocks away
-        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100, 200);
+        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100,
+                200);
         if (pos == null) {
             return false; // No suitable location found
         }
@@ -387,13 +384,57 @@ public class SmallStructureEvent {
         int endZ = startZ + 15;
         int worldBottomY = server.getOverworld().getBottomY();
         int worldTopY = server.getOverworld().getHeight();
-        
+
         // Make sure the chunk is loaded before deleting blocks
         BlockPos chunkPos = new BlockPos(startX, worldBottomY + (worldTopY - worldBottomY) / 2, startZ);
         if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), chunkPos, 1)) {
             return false; // Chunk couldn't be loaded
         }
-        
+
+        boolean hasStorageOrSpawnPoint = false;
+        // Check for chests, beds, or spawn points in the chunk
+        for (int x = startX; x <= endX; x++) {
+            for (int z = startZ; z <= endZ; z++) {
+                for (int y = worldBottomY; y < worldTopY; y++) {
+                    BlockPos blockPos = new BlockPos(x, y, z);
+                    // Check for beds or storage blocks
+                    if (server.getOverworld().getBlockState(blockPos).getBlock() instanceof net.minecraft.block.ChestBlock
+                            || server.getOverworld().getBlockState(blockPos).getBlock() instanceof net.minecraft.block.TrappedChestBlock
+                            || server.getOverworld().getBlockState(blockPos).getBlock() instanceof net.minecraft.block.BarrelBlock
+                            || server.getOverworld().getBlockState(blockPos).getBlock() instanceof BedBlock) {
+                        hasStorageOrSpawnPoint = true;
+                        break;
+                    }
+                    // Check if this is the player's spawn point
+                    if (blockPos.equals(player.getSpawnPointPosition())) {
+                        hasStorageOrSpawnPoint = true;
+                        break;
+                    }
+                }
+                if (hasStorageOrSpawnPoint) {
+                    break;
+                }
+            }
+            if (hasStorageOrSpawnPoint) {
+                break;
+            }
+        }
+
+        if (hasStorageOrSpawnPoint) {
+            return false; // Abort deletion if any storage blocks or spawn points are found
+        }
+
+        // return false if chunk is within 3 chunks of players spawn point
+        BlockPos spawnPos = player.getSpawnPointPosition();
+        if (spawnPos != null) {
+            int spawnChunkX = spawnPos.getX() >> 4;
+            int spawnChunkZ = spawnPos.getZ() >> 4;
+            if (chunkX >= spawnChunkX - 3 && chunkX <= spawnChunkX + 3 &&
+                    chunkZ >= spawnChunkZ - 3 && chunkZ <= spawnChunkZ + 3) {
+                return false;
+            }
+        }
+
         // delete all blocks in chunk
         for (int x = startX; x <= endX; x++) {
             for (int z = startZ; z <= endZ; z++) {
@@ -405,23 +446,61 @@ public class SmallStructureEvent {
         }
         return true;
     }
+
     private static boolean burningForestEvent(MinecraftServer server, ServerPlayerEntity player) {
         // find random tree location 50-100 blocks away
-        // spwn fire in a 5 block radius around the tree, randomly, only on air blocks
-        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 50, 100);
+        // We need to include snow when finding a surface location to work with snowy areas
+        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 50,
+                100, true); // Changed to include snow
         if (pos == null) {
             return false; // No suitable location found
         }
+        
+        // Find trees, properly handling snow-covered ones
         BlockPos[] treePositions = SurfaceFinder.findTreePositions(server.getOverworld(), pos, 13);
         if (treePositions.length == 0) {
             return false; // No trees found
         }
-        BlockPos treePos = treePositions[random.nextInt(treePositions.length)];
-        int fireCount = 10 + random.nextInt(20);
-        for (int i = 0; i < fireCount; i++) {
-            BlockPos firePos = treePos.add(random.nextInt(5) - 2, random.nextInt(5) - 2, random.nextInt(5) - 2);
-            if (server.getOverworld().getBlockState(firePos).isAir()) {
-                server.getOverworld().setBlockState(firePos, Blocks.FIRE.getDefaultState());
+        
+        int numberOfTreesToBurn = Math.max(1, Math.min(3, treePositions.length)); // Limit to max 3 trees
+        for (int x = 0; x < numberOfTreesToBurn; x++) {
+            BlockPos treePos = treePositions[random.nextInt(treePositions.length)];
+            
+            // Get the actual log positions of this tree for more targeted fire placement
+            BlockPos[] treeLogPositions = SurfaceFinder.getTreeLogPositions(server.getOverworld(), treePos);
+            if (treeLogPositions.length == 0) {
+                continue; // Skip if no log positions found
+            }
+            
+            // Place fire on and around logs
+            for (BlockPos logPos : treeLogPositions) {
+                // Try to place fire directly on the log sometimes (logs themselves are flammable)
+                if (random.nextInt(100) < 40) { // 40% chance to place fire on log
+                    // Clear snow if present and place fire
+                    BlockPos fireOnLogPos = logPos.add(0, 1, 0);
+                    if (server.getOverworld().getBlockState(fireOnLogPos).getBlock() == Blocks.SNOW) {
+                        server.getOverworld().setBlockState(fireOnLogPos, Blocks.AIR.getDefaultState());
+                    }
+                    if (server.getOverworld().getBlockState(fireOnLogPos).isAir()) {
+                        server.getOverworld().setBlockState(fireOnLogPos, Blocks.FIRE.getDefaultState());
+                    }
+                }
+                
+                // Place fire around logs, clearing snow if needed
+                int fireAroundLogCount = 3 + random.nextInt(4); // 3-6 fires around each log
+                for (int i = 0; i < fireAroundLogCount; i++) {
+                    BlockPos firePos = logPos.add(random.nextInt(3) - 1, random.nextInt(2), random.nextInt(3) - 1);
+                    
+                    // Clear snow if present
+                    if (server.getOverworld().getBlockState(firePos).getBlock() == Blocks.SNOW) {
+                        server.getOverworld().setBlockState(firePos, Blocks.AIR.getDefaultState());
+                    }
+                    
+                    // Place fire on air or replace snow layers
+                    if (server.getOverworld().getBlockState(firePos).isAir()) {
+                        server.getOverworld().setBlockState(firePos, Blocks.FIRE.getDefaultState());
+                    }
+                }
             }
         }
         return true;

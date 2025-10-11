@@ -87,11 +87,27 @@ public class SurfaceFinder {
                     continue; // Skip if chunk couldn't be loaded
                 }
 
-                int topBlockY = findPointSurfaceY(world, x, z, false, true, false);
+                // Include snow when finding the surface to work properly in snowy biomes
+                int topBlockY = findPointSurfaceY(world, x, z, false, true, true);
                 if (topBlockY == -1) {
                     continue; // No suitable surface found
                 }
+
                 BlockPos topBlock = new BlockPos(x, topBlockY, z);
+                BlockState topBlockState = world.getBlockState(topBlock);
+                
+                // Handle snow on top of leaves or directly check below snow for leaves
+                if (topBlockState.getBlock() == Blocks.SNOW) {
+                    // Check the block below snow
+                    BlockState belowSnow = world.getBlockState(topBlock.down(1));
+                    if (!(belowSnow.getBlock() instanceof LeavesBlock)) {
+                        continue; // If the block below snow isn't leaves, skip
+                    }
+                    topBlock = topBlock.down(1); // Use the block below snow as top block
+                    topBlockY--; // Adjust Y coordinate
+                }
+                
+                // Check if the top block is leaves or we've already confirmed leaves below snow
                 if (world.getBlockState(topBlock).getBlock() instanceof LeavesBlock) {
                     int trunkHeight = 0;
                     for (int y = 0; y <= 30; y++) {
@@ -106,10 +122,10 @@ public class SurfaceFinder {
                             trunkHeight = 0; // reset trunk height if we hit air
                             continue;
                         } else if (blockState.getBlock() == Blocks.SNOW) {
-                            trunkHeight = 0; // reset trunk height if we hit snow
+                            // Don't reset trunk height for snow, just continue
                             continue; // allow snow on top of a tree
                         } else {
-                            break; // hit a non-log, non-leaf, non-air block
+                            break; // hit a non-log, non-leaf, non-air, non-snow block
                         }
                     }
                     if (trunkHeight >= 3) {
@@ -133,19 +149,39 @@ public class SurfaceFinder {
             return new BlockPos[0]; // Return empty array if chunk couldn't be loaded
         }
 
-        int topBlockY = findPointSurfaceY(world, x, z, false, true, false);
+        // Include snow when finding the surface to work properly in snowy biomes
+        int topBlockY = findPointSurfaceY(world, x, z, false, true, true);
         if (topBlockY == -1) {
             return new BlockPos[0]; // No suitable surface found
         }
+        
+        // First check if top block is snow, and if so, look below it
+        if (world.getBlockState(new BlockPos(x, topBlockY, z)).getBlock() == Blocks.SNOW) {
+            topBlockY--; // Move below the snow layer
+        }
+        
+        // Search downward for logs
         for (int y = 0; y <= 30; y++) {
             BlockPos checkPos = new BlockPos(x, topBlockY - y, z);
             BlockState blockState = world.getBlockState(checkPos);
             if (BlockTypes.isLogBlock(blockState.getBlock())) {
                 logPositions.add(checkPos);
+                
+                // Also check adjacent blocks for a more complete tree structure
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dz == 0) continue; // Skip the center block we already added
+                        BlockPos adjacentPos = new BlockPos(x + dx, topBlockY - y, z + dz);
+                        BlockState adjacentState = world.getBlockState(adjacentPos);
+                        if (BlockTypes.isLogBlock(adjacentState.getBlock())) {
+                            logPositions.add(adjacentPos);
+                        }
+                    }
+                }
             } else if (blockState.getBlock() == Blocks.SNOW) {
-                continue; // allow snow on top of a tree
-            } else {
-                break; // hit a non-log, non-leaf, non-air block
+                continue; // Skip snow layers and keep looking
+            } else if (!(blockState.getBlock() instanceof LeavesBlock) && !blockState.isAir()) {
+                break; // Stop if we hit a non-log, non-leaf, non-air, non-snow block
             }
         }
         return logPositions.toArray(new BlockPos[0]);
