@@ -171,4 +171,9 @@ public class StripMine {
         newArray[array.length] = newElement;
         return newArray;
     }
+
+    private static boolean placePossibleBlocks(MinecraftServer server, int[][] coordinates) {
+        ServerWorld overworld = server.getWorld(ServerWorld.OVERWORLD);
+        HorrorModPersistentState state = HorrorModPersistentState.
+        
 }

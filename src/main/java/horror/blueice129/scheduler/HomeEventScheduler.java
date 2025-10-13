@@ -17,8 +17,8 @@ import java.util.UUID;
 
 public class HomeEventScheduler {
     private static final Random random = Random.create();
-    private static final int MIN_START_DAY = 10;
-    private static final int MAX_START_DAY = 20;
+    private static final int MIN_START_DAY = 3;
+    private static final int MAX_START_DAY = 5;
     private static final String TIMER_ID = "homeEventTimer";
     private static final String LOGOUT_TIME_ID = "playerLogoutTime";
     private static final String EVENT_READY_ID = "homeEventReady";
