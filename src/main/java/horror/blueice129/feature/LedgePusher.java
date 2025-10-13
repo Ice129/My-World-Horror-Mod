@@ -1,5 +1,7 @@
 package horror.blueice129.feature;
 
+import horror.blueice129.utils.PlayerUtils;
+
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.entity.player.PlayerEntity;
@@ -18,14 +20,13 @@ public class LedgePusher {
     public boolean isPlayerOnLedge() {
         BlockPos playerPos = this.player.getBlockPos();
         // check blocks in front of the player and see if they are on a ledge
-        // get the block infront of the player, and the 2 diagonal forwrd blocks
-        int directionX = (int) Math.round(-Math.sin(Math.toRadians(player.getYaw())));
-        int directionZ = (int) Math.round(Math.cos(Math.toRadians(player.getYaw())));
-        BlockPos frontPos = playerPos.add(directionX, 0, directionZ);
-        
+        String direction = PlayerUtils.getPlayerCompassDirection(player);
+        BlockPos frontPos = PlayerUtils.getRelativeBlockPos(playerPos, direction);
+        BlockPos leftBlockPos = PlayerUtils.getRelativeBlockPos(frontPos, PlayerUtils.getLeftRightDirection(direction, true));
+        BlockPos rightBlockPos = PlayerUtils.getRelativeBlockPos(frontPos, PlayerUtils.getLeftRightDirection(direction, false));
 
-
-        for (BlockPos pos : BlockPos.iterate(playerPos.add(-1, 0, -1), playerPos.add(1, 0, 1))) {
+        BlockPos[] checkPositions = { frontPos, leftBlockPos, rightBlockPos };
+        for (BlockPos pos : checkPositions) {
             for (int y = -2; y <= minLedgeHeight; y++) {
                 BlockPos checkPos = pos.add(0, y, 0);
                 if (!world.isAir(checkPos)) {
@@ -35,5 +36,7 @@ public class LedgePusher {
         }
         return true; // No solid blocks found, player is on a ledge
     }
+
+
 
 }
