@@ -108,4 +108,5 @@ public class PlayerUtils {
             default:
                 return initialBlockPos; // Invalid direction input
         }
+    }
 }
