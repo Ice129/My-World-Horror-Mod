@@ -12,6 +12,10 @@ public class PlayerUtils {
         return player.getYaw();
     }
 
+    public static boolean isPlayerOnGround(PlayerEntity player) {
+        return player.isOnGround();
+    }
+
     /**
      * Get the compass direction (cardinal and intercardinal) the player is facing.
      * 
@@ -23,21 +27,21 @@ public class PlayerUtils {
             yaw += 360;
         }
         if (yaw >= 337.5 || yaw < 22.5) {
-            return "N";
-        } else if (yaw >= 22.5 && yaw < 67.5) {
-            return "NE";
-        } else if (yaw >= 67.5 && yaw < 112.5) {
-            return "E";
-        } else if (yaw >= 112.5 && yaw < 157.5) {
-            return "SE";
-        } else if (yaw >= 157.5 && yaw < 202.5) {
             return "S";
-        } else if (yaw >= 202.5 && yaw < 247.5) {
+        } else if (yaw >= 22.5 && yaw < 67.5) {
             return "SW";
-        } else if (yaw >= 247.5 && yaw < 292.5) {
+        } else if (yaw >= 67.5 && yaw < 112.5) {
             return "W";
-        } else if (yaw >= 292.5 && yaw < 337.5) {
+        } else if (yaw >= 112.5 && yaw < 157.5) {
             return "NW";
+        } else if (yaw >= 157.5 && yaw < 202.5) {
+            return "N";
+        } else if (yaw >= 202.5 && yaw < 247.5) {
+            return "NE";
+        } else if (yaw >= 247.5 && yaw < 292.5) {
+            return "E";
+        } else if (yaw >= 292.5 && yaw < 337.5) {
+            return "SE";
         }
         // Fallback: ensure the method always returns a String
         return "N";
@@ -107,6 +111,34 @@ public class PlayerUtils {
                 return initialBlockPos.north().west();
             default:
                 return initialBlockPos; // Invalid direction input
+        }
+    }
+
+    /**
+     * get a x,z vector from a compass direction
+     * @param compassDirection The compass direction ('N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW')
+     * @return double array [x, z]
+     */
+    public static double[] getDirectionVector(String compassDirection) {
+        switch (compassDirection) {
+            case "N":
+                return new double[] { 0, -1 };
+            case "NE":
+                return new double[] { 0.7071, -0.7071 }; // approx sqrt(2)/2
+            case "E":
+                return new double[] { 1, 0 };
+            case "SE":
+                return new double[] { 0.7071, 0.7071 };
+            case "S":
+                return new double[] { 0, 1 };
+            case "SW":
+                return new double[] { -0.7071, 0.7071 };
+            case "W":
+                return new double[] { -1, 0 };
+            case "NW":
+                return new double[] { -0.7071, -0.7071 };
+            default:
+                return new double[] { 0, 0 }; // Invalid direction input
         }
     }
 }

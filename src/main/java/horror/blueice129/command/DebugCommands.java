@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.feature.HomeVisitorEvent;
 import horror.blueice129.feature.SmallStructureEvent;
+import horror.blueice129.feature.LedgePusher;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
@@ -41,16 +42,35 @@ public class DebugCommands {
         // Only register in development environment or if explicitly enabled
         if (environment == CommandManager.RegistrationEnvironment.DEDICATED
                 || environment == CommandManager.RegistrationEnvironment.INTEGRATED) {
+
             dispatcher.register(
                     literal("horror129")
                             .then(literal("debug")
                                     .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
                                     .then(literal("homevisitor")
                                             .executes(DebugCommands::triggerHomeVisitor))
-                    .then(literal("smallstructure10s")
-                        .executes(context -> setSmallStructure10s(context.getSource())))
+                                    .then(literal("smallstructure10s")
+                                            .executes(context -> setSmallStructure10s(context.getSource())))
                                     .then(literal("place_diamond_pillars")
-                                            .executes(context -> placeDiamondPillars(context.getSource())))));
+                                            .executes(context -> placeDiamondPillars(context.getSource())))
+                                    .then(literal("ledgepusher")
+                                            .executes(context -> {
+                                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                                if (player == null) {
+                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                    return 0;
+                                                }
+                                                LedgePusher ledgePusher = new LedgePusher(player, 10);
+                                                if (ledgePusher.isPlayerOnLedge()) {
+                                                    context.getSource().sendFeedback(() -> Text.literal("You are on a ledge!"), false);
+                                                } else {
+                                                    context.getSource().sendFeedback(() -> Text.literal("You are not on a ledge."), false);
+                                                }
+                                                return 1;
+                                            }))
+                            )
+            );
+
             dispatcher.register(CommandManager.literal("debug_event")
                     .then(CommandManager.literal("crafting_table").executes(context -> {
                         return executeEvent(context.getSource(), "crafting_table");
@@ -90,7 +110,8 @@ public class DebugCommands {
                     }))
                     .then(CommandManager.literal("burning_forest").executes(context -> {
                         return executeEvent(context.getSource(), "burning_forest");
-                    })));
+                    }))
+            );
         }
     }
 
