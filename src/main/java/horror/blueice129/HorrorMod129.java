@@ -4,7 +4,9 @@ import horror.blueice129.command.DebugCommands;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.HomeEventScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
+import horror.blueice129.scheduler.LedgePusherScheduler;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +34,10 @@ public class HorrorMod129 implements ModInitializer {
 		CaveMinerScheduler.register();
 		HomeEventScheduler.register();
 		SmallStructureScheduler.register();
+		LedgePusherScheduler.register();
 		
+		// Register fleeing entity tick handler
+		ServerTickEvents.START_SERVER_TICK.register(horror.blueice129.feature.LedgePusher::onServerTick);
 		
 		// Register debug commands
 		DebugCommands.register();

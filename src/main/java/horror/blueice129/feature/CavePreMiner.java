@@ -88,7 +88,7 @@ public class CavePreMiner {
                 BlockPos neighborPos = currentPos.offset(direction);
 
                 // Check if neighbor is within 200 blocks of start position
-                if (neighborPos.getSquaredDistance(startPos) > 200 * 200) {
+                if (neighborPos.getSquaredDistance(startPos) > 200 * 50) {
                     continue;
                 }
                 // Skip anything above the hard cutoff
@@ -105,7 +105,7 @@ public class CavePreMiner {
                     // account slope and inclines of cave floor
                     // if solid block within 10 blocks below, add to queue
                     boolean hasSolidBelow = false;
-                    for (int i = 1; i <= 10; i++) { 
+                    for (int i = 1; i <= 10; i++) {
                         BlockPos belowPos = currentPos.down(i);
                         if (belowPos.getY() > 55)
                             continue; // don't test surface blocks
@@ -224,14 +224,18 @@ public class CavePreMiner {
      */
 
     public static boolean placeExtraBlocks(World world, java.util.List<BlockPos> caveAirBlocks, PlayerEntity player) {
-        // Chance distribution for extras: furnace 20%, crafting table 40%, pillar 30%, nothing 10%
+        // Chance distribution for extras: furnace 20%, crafting table 40%, pillar 30%,
+        // nothing 10%
         java.util.List<BlockPos> suitablePositions = new java.util.ArrayList<>();
         for (BlockPos pos : caveAirBlocks) {
-            if (pos.getY() > 55) continue; // never place extras on/above surface
-            if (isBlockSuitableForExtraBlock(world, pos, player)) suitablePositions.add(pos);
+            if (pos.getY() > 55)
+                continue; // never place extras on/above surface
+            if (isBlockSuitableForExtraBlock(world, pos, player))
+                suitablePositions.add(pos);
         }
 
-        if (suitablePositions.isEmpty()) return false;
+        if (suitablePositions.isEmpty())
+            return false;
 
         // Pick a random candidate position
         java.util.Collections.shuffle(suitablePositions);
@@ -252,8 +256,10 @@ public class CavePreMiner {
 
     // Helper: place a furnace at pos (on the pos itself). Returns true if placed.
     private static boolean placeFurnaceAt(World world, BlockPos pos) {
-        if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, pos, 1)) return false;
-        if (!world.getBlockState(pos).isAir()) return false;
+        if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, pos, 1))
+            return false;
+        if (!world.getBlockState(pos).isAir())
+            return false;
 
         world.setBlockState(pos, Blocks.FURNACE.getDefaultState(), 3);
         BlockEntity blockEntity = world.getBlockEntity(pos);
@@ -266,21 +272,28 @@ public class CavePreMiner {
         return true;
     }
 
-    // Helper: place a crafting table above the supplied pos. Returns true if placed.
+    // Helper: place a crafting table above the supplied pos. Returns true if
+    // placed.
     private static boolean placeCraftingTableAt(World world, BlockPos pos) {
         BlockPos above = pos.up();
-        if (above.getY() > 55) return false;
-        if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, above, 1)) return false;
-        if (!world.getBlockState(above).isAir()) return false;
+        if (above.getY() > 55)
+            return false;
+        if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, above, 1))
+            return false;
+        if (!world.getBlockState(above).isAir())
+            return false;
         world.setBlockState(above, Blocks.CRAFTING_TABLE.getDefaultState(), 3);
         return true;
     }
 
-    // Helper: place a 3-block tall cobblestone pillar starting at pos.up(). Returns true if at least one block placed.
+    // Helper: place a 3-block tall cobblestone pillar starting at pos.up(). Returns
+    // true if at least one block placed.
     private static boolean placeCobblestonePillarAt(World world, BlockPos pos) {
         BlockPos base = pos.up();
-        if (base.getY() > 55) return false;
-        if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, base, 1)) return false;
+        if (base.getY() > 55)
+            return false;
+        if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, base, 1))
+            return false;
 
         boolean placedAny = false;
         for (int i = 0; i < 3; i++) {
@@ -412,6 +425,7 @@ public class CavePreMiner {
             stairLength++;
         }
         // Set the 3 blocks above each stair block to air
+        int torchDistance = 0;
         for (BlockPos stairPos : stairBlocks) {
             if (world.getBlockState(stairPos).isOf(Blocks.CAVE_AIR) || world.getBlockState(stairPos).isOf(Blocks.AIR)) {
                 int surfaceY = SurfaceFinder.findPointSurfaceY((ServerWorld) world,
@@ -422,11 +436,22 @@ public class CavePreMiner {
                 }
             }
             for (int i = 1; i <= 3; i++) {
-                BlockPos abovePos = stairPos.up(i);
-                if (abovePos.getY() < world.getTopY()) {
-                    world.setBlockState(abovePos, Blocks.AIR.getDefaultState());
+                if (i == 1 && torchDistance == 8) {
+                    // place torch on stair block
+                    BlockPos torchPos = stairPos.up(1);
+                    if (torchPos.getY() < world.getTopY()) {
+                        world.setBlockState(torchPos, Blocks.TORCH.getDefaultState());
+                    }
+                    torchDistance = 0;
+                } else {
+                    BlockPos abovePos = stairPos.up(i);
+                    if (abovePos.getY() < world.getTopY()) {
+                        world.setBlockState(abovePos, Blocks.AIR.getDefaultState());
+                    }
                 }
+
             }
+            torchDistance++;
         }
         return stairLength;
     }

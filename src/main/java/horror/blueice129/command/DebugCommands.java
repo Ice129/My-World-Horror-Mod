@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.feature.HomeVisitorEvent;
 import horror.blueice129.feature.SmallStructureEvent;
+import horror.blueice129.feature.LedgePusher;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
@@ -41,16 +42,73 @@ public class DebugCommands {
         // Only register in development environment or if explicitly enabled
         if (environment == CommandManager.RegistrationEnvironment.DEDICATED
                 || environment == CommandManager.RegistrationEnvironment.INTEGRATED) {
+
             dispatcher.register(
                     literal("horror129")
                             .then(literal("debug")
                                     .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
                                     .then(literal("homevisitor")
                                             .executes(DebugCommands::triggerHomeVisitor))
-                    .then(literal("smallstructure10s")
-                        .executes(context -> setSmallStructure10s(context.getSource())))
+                                    .then(literal("smallstructure10s")
+                                            .executes(context -> setSmallStructure10s(context.getSource())))
+                                    .then(literal("ledgepusher20ticks")
+                                            .executes(context -> setLedgePusherCooldown20Ticks(context.getSource())))
                                     .then(literal("place_diamond_pillars")
-                                            .executes(context -> placeDiamondPillars(context.getSource())))));
+                                            .executes(context -> placeDiamondPillars(context.getSource())))
+                                    .then(literal("ledgepusher")
+                                            .executes(context -> {
+                                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                                if (player == null) {
+                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                    return 0;
+                                                }
+                                                LedgePusher ledgePusher = new LedgePusher(player, 10);
+                                                if (ledgePusher.isPlayerOnLedge()) {
+                                                    context.getSource().sendFeedback(() -> Text.literal("You are on a ledge!"), false);
+                                                } else {
+                                                    context.getSource().sendFeedback(() -> Text.literal("You are not on a ledge."), false);
+                                                }
+                                                return 1;
+                                            }))
+                                    .then(literal("push")
+                                            .executes(context -> {
+                                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                                if (player == null) {
+                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                    return 0;
+                                                }
+                                                LedgePusher ledgePusher = new LedgePusher(player, 10);
+                                                ledgePusher.pushPlayer();
+                                                context.getSource().sendFeedback(() -> Text.literal("You have been pushed!"), false);
+                                                return 1;
+                                            })
+                                    )
+                                    .then(literal("spawn_fleeing_entity")
+                                            .executes(context -> {
+                                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                                if (player == null) {
+                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                    return 0;
+                                                }
+                                                ServerWorld world = (ServerWorld) player.getWorld();
+                                                String direction = horror.blueice129.utils.PlayerUtils.getPlayerCompassDirection(player);
+                                                double[] directionVector = horror.blueice129.utils.PlayerUtils.getDirectionVector(direction);
+                                                
+                                                // Spawn fleeing entity 3 blocks in front of player
+                                                net.minecraft.util.math.Vec3d spawnPos = new net.minecraft.util.math.Vec3d(
+                                                    player.getX() + directionVector[0] * 3,
+                                                    player.getY(),
+                                                    player.getZ() + directionVector[1] * 3
+                                                );
+                                                
+                                                LedgePusher.spawnFleeingEntityStatic(world, spawnPos, directionVector);
+                                                context.getSource().sendFeedback(() -> Text.literal("Spawned fleeing entity!"), false);
+                                                return 1;
+                                            })
+                                    )
+                            )
+            );
+
             dispatcher.register(CommandManager.literal("debug_event")
                     .then(CommandManager.literal("crafting_table").executes(context -> {
                         return executeEvent(context.getSource(), "crafting_table");
@@ -90,7 +148,8 @@ public class DebugCommands {
                     }))
                     .then(CommandManager.literal("burning_forest").executes(context -> {
                         return executeEvent(context.getSource(), "burning_forest");
-                    })));
+                    }))
+            );
         }
     }
 
@@ -164,6 +223,19 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set small structure timer: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    private static int setLedgePusherCooldown20Ticks(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            // Set cooldown to 20 ticks (1 second)
+            horror.blueice129.scheduler.LedgePusherScheduler.setTimer(server, 20);
+            source.sendFeedback(() -> Text.literal("Set ledge pusher cooldown to 20 ticks (1 second)."), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set ledge pusher cooldown: " + e.getMessage()));
             return 0;
         }
     }
