@@ -74,7 +74,7 @@ public class LedgePusherScheduler {
             HorrorMod129.LOGGER.info("LedgePusherScheduler, cooldown is: " + state.getTimer(cooldownTimerKey));
             return;
         }
-        else if (ledgePusher.isPlayerOnLedge()) {
+        if (ledgePusher.isPlayerOnLedge()) {
             // player is on a ledge and the cooldown has expired, roll to see if they get pushed
             HorrorMod129.LOGGER.info("Player is on a ledge, rolling to see if they get pushed");
             if (random.nextInt(PUSH_CHANCE) == 0) {
