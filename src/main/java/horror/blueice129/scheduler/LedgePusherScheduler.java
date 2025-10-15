@@ -2,7 +2,7 @@ package horror.blueice129.scheduler;
 
 import horror.blueice129.feature.LedgePusher;
 import horror.blueice129.data.HorrorModPersistentState;
-import horror.blueice129.HorrorMod129;
+// import horror.blueice129.HorrorMod129;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 // import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -21,7 +21,7 @@ public class LedgePusherScheduler {
     private static int ticksSinceLastPush;
     private static LedgePusher ledgePusher;
     private static HorrorModPersistentState state;
-    private static final int PUSH_CHANCE = 20 * 60; // chance is 1 in PUSH_CHANCE every tick, so for 1 minute on an edge,
+    private static final int PUSH_CHANCE = 20 * 40; // chance is 1 in PUSH_CHANCE every tick, so for 1 minute on an edge,
                                                     // you can be expected to be pushed once
 
     public static void register() {
@@ -46,7 +46,7 @@ public class LedgePusherScheduler {
     public static void setTimer(MinecraftServer server, int ticks) {
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         state.setTimer(cooldownTimerKey, Math.max(ticks, 1));
-        HorrorMod129.LOGGER.info("LedgePusherScheduler cooldown set to " + state.getTimer(cooldownTimerKey) + " ticks via debug command");
+        // HorrorMod129.LOGGER.info("LedgePusherScheduler cooldown set to " + state.getTimer(cooldownTimerKey) + " ticks via debug command");
     }
     
     private static void onServerTick(MinecraftServer server) {
@@ -71,18 +71,21 @@ public class LedgePusherScheduler {
         int cooldown = state.getTimer(cooldownTimerKey);
         if (cooldown > 0) {
             state.setTimer(cooldownTimerKey, cooldown - 1);
-            HorrorMod129.LOGGER.info("LedgePusherScheduler, cooldown is: " + state.getTimer(cooldownTimerKey));
+            // HorrorMod129.LOGGER.info("LedgePusherScheduler, cooldown is: " + state.getTimer(cooldownTimerKey));
             return;
         }
+        // say in world chat "checking ledge"
+        // server.getPlayerManager().getPlayerList().forEach(p -> 
+        //         p.sendMessage(net.minecraft.text.Text.literal("LedgePusherScheduler: Checking ledge..."), false));
         if (ledgePusher.isPlayerOnLedge()) {
             // player is on a ledge and the cooldown has expired, roll to see if they get pushed
-            HorrorMod129.LOGGER.info("Player is on a ledge, rolling to see if they get pushed");
+            // HorrorMod129.LOGGER.info("Player is on a ledge, rolling to see if they get pushed");
             if (random.nextInt(PUSH_CHANCE) == 0) {
                 // push the player
                 ledgePusher.pushPlayer();
                 ticksSinceLastPush = 0;
                 state.setTimer(cooldownTimerKey, MIN_DELAY); // Reset cooldown timer
-                HorrorMod129.LOGGER.info("Player pushed off ledge");
+                // HorrorMod129.LOGGER.info("Player pushed off ledge");
             }
         }
     }

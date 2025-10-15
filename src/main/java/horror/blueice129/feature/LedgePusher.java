@@ -4,7 +4,7 @@ import horror.blueice129.utils.PlayerUtils;
 
 import com.mojang.authlib.GameProfile;
 
-import horror.blueice129.HorrorMod129;
+// import horror.blueice129.HorrorMod129;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d; // Used in method parameters
@@ -52,10 +52,10 @@ public class LedgePusher {
                 PlayerUtils.getLeftRightDirection(direction, false));
 
         // log the direction and positions being checked
-        HorrorMod129.LOGGER.info("Checking ledge at direction: " + direction);
-        HorrorMod129.LOGGER.info("Front Pos: " + frontPos);
-        HorrorMod129.LOGGER.info("Left Pos: " + leftBlockPos);
-        HorrorMod129.LOGGER.info("Right Pos: " + rightBlockPos);
+        // HorrorMod129.LOGGER.info("Checking ledge at direction: " + direction);
+        // HorrorMod129.LOGGER.info("Front Pos: " + frontPos);
+        // HorrorMod129.LOGGER.info("Left Pos: " + leftBlockPos);
+        // HorrorMod129.LOGGER.info("Right Pos: " + rightBlockPos);
 
         BlockPos[] checkPositions = { frontPos, leftBlockPos, rightBlockPos };
         for (BlockPos pos : checkPositions) {
@@ -125,7 +125,7 @@ public class LedgePusher {
     public static void spawnFleeingEntityStatic(ServerWorld world, Vec3d position, double[] fleeDirection) {
         // Try the simplest possible approach - plain armorstand
         try {
-            HorrorMod129.LOGGER.info("Creating fleeing entity at " + position.toString());
+            // HorrorMod129.LOGGER.info("Creating fleeing entity at " + position.toString());
             
             // Create an armor stand as the fleeing entity
             ArmorStandEntity entity = new ArmorStandEntity(world, position.x, position.y, position.z);
@@ -143,13 +143,14 @@ public class LedgePusher {
 
             // Spawn the entity in the world
             boolean success = world.spawnEntity(entity);
-            HorrorMod129.LOGGER.info("Entity spawn success: " + success);
+            success =  success && entity.isAlive();
+            // HorrorMod129.LOGGER.info("Entity spawn success: " + success);
             
             // Now manually set initial velocity
             entity.setVelocity(fleeDirection[0] * 0.25, 0, fleeDirection[1] * 0.25);
         } catch (Exception e) {
             // Log any errors for debugging
-            HorrorMod129.LOGGER.error("Error spawning fleeing entity", e);
+            // HorrorMod129.LOGGER.error("Error spawning fleeing entity", e);
         }
     }
     
