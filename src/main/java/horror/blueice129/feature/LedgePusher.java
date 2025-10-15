@@ -139,7 +139,7 @@ public class LedgePusher {
             float speed = 0.15f;
             
             // Set the custom tag via entity UUID
-            FLEEING_ENTITIES.put(entity.getUuid(), new FleeingEntityData(60, -fleeDirection[0] * speed, -fleeDirection[1] * speed));
+            FLEEING_ENTITIES.put(entity.getUuid(), new FleeingEntityData(80, -fleeDirection[0] * speed, -fleeDirection[1] * speed));
 
             // Spawn the entity in the world
             boolean success = world.spawnEntity(entity);
