@@ -2,6 +2,7 @@ package horror.blueice129.scheduler;
 
 import horror.blueice129.feature.LedgePusher;
 import horror.blueice129.data.HorrorModPersistentState;
+import horror.blueice129.HorrorMod129;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 // import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -47,6 +48,8 @@ public class LedgePusherScheduler {
             ledgePusher = new LedgePusher(player, 10);
         }
 
+        ticksSinceLastPush++;
+        
         if (ticksSinceLastPush == 10) { // 0.5 seconds
             if (ledgePusher.didPlayerFall()) {
                 // start the entity running event
@@ -64,9 +67,11 @@ public class LedgePusherScheduler {
             // player is on a ledge and the cooldown has expired, roll to see if they get pushed
             if (random.nextInt(PUSH_CHANCE) == 0) {
                 // push the player
-                
-
-
-
+                ledgePusher.pushPlayer();
+                ticksSinceLastPush = 0;
+                state.setTimer(cooldownTimerKey, MIN_DELAY); // Reset cooldown timer
+                HorrorMod129.LOGGER.info("Player pushed off ledge");
+            }
+        }
     }
 }

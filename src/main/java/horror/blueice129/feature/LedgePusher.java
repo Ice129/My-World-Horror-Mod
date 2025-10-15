@@ -1,12 +1,18 @@
 package horror.blueice129.feature;
 
 import horror.blueice129.utils.PlayerUtils;
+
+import com.mojang.authlib.GameProfile;
+
 import horror.blueice129.HorrorMod129;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.block.Block;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+
+
 
 public class LedgePusher {
     private final int minLedgeHeight;
@@ -72,12 +78,32 @@ public class LedgePusher {
     }
 
     public void pushPlayer() {
-        // punch player in the direction they are facing
-        // deal the damage too
-        // attribute damage source to "BlueIce129", so if they die from falling, it shows "____ was doomed to fall by BlueIce129"
-        String direction = PlayerUtils.getPlayerCompassDirection(player);
-        double pushStrength = 1.0;
-        
+    String direction = PlayerUtils.getPlayerCompassDirection(player);
+    double pushStrength = 1.0;
+    double[] directionVector = PlayerUtils.getDirectionVector(direction);
+    double dx = directionVector[0] * pushStrength;
+    double dz = directionVector[1] * pushStrength;
+    player.addVelocity(dx, 0.5, dz);
+    
+    // Create a fake player with blueice129 name to damage the player
+    if (world instanceof ServerWorld) {
+        ServerWorld serverWorld = (ServerWorld) world;
+        GameProfile profile = new GameProfile(java.util.UUID.nameUUIDFromBytes("blueice129".getBytes()), "blueice129");
+        FakePlayer fakePlayer = FakePlayer.get(serverWorld, profile);
+        // Position the fake player behind the real player (opposite of push direction)
+        fakePlayer.setPosition(
+            player.getX() - directionVector[0] * 2,
+            player.getY(),
+            player.getZ() - directionVector[1] * 2
+        );
+        // Damage the player as if attacked by the fake player
+        player.damage(player.getDamageSources().playerAttack(fakePlayer), 2.0f);
+    } else {
+        // Fallback for client-side or if we can't create a fake player
+        player.damage(player.getDamageSources().generic(), 2.0f);
+    }
+}
+
 
 
 
