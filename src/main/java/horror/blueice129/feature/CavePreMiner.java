@@ -87,7 +87,7 @@ public class CavePreMiner {
             for (net.minecraft.util.math.Direction direction : net.minecraft.util.math.Direction.values()) {
                 BlockPos neighborPos = currentPos.offset(direction);
 
-                // Check if neighbor is within 200 blocks of start position 
+                // Check if neighbor is within 200 blocks of start position
                 if (neighborPos.getSquaredDistance(startPos) > 200 * 50) {
                     continue;
                 }
@@ -449,8 +449,9 @@ public class CavePreMiner {
                         world.setBlockState(abovePos, Blocks.AIR.getDefaultState());
                     }
                 }
-                torchDistance++;
+
             }
+            torchDistance++;
         }
         return stairLength;
     }
