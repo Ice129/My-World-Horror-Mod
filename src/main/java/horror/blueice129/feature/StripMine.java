@@ -249,8 +249,10 @@ public class StripMine {
         return newArray;
     }
 
-    // private static boolean placePossibleBlocks(MinecraftServer server, int[][] coordinates) {
-    //     ServerWorld overworld = server.getWorld(ServerWorld.OVERWORLD);
-    //     StateSaverAndLoader state = StateSaverAndLoader.
+    private static boolean placePossibleBlocks(MinecraftServer server, String mineID) {
+        String placedBlocksID = mineID + "_placed";
+        StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
+        StripMineBlocks allBlocks = state.getStripMineBlocks(mineID);
+        StripMineBlocks placedBlocks = state.getStripMineBlocks(placedBlocksID);
         
 }
