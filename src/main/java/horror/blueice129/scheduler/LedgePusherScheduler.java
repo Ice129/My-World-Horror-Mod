@@ -25,6 +25,7 @@ public class LedgePusherScheduler {
                                                     // you can be expected to be pushed once
 
     public static void register() {
+
         ServerTickEvents.END_SERVER_TICK.register(LedgePusherScheduler::onServerTick);
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.isClient())
@@ -35,11 +36,19 @@ public class LedgePusherScheduler {
                 if (!state.hasTimer(cooldownTimerKey)) {
                     state.setTimer(cooldownTimerKey, MIN_DELAY);
                 }
-
             }
         });
     }
 
+    /**
+     * Debug helper to set the ledge pusher cooldown timer directly (in ticks).
+     */
+    public static void setTimer(MinecraftServer server, int ticks) {
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        state.setTimer(cooldownTimerKey, Math.max(ticks, 1));
+        HorrorMod129.LOGGER.info("LedgePusherScheduler cooldown set to " + state.getTimer(cooldownTimerKey) + " ticks via debug command");
+    }
+    
     private static void onServerTick(MinecraftServer server) {
         // get the first player in the server
         if (server.getPlayerManager().getPlayerList().isEmpty()) {
@@ -62,10 +71,12 @@ public class LedgePusherScheduler {
         int cooldown = state.getTimer(cooldownTimerKey);
         if (cooldown > 0) {
             state.setTimer(cooldownTimerKey, cooldown - 1);
+            HorrorMod129.LOGGER.info("LedgePusherScheduler, cooldown is: " + state.getTimer(cooldownTimerKey));
             return;
         }
         else if (ledgePusher.isPlayerOnLedge()) {
             // player is on a ledge and the cooldown has expired, roll to see if they get pushed
+            HorrorMod129.LOGGER.info("Player is on a ledge, rolling to see if they get pushed");
             if (random.nextInt(PUSH_CHANCE) == 0) {
                 // push the player
                 ledgePusher.pushPlayer();

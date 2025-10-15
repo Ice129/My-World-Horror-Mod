@@ -51,6 +51,8 @@ public class DebugCommands {
                                             .executes(DebugCommands::triggerHomeVisitor))
                                     .then(literal("smallstructure10s")
                                             .executes(context -> setSmallStructure10s(context.getSource())))
+                                    .then(literal("ledgepusher20ticks")
+                                            .executes(context -> setLedgePusherCooldown20Ticks(context.getSource())))
                                     .then(literal("place_diamond_pillars")
                                             .executes(context -> placeDiamondPillars(context.getSource())))
                                     .then(literal("ledgepusher")
@@ -221,6 +223,19 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set small structure timer: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    private static int setLedgePusherCooldown20Ticks(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            // Set cooldown to 20 ticks (1 second)
+            horror.blueice129.scheduler.LedgePusherScheduler.setTimer(server, 20);
+            source.sendFeedback(() -> Text.literal("Set ledge pusher cooldown to 20 ticks (1 second)."), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set ledge pusher cooldown: " + e.getMessage()));
             return 0;
         }
     }
