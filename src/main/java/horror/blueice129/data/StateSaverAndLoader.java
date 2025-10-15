@@ -1,8 +1,9 @@
 package horror.blueice129.data;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap;
 
 import horror.blueice129.HorrorMod129;
 import net.minecraft.server.MinecraftServer;
@@ -179,5 +180,176 @@ public class StateSaverAndLoader extends PersistentState {
     public Set<String> getStripMineBlocksIds() {
         return stripMineBlocks.keySet();
     }
-
+    
+    /**
+     * Gets an integer value by its ID
+     * @param id The ID of the value to retrieve
+     * @param defaultValue The default value to return if not found
+     * @return The integer value, or the default value if not found
+     */
+    public int getIntValue(String id, int defaultValue) {
+        return intValues.getOrDefault(id, defaultValue);
+    }
+    
+    /**
+     * Sets an integer value by its ID
+     * @param id The ID of the value to set
+     * @param value The integer value
+     */
+    public void setIntValue(String id, int value) {
+        intValues.put(id, value);
+        this.markDirty();
+    }
+    
+    /**
+     * Removes an integer value
+     * @param id The ID of the value to remove
+     */
+    public void removeIntValue(String id) {
+        if (intValues.containsKey(id)) {
+            intValues.remove(id);
+            this.markDirty();
+        }
+    }
+    
+    /**
+     * Checks if an integer value exists
+     * @param id The ID to check
+     * @return True if the integer value exists
+     */
+    public boolean hasIntValue(String id) {
+        return intValues.containsKey(id);
+    }
+    
+    /**
+     * Gets all integer value IDs
+     * @return Set of all integer value IDs
+     */
+    public Set<String> getIntValueIds() {
+        return intValues.keySet();
+    }
+    
+    /**
+     * Gets a block position by its ID
+     * @param id The ID of the position to retrieve
+     * @return The block position, or null if not found
+     */
+    public BlockPos getPosition(String id) {
+        return blockPositions.get(id);
+    }
+    
+    /**
+     * Sets a block position by its ID
+     * @param id The ID of the position to set
+     * @param pos The block position value
+     */
+    public void setPosition(String id, BlockPos pos) {
+        blockPositions.put(id, pos);
+        this.markDirty();
+    }
+    
+    /**
+     * Removes a block position
+     * @param id The ID of the position to remove
+     */
+    public void removePosition(String id) {
+        if (blockPositions.containsKey(id)) {
+            blockPositions.remove(id);
+            this.markDirty();
+        }
+    }
+    
+    /**
+     * Checks if a position exists
+     * @param id The ID to check
+     * @return True if the position exists
+     */
+    public boolean hasPosition(String id) {
+        return blockPositions.containsKey(id);
+    }
+    
+    /**
+     * Gets all position IDs
+     * @return Set of all position IDs
+     */
+    public Set<String> getPositionIds() {
+        return blockPositions.keySet();
+    }
+    
+    // Timer methods using intValues with "timer_" prefix
+    
+    /**
+     * Gets a timer value by its ID
+     * @param timerId The ID of the timer to retrieve
+     * @return Current timer value in ticks, or 0 if the timer doesn't exist
+     */
+    public int getTimer(String timerId) {
+        return getIntValue("timer_" + timerId, 0);
+    }
+    
+    /**
+     * Sets a timer value by its ID
+     * @param timerId The ID of the timer to set
+     * @param value The new timer value in ticks
+     */
+    public void setTimer(String timerId, int value) {
+        setIntValue("timer_" + timerId, value);
+    }
+    
+    /**
+     * Increments a timer by the specified amount
+     * @param timerId The ID of the timer to increment
+     * @param amount The amount to increment the timer by
+     * @return The new timer value
+     */
+    public int incrementTimer(String timerId, int amount) {
+        int currentValue = getTimer(timerId);
+        int newValue = currentValue + amount;
+        setTimer(timerId, newValue);
+        return newValue;
+    }
+    
+    /**
+     * Decrements a timer by the specified amount (won't go below 0)
+     * @param timerId The ID of the timer to decrement
+     * @param amount The amount to decrement the timer by
+     * @return The new timer value
+     */
+    public int decrementTimer(String timerId, int amount) {
+        int currentValue = getTimer(timerId);
+        int newValue = Math.max(0, currentValue - amount);
+        setTimer(timerId, newValue);
+        return newValue;
+    }
+    
+    /**
+     * Checks if a timer exists
+     * @param timerId The ID of the timer to check
+     * @return True if the timer exists, false otherwise
+     */
+    public boolean hasTimer(String timerId) {
+        return hasIntValue("timer_" + timerId);
+    }
+    
+    /**
+     * Removes a timer
+     * @param timerId The ID of the timer to remove
+     */
+    public void removeTimer(String timerId) {
+        removeIntValue("timer_" + timerId);
+    }
+    
+    /**
+     * Gets all timer IDs
+     * @return Set of all timer IDs
+     */
+    public Set<String> getTimerIds() {
+        Set<String> timerKeys = new HashSet<>();
+        for (String key : getIntValueIds()) {
+            if (key.startsWith("timer_")) {
+                timerKeys.add(key.substring(6)); // Remove "timer_" prefix
+            }
+        }
+        return timerKeys;
+    }
 }

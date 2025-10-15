@@ -1,7 +1,7 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
-import horror.blueice129.data.HorrorModPersistentState;
+import horror.blueice129.data.StateSaverAndLoader;
 import horror.blueice129.feature.HomeVisitorEvent;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -39,7 +39,7 @@ public class HomeEventScheduler {
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.isClient()) return;
             if (world.getRegistryKey() == World.OVERWORLD) {
-                HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+                StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
                 
                 // If the timer is not set, initialize it
                 if (!state.hasTimer(TIMER_ID)) {
@@ -53,7 +53,7 @@ public class HomeEventScheduler {
         // Track player logout time
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
-            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
             long currentTime = System.currentTimeMillis() / 1000L;
             // Store as integer to track logout time (in seconds since epoch)
             // This might lead to overflow in ~2038, but that's acceptable for now
@@ -64,7 +64,7 @@ public class HomeEventScheduler {
         // Check time difference when player logs in
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
-            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
             long currentTime = System.currentTimeMillis() / 1000L;
             String playerKey = LOGOUT_TIME_ID + player.getUuidAsString();
             
@@ -111,7 +111,7 @@ public class HomeEventScheduler {
 
     private static void onServerTick(MinecraftServer server) {
         // Get the persistent state
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
         int currentTimer = state.getTimer(TIMER_ID);
         
         // Only decrement if timer is greater than 0
@@ -164,7 +164,7 @@ public class HomeEventScheduler {
      * @param player The player who reconnected
      */
     private static void triggerHomeEvent(MinecraftServer server, ServerPlayerEntity player, BlockPos bedPos) {
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
 
         HomeVisitorEvent.triggerEvent(server, player, bedPos);
 

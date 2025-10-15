@@ -251,6 +251,6 @@ public class StripMine {
 
     // private static boolean placePossibleBlocks(MinecraftServer server, int[][] coordinates) {
     //     ServerWorld overworld = server.getWorld(ServerWorld.OVERWORLD);
-    //     HorrorModPersistentState state = HorrorModPersistentState.
+    //     StateSaverAndLoader state = StateSaverAndLoader.
         
 }

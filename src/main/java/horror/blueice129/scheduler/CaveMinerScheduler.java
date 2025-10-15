@@ -1,7 +1,7 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
-import horror.blueice129.data.HorrorModPersistentState;
+import horror.blueice129.data.StateSaverAndLoader;
 import horror.blueice129.feature.CavePreMiner;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -45,7 +45,7 @@ public class CaveMinerScheduler {
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.isClient()) return;
             if (world.getRegistryKey() == World.OVERWORLD) {
-                HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+                StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
                 
                 // If the timer is not set, initialize it
                 if (!state.hasTimer(TIMER_ID)) {
@@ -75,7 +75,7 @@ public class CaveMinerScheduler {
             ServerPlayerEntity player = server.getPlayerManager().getPlayerList().get(0);
             
             // Get our persistent state
-            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
             
             // Get current timer value
             int currentTimer = state.decrementTimer(TIMER_ID, 1); // Decrement timer by 1 tick

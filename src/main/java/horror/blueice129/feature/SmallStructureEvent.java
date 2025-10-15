@@ -1,6 +1,6 @@
 package horror.blueice129.feature;
 
-import horror.blueice129.data.HorrorModPersistentState;
+import horror.blueice129.data.StateSaverAndLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.block.Blocks;
@@ -62,7 +62,7 @@ public class SmallStructureEvent {
      * @return boolean indicating if the event was successfully triggered
      */
     public static boolean triggerEvent(MinecraftServer server, ServerPlayerEntity player) {
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
         // adjust weights based on player agro meter
         adjustWeightsBasedOnAgro(state);
 
@@ -85,7 +85,7 @@ public class SmallStructureEvent {
      */
     public static boolean triggerEvent(MinecraftServer server, ServerPlayerEntity player, String structureId) {
         // Adjust weights based on player agro meter
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
         adjustWeightsBasedOnAgro(state);
 
         // If a specific structureId is provided, use it directly
@@ -105,7 +105,7 @@ public class SmallStructureEvent {
      * 
      * @param player The player whose agro meter is used for adjustment
      */
-    private static void adjustWeightsBasedOnAgro(HorrorModPersistentState state) {
+    private static void adjustWeightsBasedOnAgro(StateSaverAndLoader state) {
         int agroMeter = state.getIntValue("agroMeter", 0);
 
         for (String[] structure : STRUCTURE_LIST) {

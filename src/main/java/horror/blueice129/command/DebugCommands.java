@@ -18,7 +18,7 @@ import net.minecraft.block.Blocks;
 import com.mojang.brigadier.Command;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.server.MinecraftServer;
-import horror.blueice129.data.HorrorModPersistentState;
+import horror.blueice129.data.StateSaverAndLoader;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -137,7 +137,7 @@ public class DebugCommands {
         }
 
         MinecraftServer server = source.getServer();
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
 
     // Set the event ready flag and zero the timer so it triggers on next qualifying reconnect
     state.setIntValue("homeEventReady", 1);
