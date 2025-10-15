@@ -1,6 +1,7 @@
 package horror.blueice129.feature;
 
-import horror.blueice129.data.HorrorModPersistentState;
+import horror.blueice129.data.StateSaverAndLoader;
+import horror.blueice129.data.StripMineBlocks;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.math.BlockPos;
@@ -8,7 +9,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 
 public class StripMine {
-    private static final String STRIP_MINE_LOCATIONS_ID = "strip_mine_block_locations";
     private static final Random RANDOM = Random.create();
 
     /**
@@ -22,7 +22,7 @@ public class StripMine {
      *         blockType: 0 = stairs , 1 = main tunnel entrance, 2 = main tunnel, 3
      *         = side tunnel entrance , 4 = side tunnel main, 5 = stair support
      */
-    public static int[][] generateStripMine(MinecraftServer server, int startX, int startZ, int length) {
+    public static String generateStripMine(MinecraftServer server, int startX, int startZ, int length) {
         int[][] coordinates = new int[0][4];
         // block pos for start of strip mine
         int x = startX;
@@ -57,7 +57,84 @@ public class StripMine {
                     new BlockPos(block[0], block[2], block[1]), block[3], coordinates);
         }
 
-        return coordinates;
+        // Create arrays for each type of block
+        BlockPos[] stairBlocksArray = new BlockPos[coordinates.length];
+        BlockPos[] mainTunnelEntranceBlocksArray = new BlockPos[coordinates.length];
+        BlockPos[] mainTunnelBlocksArray = new BlockPos[coordinates.length];
+        BlockPos[] sideTunnelEntranceBlocksArray = new BlockPos[coordinates.length];
+        BlockPos[] sideTunnelMainBlocksArray = new BlockPos[coordinates.length];
+        BlockPos[] stairSupportBlocksArray = new BlockPos[coordinates.length];
+        
+        // Counter for each array
+        int stairCount = 0;
+        int mainTunnelEntranceCount = 0;
+        int mainTunnelCount = 0;
+        int sideTunnelEntranceCount = 0;
+        int sideTunnelMainCount = 0;
+        int stairSupportCount = 0;
+        
+        // Sort blocks by type
+        for (int[] coord : coordinates) {
+            BlockPos pos = new BlockPos(coord[0], coord[2], coord[1]);
+            int blockType = coord[3];
+            
+            switch (blockType) {
+                case 0:
+                    stairBlocksArray[stairCount++] = pos;
+                    break;
+                case 1:
+                    mainTunnelEntranceBlocksArray[mainTunnelEntranceCount++] = pos;
+                    break;
+                case 2:
+                    mainTunnelBlocksArray[mainTunnelCount++] = pos;
+                    break;
+                case 3:
+                    sideTunnelEntranceBlocksArray[sideTunnelEntranceCount++] = pos;
+                    break;
+                case 4:
+                    sideTunnelMainBlocksArray[sideTunnelMainCount++] = pos;
+                    break;
+                case 5:
+                    stairSupportBlocksArray[stairSupportCount++] = pos;
+                    break;
+            }
+        }
+        
+        // Create trimmed arrays with the correct size
+        BlockPos[] finalStairBlocks = new BlockPos[stairCount];
+        BlockPos[] finalMainTunnelEntranceBlocks = new BlockPos[mainTunnelEntranceCount];
+        BlockPos[] finalMainTunnelBlocks = new BlockPos[mainTunnelCount];
+        BlockPos[] finalSideTunnelEntranceBlocks = new BlockPos[sideTunnelEntranceCount];
+        BlockPos[] finalSideTunnelMainBlocks = new BlockPos[sideTunnelMainCount];
+        BlockPos[] finalStairSupportBlocks = new BlockPos[stairSupportCount];
+        
+        // Copy data to the trimmed arrays
+        System.arraycopy(stairBlocksArray, 0, finalStairBlocks, 0, stairCount);
+        System.arraycopy(mainTunnelEntranceBlocksArray, 0, finalMainTunnelEntranceBlocks, 0, mainTunnelEntranceCount);
+        System.arraycopy(mainTunnelBlocksArray, 0, finalMainTunnelBlocks, 0, mainTunnelCount);
+        System.arraycopy(sideTunnelEntranceBlocksArray, 0, finalSideTunnelEntranceBlocks, 0, sideTunnelEntranceCount);
+        System.arraycopy(sideTunnelMainBlocksArray, 0, finalSideTunnelMainBlocks, 0, sideTunnelMainCount);
+        System.arraycopy(stairSupportBlocksArray, 0, finalStairSupportBlocks, 0, stairSupportCount);
+        
+        // Generate unique ID for this strip mine
+        String mineID = "StripMine-" + startX + "-" + startZ;
+        
+        // Create StripMineBlocks object
+        StripMineBlocks stripMineBlocks = new StripMineBlocks(
+            mineID,
+            finalStairBlocks,
+            finalMainTunnelEntranceBlocks,
+            finalMainTunnelBlocks,
+            finalSideTunnelEntranceBlocks,
+            finalSideTunnelMainBlocks,
+            finalStairSupportBlocks
+        );
+        
+        // Store the StripMineBlocks in the persistent state
+        StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
+        state.setStripMineBlocks(mineID, stripMineBlocks);
+        
+        return mineID;
     }
 
     private static int[][] generateStairs(MinecraftServer server, int x, int stripMineYLevel, int z,
@@ -172,8 +249,8 @@ public class StripMine {
         return newArray;
     }
 
-    private static boolean placePossibleBlocks(MinecraftServer server, int[][] coordinates) {
-        ServerWorld overworld = server.getWorld(ServerWorld.OVERWORLD);
-        HorrorModPersistentState state = HorrorModPersistentState.
+    // private static boolean placePossibleBlocks(MinecraftServer server, int[][] coordinates) {
+    //     ServerWorld overworld = server.getWorld(ServerWorld.OVERWORLD);
+    //     HorrorModPersistentState state = HorrorModPersistentState.
         
 }
