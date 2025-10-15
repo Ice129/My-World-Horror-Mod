@@ -9,6 +9,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import horror.blueice129.utils.PlayerUtils;
 
 public class LedgePusherScheduler {
     // check every tick if the player is on a ledge
@@ -52,9 +54,8 @@ public class LedgePusherScheduler {
         
         if (ticksSinceLastPush == 10) { // 0.5 seconds
             if (ledgePusher.didPlayerFall()) {
-                // start the entity running event
-                // TODO: add entity running event
-                // TODO: Implement the entity running event logic here
+                // make entity flee
+                LedgePusher.spawnFleeingEntityStatic((ServerWorld) player.getWorld(), player.getPos(), PlayerUtils.getDirectionVector(PlayerUtils.getPlayerCompassDirection(player)));
             }
         }
 

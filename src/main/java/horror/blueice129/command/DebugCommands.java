@@ -68,6 +68,42 @@ public class DebugCommands {
                                                 }
                                                 return 1;
                                             }))
+                                    .then(literal("push")
+                                            .executes(context -> {
+                                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                                if (player == null) {
+                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                    return 0;
+                                                }
+                                                LedgePusher ledgePusher = new LedgePusher(player, 10);
+                                                ledgePusher.pushPlayer();
+                                                context.getSource().sendFeedback(() -> Text.literal("You have been pushed!"), false);
+                                                return 1;
+                                            })
+                                    )
+                                    .then(literal("spawn_fleeing_entity")
+                                            .executes(context -> {
+                                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                                if (player == null) {
+                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                    return 0;
+                                                }
+                                                ServerWorld world = (ServerWorld) player.getWorld();
+                                                String direction = horror.blueice129.utils.PlayerUtils.getPlayerCompassDirection(player);
+                                                double[] directionVector = horror.blueice129.utils.PlayerUtils.getDirectionVector(direction);
+                                                
+                                                // Spawn fleeing entity 3 blocks in front of player
+                                                net.minecraft.util.math.Vec3d spawnPos = new net.minecraft.util.math.Vec3d(
+                                                    player.getX() + directionVector[0] * 3,
+                                                    player.getY(),
+                                                    player.getZ() + directionVector[1] * 3
+                                                );
+                                                
+                                                LedgePusher.spawnFleeingEntityStatic(world, spawnPos, directionVector);
+                                                context.getSource().sendFeedback(() -> Text.literal("Spawned fleeing entity!"), false);
+                                                return 1;
+                                            })
+                                    )
                             )
             );
 
