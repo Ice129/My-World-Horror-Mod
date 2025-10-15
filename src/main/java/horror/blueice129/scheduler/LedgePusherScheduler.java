@@ -17,7 +17,7 @@ public class LedgePusherScheduler {
     private static final Random random = Random.create();
 
     private final static String cooldownTimerKey = "ledgePusherCooldown";
-    private final static int MIN_DELAY = 20 * 60 * 10; // 10 minutes
+    private static int MIN_DELAY = 20 * 60 * 25;
     private static int ticksSinceLastPush;
     private static LedgePusher ledgePusher;
     private static HorrorModPersistentState state;
@@ -84,9 +84,23 @@ public class LedgePusherScheduler {
                 // push the player
                 ledgePusher.pushPlayer();
                 ticksSinceLastPush = 0;
+                MIN_DELAY = minDelayModifier(state);
                 state.setTimer(cooldownTimerKey, MIN_DELAY); // Reset cooldown timer
                 // HorrorMod129.LOGGER.info("Player pushed off ledge");
             }
         }
+    }
+
+    /**
+     * add time to the min delay iversley proportional to agro meter
+     * gets shorter the more aggro you have
+     * @return
+     */
+    private static int minDelayModifier(HorrorModPersistentState state) {
+        int agroMeter = state.getIntValue("agroMeter", 0);
+        int minsPerAgro = 3;
+        MIN_DELAY = Math.max(20 * 60 * 10, MIN_DELAY - ((20 * 60 * minsPerAgro) * agroMeter)); // min 10 minutes, max 25 minutes
+        return MIN_DELAY;
+        
     }
 }
