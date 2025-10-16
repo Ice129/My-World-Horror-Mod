@@ -2,11 +2,19 @@ package horror.blueice129.feature;
 
 import horror.blueice129.data.StateSaverAndLoader;
 import horror.blueice129.data.StripMineBlocks;
+import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.SurfaceFinder;
+import horror.blueice129.utils.BlockTypes;
+// import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class StripMine {
     private static final Random RANDOM = Random.create();
@@ -41,7 +49,8 @@ public class StripMine {
         stairBottomeBlocks[1] = stairBlocks[stairBlocks.length - 2];
         int[][] generatedMainTunnel = generateMainTunnel(server, stairBottomeBlocks, length);
 
-        int[][] sideTunnels = generateSideTunnels(server, sideTunnelMinLength, sideTunnelMaxLength, length, stairBottomeBlocks);
+        int[][] sideTunnels = generateSideTunnels(server, sideTunnelMinLength, sideTunnelMaxLength, length,
+                stairBottomeBlocks);
 
         // combine all coordinates into one array
         for (int[] block : stairBlocks) {
@@ -64,7 +73,7 @@ public class StripMine {
         BlockPos[] sideTunnelEntranceBlocksArray = new BlockPos[coordinates.length];
         BlockPos[] sideTunnelMainBlocksArray = new BlockPos[coordinates.length];
         BlockPos[] stairSupportBlocksArray = new BlockPos[coordinates.length];
-        
+
         // Counter for each array
         int stairCount = 0;
         int mainTunnelEntranceCount = 0;
@@ -72,12 +81,12 @@ public class StripMine {
         int sideTunnelEntranceCount = 0;
         int sideTunnelMainCount = 0;
         int stairSupportCount = 0;
-        
+
         // Sort blocks by type
         for (int[] coord : coordinates) {
             BlockPos pos = new BlockPos(coord[0], coord[2], coord[1]);
             int blockType = coord[3];
-            
+
             switch (blockType) {
                 case 0:
                     stairBlocksArray[stairCount++] = pos;
@@ -99,7 +108,7 @@ public class StripMine {
                     break;
             }
         }
-        
+
         // Create trimmed arrays with the correct size
         BlockPos[] finalStairBlocks = new BlockPos[stairCount];
         BlockPos[] finalMainTunnelEntranceBlocks = new BlockPos[mainTunnelEntranceCount];
@@ -107,7 +116,7 @@ public class StripMine {
         BlockPos[] finalSideTunnelEntranceBlocks = new BlockPos[sideTunnelEntranceCount];
         BlockPos[] finalSideTunnelMainBlocks = new BlockPos[sideTunnelMainCount];
         BlockPos[] finalStairSupportBlocks = new BlockPos[stairSupportCount];
-        
+
         // Copy data to the trimmed arrays
         System.arraycopy(stairBlocksArray, 0, finalStairBlocks, 0, stairCount);
         System.arraycopy(mainTunnelEntranceBlocksArray, 0, finalMainTunnelEntranceBlocks, 0, mainTunnelEntranceCount);
@@ -115,25 +124,24 @@ public class StripMine {
         System.arraycopy(sideTunnelEntranceBlocksArray, 0, finalSideTunnelEntranceBlocks, 0, sideTunnelEntranceCount);
         System.arraycopy(sideTunnelMainBlocksArray, 0, finalSideTunnelMainBlocks, 0, sideTunnelMainCount);
         System.arraycopy(stairSupportBlocksArray, 0, finalStairSupportBlocks, 0, stairSupportCount);
-        
+
         // Generate unique ID for this strip mine
         String mineID = "StripMine-" + startX + "-" + startZ;
-        
+
         // Create StripMineBlocks object
         StripMineBlocks stripMineBlocks = new StripMineBlocks(
-            mineID,
-            finalStairBlocks,
-            finalMainTunnelEntranceBlocks,
-            finalMainTunnelBlocks,
-            finalSideTunnelEntranceBlocks,
-            finalSideTunnelMainBlocks,
-            finalStairSupportBlocks
-        );
-        
+                mineID,
+                finalStairBlocks,
+                finalMainTunnelEntranceBlocks,
+                finalMainTunnelBlocks,
+                finalSideTunnelEntranceBlocks,
+                finalSideTunnelMainBlocks,
+                finalStairSupportBlocks);
+
         // Store the StripMineBlocks in the persistent state
         StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
         state.setStripMineBlocks(mineID, stripMineBlocks);
-        
+
         return mineID;
     }
 
@@ -249,10 +257,259 @@ public class StripMine {
         return newArray;
     }
 
-    private static boolean placePossibleBlocks(MinecraftServer server, String mineID) {
-        String placedBlocksID = mineID + "_placed";
+    public static boolean placePossibleBlocks(MinecraftServer server, String mineID) {
+        String notPlacedBlocksID = mineID + "_placed";
         StateSaverAndLoader state = StateSaverAndLoader.getServerState(server);
         StripMineBlocks allBlocks = state.getStripMineBlocks(mineID);
-        StripMineBlocks placedBlocks = state.getStripMineBlocks(placedBlocksID);
+        StripMineBlocks notPlacedBlocks = state.getStripMineBlocks(placedBlocksID);
+
+        // If we don't have the strip mine data, return false
+        if (allBlocks == null) {
+            return false;
+        }
+
+        // If placedBlocks doesn't exist yet, create a new empty one
+        if (placedBlocks == null) {
+            placedBlocks = new StripMineBlocks(placedBlocksID,
+                    new BlockPos[0], new BlockPos[0], new BlockPos[0],
+                    new BlockPos[0], new BlockPos[0], new BlockPos[0]);
+            
+            // Save the new empty placedBlocks object to the state
+            state.setStripMineBlocks(placedBlocksID, placedBlocks);
+        }
+
+        // Track if any blocks were placed during this operation
+        boolean anyBlocksPlaced = false;
+        ServerWorld world = server.getWorld(ServerWorld.OVERWORLD);
         
-}
+        
+        
+        
+        // Save the updated placedBlocks if any blocks were placed
+        if (anyBlocksPlaced) {
+            // 
+            state.setStripMineBlocks(placedBlocksID, updatedPlacedBlocks);
+        }
+
+        return anyBlocksPlaced;
+    }
+
+    /**
+     * Processes a specific block type for the strip mine
+     * 
+     * @param world           The server world to place blocks in
+     * @param allBlocks       All blocks of this type that need to be placed
+     * @param placedBlocks    Blocks of this type that have already been placed
+     * @param blockType       The type of block (0=stairs, 1=main tunnel entrance,
+     *                        etc.)
+     * @param placedBlocksObj The StripMineBlocks object to update with newly placed
+     *                        blocks
+     * @return true if any blocks were placed, false otherwise
+     */
+    private static BlockPos processBlockType(ServerWorld world, BlockPos[] allBlocks, BlockPos[] placedBlocks,
+            int blockType, StripMineBlocks placedBlocksObj) {
+        if (allBlocks == null || allBlocks.length == 0) {
+            return null;
+        }
+
+        // Convert existing placedBlocks to a List for easier checking
+        List<BlockPos> placedBlocksList = new ArrayList<>();
+        if (placedBlocks != null) {
+            placedBlocksList.addAll(Arrays.asList(placedBlocks));
+        }
+
+        List<BlockPos> newlyPlacedBlocks = new ArrayList<>();
+        boolean anyBlocksPlaced = false;
+
+        // Process each block position
+        for (BlockPos pos : allBlocks) {
+            // Skip if this block has already been placed
+            if (isBlockAlreadyPlaced(pos, placedBlocksList)) {
+                continue;
+            }
+
+            // Check if the chunk containing this block is loaded
+            if (!ChunkLoader.loadChunksInRadius(world, pos, 1)) {
+                continue; // Skip if chunk is not loaded
+            }
+
+            // Place the block based on its type
+            if (placeBlockByType(world, pos, blockType)) {
+                newlyPlacedBlocks.add(pos);
+                anyBlocksPlaced = true;
+            }
+        }
+
+
+        if (anyBlocksPlaced) {
+
+
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks if a block position is already in the list of placed blocks
+     * 
+     * @param pos          The block position to check
+     * @param placedBlocks List of already placed blocks
+     * @return true if the block is already placed, false otherwise
+     */
+    private static boolean isBlockAlreadyPlaced(BlockPos pos, List<BlockPos> placedBlocks) {
+        // We need to check each position since BlockPos equals() checks exact object,
+        // not just coordinates
+        for (BlockPos placedPos : placedBlocks) {
+            if (pos.getX() == placedPos.getX() &&
+                    pos.getY() == placedPos.getY() &&
+                    pos.getZ() == placedPos.getZ()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Places a block based on its type
+     * 
+     * @param world     The server world to place blocks in
+     * @param pos       The position to place the block at
+     * @param blockType The type of block to place (0=stairs, 1=main tunnel
+     *                  entrance, etc.)
+     * @return true if the block was successfully placed, false otherwise
+     */
+    private static boolean placeBlockByType(ServerWorld world, BlockPos pos, int blockType) {
+        // Different block types for different parts of the mine
+        BlockState blockState;
+
+        // Select block state based on block type
+        switch (blockType) {
+            case 0: // stairs
+                // Create an air block for the stairs (carve out space)
+                blockState = Blocks.AIR.getDefaultState();
+
+                // break any ore blocks in the side tunnel
+                superMineOreVeins(world, pos);
+
+                // Randomly place torches on stair blocks
+                torchPlacer(world, pos);
+
+                break;
+            case 1: // main tunnel entrance
+                // Create an air block for the main tunnel entrance
+                blockState = Blocks.AIR.getDefaultState();
+
+                // break any ore blocks in the side tunnel
+                superMineOreVeins(world, pos);
+
+                torchPlacer(world, pos);
+
+                break;
+            case 2: // main tunnel
+                // Create an air block for the main tunnel
+                blockState = Blocks.AIR.getDefaultState();
+
+                // break any ore blocks in the side tunnel
+                superMineOreVeins(world, pos);
+                torchPlacer(world, pos);
+                break;
+            case 3: // side tunnel entrance
+                blockState = Blocks.AIR.getDefaultState();
+
+                // break any ore blocks in the side tunnel
+                superMineOreVeins(world, pos);
+                torchPlacer(world, pos);
+                break;
+            case 4: // side tunnel main
+                // Create an air block for the side tunnel
+                blockState = Blocks.AIR.getDefaultState();
+
+                superMineOreVeins(world, pos);
+                torchPlacer(world, pos);
+                break;
+            case 5: // stair support
+                // Place wooden supports for the stairs
+                if (world.getBlockState(pos).isAir()) {
+                    blockState = Blocks.COBBLESTONE.getDefaultState();
+                } else {
+                    return false; // Cannot place support if space is not air
+                }
+                break;
+
+            default:
+                return false; // Unknown block type
+        }
+
+        // Set the block in the world
+        world.setBlockState(pos, blockState);
+
+        return true;
+
+    }
+
+    /**
+     * check id plaacing torch is ok position
+     * check if adjacent torches are in invalid locations, and if so, delete them
+     * 
+     * @param world
+     * @param pos
+     */
+
+    private static void torchPlacer(ServerWorld world, BlockPos pos) {
+
+        boolean isBlockBellowSolid = world.getBlockState(pos.down()).isSolidBlock(world, pos.down());
+        if (RANDOM.nextInt(10) == 0 && isBlockBellowSolid) {
+            // Place a torch if the block below is solid and the random check passes
+            world.setBlockState(pos, Blocks.TORCH.getDefaultState());
+        }
+
+        // get rid of torches that are in invalid locations
+        for (BlockPos adjacentPos : new BlockPos[] {
+                pos.north(), pos.south(), pos.east(), pos.west(), pos.up(), pos.down() }) {
+
+            BlockState adjacentState = world.getBlockState(adjacentPos);
+            if (adjacentState.getBlock() == Blocks.TORCH) {
+                boolean isBelowSolid = world.getBlockState(adjacentPos.down()).isSolidBlock(world, adjacentPos.down());
+                if (!isBelowSolid) {
+                    // Remove the torch if the block below is not solid
+                    world.setBlockState(adjacentPos, Blocks.AIR.getDefaultState());
+                }
+            }
+        }
+    }
+
+    private static void superMineOreVeins(ServerWorld world, BlockPos pos) {
+        mineOreVeins(world, pos.down());
+        mineOreVeins(world, pos.up());
+        mineOreVeins(world, pos.north());
+        mineOreVeins(world, pos.south());
+        mineOreVeins(world, pos.east());
+        mineOreVeins(world, pos.west());
+    }
+
+    /**
+     * Mines ore veigns, checks if sourrounding blocks are an instance of an ore
+     * block, then mines recursivley any blocks
+     * 
+     * @param world
+     * @param pos
+     */
+
+    private static void mineOreVeins(ServerWorld world, BlockPos pos) {
+        if (world == null || pos == null) {
+            return;
+        }
+        BlockState targetState = world.getBlockState(pos);
+        if (BlockTypes.isOreBlock(targetState)) {
+            // Mine the ore block (set to air)
+            world.setBlockState(pos, Blocks.AIR.getDefaultState());
+
+            // Recursively check adjacent blocks in all 6 directions
+            mineOreVeins(world, pos.north());
+            mineOreVeins(world, pos.south());
+            mineOreVeins(world, pos.east());
+            mineOreVeins(world, pos.west());
+            mineOreVeins(world, pos.up());
+            mineOreVeins(world, pos.down());
+        }
+    }
