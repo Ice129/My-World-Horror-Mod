@@ -8,5 +8,10 @@ import net.minecraft.util.math.random.Random;
 
 public class PlayerDeathItems {
     private static final Random random = Random.create();
+
+    // reads the json file
+    // makes a list of items, amounts, enchants, and names according to the config
+    // finds suitable location to drop items
+    // spawns a fake player death with those items, scattering them around the location
     
 }

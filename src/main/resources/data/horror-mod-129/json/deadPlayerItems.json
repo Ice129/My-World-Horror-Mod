@@ -308,30 +308,53 @@
         }
     },
     "randomItems": {
-        "64Stacking": {
-            "items": [
-                "minecraft:arrow",
-                "minecraft:oak_planks",
-                "minecraft:cobblestone",
-                "minecraft:dirt",
-                "minecraft:torch",
-                "minecraft:diorite",
-                "minecraft:andesite",
-                "minecraft:gravel",
-                "minecraft:coal",
-                "minecraft:iron_nugget",
-                "minecraft:birch_planks",
-                "minecraft:sticks",
-                "minecraft:lily_of_the_valley",
-                "minecraft:oak_sapling",
-                "minecraft:bone",
-                "minecraft:string",
-                "minecraft:rotten_flesh",
-                "minecraft:gunpowder",
-                "minecraft:wheat_seeds",
-                "minecraft:"
-            ],
-            "chance": 0.5
-        }
+        "64Stacking": [
+            "minecraft:arrow",
+            "minecraft:oak_planks",
+            "minecraft:cobblestone",
+            "minecraft:dirt",
+            "minecraft:torch",
+            "minecraft:diorite",
+            "minecraft:andesite",
+            "minecraft:gravel",
+            "minecraft:coal",
+            "minecraft:iron_nugget",
+            "minecraft:birch_planks",
+            "minecraft:stick",
+            "minecraft:lily_of_the_valley",
+            "minecraft:oak_sapling",
+            "minecraft:bone",
+            "minecraft:string",
+            "minecraft:rotten_flesh",
+            "minecraft:gunpowder",
+            "minecraft:wheat_seeds",
+            "minecraft:beef",
+            "minecraft:chicken",
+            "minecraft:porkchop",
+            "minecraft:mutton",
+            "minecraft:arrow"
+        ],
+        "16Stacking": [
+            "minecraft:ender_pearl",
+            "minecraft:bread",
+            "minecraft:diamond",
+            "minecraft:emerald",
+            "minecraft:tuff",
+            "minecraft:flint",
+            "minecraft:apple",
+            "minecraft:sweet_berries",
+            "minecraft:oak_sign"
+        ],
+        "1Stacking": [
+            "minecraft:shield",
+            "minecraft:bow",
+            "minecraft:crossbow",
+            "minecraft:iron_hoe",
+            "minecraft:clock",
+            "minecraft:compass",
+            "minecraft:enchanted_golden_apple"
+        ],
+        "minNumberItems": 10,
+        "maxNumberItems": 27
     }
 }
