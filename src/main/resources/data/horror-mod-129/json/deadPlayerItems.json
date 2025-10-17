@@ -1,0 +1,337 @@
+{
+    "armour": {
+        "minDurabilityPercent": 30,
+        "minMendingDurabilityPercent": 90,
+        "helmet": {
+            "enchants": {
+                "minecraft:protection": {
+                    "minLevel": 2,
+                    "maxLevel": 4,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:respiration": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.3
+                },
+                "minecraft:aqua_affinity": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.3
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.6
+                }
+            },
+            "names": [
+                "Hat",
+                "Helmet",
+                "Hard Hat"
+            ],
+            "nameChance": 0.3
+        },
+        "chestplate": {
+            "enchants": {
+                "minecraft:protection": {
+                    "minLevel": 2,
+                    "maxLevel": 4,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:thorns": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.2
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.6
+                }
+            },
+            "names": [
+                "Chestplate",
+                "Shirt"
+            ],
+            "nameChance": 0.3
+        },
+        "leggings": {
+            "enchants": {
+                "minecraft:protection": {
+                    "minLevel": 2,
+                    "maxLevel": 4,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:thorns": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.2
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.6
+                }
+            },
+            "names": [
+                "Leggings",
+                "Jeans",
+                "Blueice129's Pants"
+            ],
+            "nameChance": 0.3
+        },
+        "boots": {
+            "enchants": {
+                "minecraft:protection": {
+                    "minLevel": 2,
+                    "maxLevel": 4,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:feather_falling": {
+                    "minLevel": 1,
+                    "maxLevel": 4,
+                    "chance": 0.4
+                },
+                "minecraft:depth_strider": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.2
+                },
+                "minecraft:frost_walker": {
+                    "minLevel": 1,
+                    "maxLevel": 2,
+                    "chance": 0.1
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.6
+                }
+            },
+            "names": [
+                "Boots",
+                "Shoes",
+                "Runners"
+            ],
+            "nameChance": 0.3
+        },
+        "lowClass": {
+            "minecraft:leather": 3,
+            "minecraft:golden": 2,
+            "minecraft:chainmail": 1
+        },
+        "midClass": {
+            "minecraft:iron": 5,
+            "minecraft:diamond": 2
+        },
+        "highClass": {
+            "minecraft:netherite": 1,
+            "minecraft:diamond": 4
+        }
+    },
+    "Essentials": {
+        "minDurabilityPercent": 30,
+        "minMendingDurabilityPercent": 90,
+        "sword": {
+            "enchants": {
+                "minecraft:sharpness": {
+                    "minLevel": 2,
+                    "maxLevel": 5,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:looting": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.3
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.4
+                },
+                "minecraft:fire_aspect": {
+                    "minLevel": 1,
+                    "maxLevel": 2,
+                    "chance": 0.3
+                }
+            },
+            "names": [
+                "Sword",
+                "Chef's Knife",
+                "Kill-Blade"
+            ],
+            "nameChance": 0.3
+        },
+        "pickaxe": {
+            "enchants": {
+                "minecraft:efficiency": {
+                    "minLevel": 2,
+                    "maxLevel": 5,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:fortune": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.3
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.4
+                }
+            },
+            "names": [
+                "Pickaxe",
+                "Mr Picky",
+                "Simulation Breaker"
+            ],
+            "nameChance": 0.3
+        },
+        "axe": {
+            "enchants": {
+                "minecraft:efficiency": {
+                    "minLevel": 2,
+                    "maxLevel": 5,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:fortune": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.3
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.4
+                }
+            },
+            "names": [
+                "Axe",
+                "Deaths Divider",
+                "Harbringer of Logs"
+            ],
+            "nameChance": 0.3
+        },
+        "shovel": {
+            "enchants": {
+                "minecraft:efficiency": {
+                    "minLevel": 2,
+                    "maxLevel": 5,
+                    "chance": 0.5
+                },
+                "minecraft:unbreaking": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.5
+                },
+                "minecraft:fortune": {
+                    "minLevel": 1,
+                    "maxLevel": 3,
+                    "chance": 0.3
+                },
+                "minecraft:mending": {
+                    "minLevel": 1,
+                    "maxLevel": 1,
+                    "chance": 0.4
+                }
+            },
+            "names": [
+                "Shovel",
+                "Diamond Sword",
+                "Ground Breaker"
+            ],
+            "nameChance": 0.3
+        },
+        "lowClass": {
+            "minecraft:wood": 1,
+            "minecraft:stone": 2,
+            "minecraft:golden": 3,
+            "minecraft:iron": 3
+        },
+        "midClass": {
+            "minecraft:iron": 5,
+            "minecraft:diamond": 3
+        },
+        "highClass": {
+            "minecraft:diamond": 5,
+            "minecraft:netherite": 2
+        }
+    },
+    "consumables": {
+        "food": {
+            "types": [
+                "minecraft:cooked_beef",
+                "minecraft:cooked_chicken",
+                "minecraft:cooked_porkchop",
+                "minecraft:cooked_mutton",
+                "minecraft:bread",
+                "minecraft:cooked_potato"
+            ],
+            "minAmount": 15,
+            "maxAmount": 100
+        }
+    },
+    "randomItems": {
+        "64Stacking": {
+            "items": [
+                "minecraft:arrow",
+                "minecraft:oak_planks",
+                "minecraft:cobblestone",
+                "minecraft:dirt",
+                "minecraft:torch",
+                "minecraft:diorite",
+                "minecraft:andesite",
+                "minecraft:gravel",
+                "minecraft:coal",
+                "minecraft:iron_nugget",
+                "minecraft:birch_planks",
+                "minecraft:sticks",
+                "minecraft:lily_of_the_valley",
+                "minecraft:oak_sapling",
+                "minecraft:bone",
+                "minecraft:string",
+                "minecraft:rotten_flesh",
+                "minecraft:gunpowder",
+                "minecraft:wheat_seeds",
+                "minecraft:"
+            ],
+            "chance": 0.5
+        }
+    }
+}
