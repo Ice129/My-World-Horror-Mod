@@ -279,7 +279,7 @@
             "nameChance": 0.3
         },
         "lowClass": {
-            "minecraft:wood": 1,
+            "minecraft:wooden": 1,
             "minecraft:stone": 2,
             "minecraft:golden": 3,
             "minecraft:iron": 3

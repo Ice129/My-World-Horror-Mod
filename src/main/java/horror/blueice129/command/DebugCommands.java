@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.feature.HomeVisitorEvent;
+import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -53,6 +54,10 @@ public class DebugCommands {
                                             .executes(context -> setSmallStructure10s(context.getSource())))
                                     .then(literal("ledgepusher20ticks")
                                             .executes(context -> setLedgePusherCooldown20Ticks(context.getSource())))
+                                    .then(literal("playerdeathitems10s")
+                                            .executes(context -> setPlayerDeathItems10s(context.getSource())))
+                                    .then(literal("trigger_playerdeathitems")
+                                            .executes(context -> triggerPlayerDeathItems(context.getSource())))
                                     .then(literal("place_diamond_pillars")
                                             .executes(context -> placeDiamondPillars(context.getSource())))
                                     .then(literal("ledgepusher")
@@ -236,6 +241,61 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set ledge pusher cooldown: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Sets the player death items timer to 10 seconds
+     */
+    private static int setPlayerDeathItems10s(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            // 10 seconds = 200 ticks
+            horror.blueice129.scheduler.PlayerDeathItemsScheduler.setTimer(server, 200);
+            source.sendFeedback(() -> Text.literal("Set player death items timer to 10 seconds (200 ticks)."), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set player death items timer: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Immediately triggers a player death items event
+     */
+    private static int triggerPlayerDeathItems(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            // Try to get the player who executed the command
+            ServerPlayerEntity player;
+            String playerName;
+            try {
+                player = source.getPlayer();
+                playerName = player.getName().getString();
+            } catch (Exception e) {
+                // If command wasn't executed by a player, try to find any player
+                if (server.getPlayerManager().getPlayerList().isEmpty()) {
+                    source.sendError(Text.literal("No players online to trigger player death items event."));
+                    return 0;
+                }
+                player = server.getPlayerManager().getPlayerList().get(0);
+                playerName = player.getName().getString();
+            }
+            
+            // Store result of the event
+            final boolean success = PlayerDeathItems.triggerEvent(server, player);
+            final String finalPlayerName = playerName;
+            
+            if (success) {
+                source.sendFeedback(() -> Text.literal("Successfully triggered player death items event around player " + finalPlayerName + "."), false);
+                return 1;
+            } else {
+                source.sendError(Text.literal("Failed to trigger player death items event."));
+                return 0;
+            }
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error triggering player death items event: " + e.getMessage()));
             return 0;
         }
     }
