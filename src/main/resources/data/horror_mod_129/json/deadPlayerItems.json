@@ -7,12 +7,12 @@
                 "minecraft:protection": {
                     "minLevel": 2,
                     "maxLevel": 4,
-                    "chance": 0.5
+                    "chance": 0.4
                 },
                 "minecraft:unbreaking": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.5
+                    "chance": 0.3
                 },
                 "minecraft:respiration": {
                     "minLevel": 1,
@@ -27,7 +27,7 @@
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.6
+                    "chance": 0.3
                 }
             },
             "names": [
@@ -42,12 +42,12 @@
                 "minecraft:protection": {
                     "minLevel": 2,
                     "maxLevel": 4,
-                    "chance": 0.5
+                    "chance": 0.4
                 },
                 "minecraft:unbreaking": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.5
+                    "chance": 0.4
                 },
                 "minecraft:thorns": {
                     "minLevel": 1,
@@ -57,7 +57,7 @@
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.6
+                    "chance": 0.2
                 }
             },
             "names": [
@@ -71,12 +71,12 @@
                 "minecraft:protection": {
                     "minLevel": 2,
                     "maxLevel": 4,
-                    "chance": 0.5
+                    "chance": 0.4
                 },
                 "minecraft:unbreaking": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.5
+                    "chance": 0.3
                 },
                 "minecraft:thorns": {
                     "minLevel": 1,
@@ -86,7 +86,7 @@
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.6
+                    "chance": 0.2
                 }
             },
             "names": [
@@ -101,17 +101,17 @@
                 "minecraft:protection": {
                     "minLevel": 2,
                     "maxLevel": 4,
-                    "chance": 0.5
+                    "chance": 0.4   
                 },
                 "minecraft:unbreaking": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.5
+                    "chance": 0.3
                 },
                 "minecraft:feather_falling": {
                     "minLevel": 1,
                     "maxLevel": 4,
-                    "chance": 0.4
+                    "chance": 0.3
                 },
                 "minecraft:depth_strider": {
                     "minLevel": 1,
@@ -126,7 +126,7 @@
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.6
+                    "chance": 0.2
                 }
             },
             "names": [
@@ -147,7 +147,8 @@
         },
         "highClass": {
             "minecraft:netherite": 1,
-            "minecraft:diamond": 4
+            "minecraft:diamond": 4,
+            "minecraft:iron": 1
         }
     },
     "Essentials": {
@@ -156,7 +157,7 @@
         "sword": {
             "enchants": {
                 "minecraft:sharpness": {
-                    "minLevel": 2,
+                    "minLevel": 1,
                     "maxLevel": 5,
                     "chance": 0.5
                 },
@@ -173,7 +174,7 @@
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.4
+                    "chance": 0.3
                 },
                 "minecraft:fire_aspect": {
                     "minLevel": 1,
@@ -183,7 +184,7 @@
             },
             "names": [
                 "Sword",
-                "Chef's Knife",
+                "Mind Blade",
                 "Kill-Blade"
             ],
             "nameChance": 0.3
@@ -193,22 +194,22 @@
                 "minecraft:efficiency": {
                     "minLevel": 2,
                     "maxLevel": 5,
-                    "chance": 0.5
+                    "chance": 0.3
                 },
                 "minecraft:unbreaking": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.5
+                    "chance": 0.3
                 },
                 "minecraft:fortune": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.3
+                    "chance": 0.2
                 },
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.4
+                    "chance": 0.2
                 }
             },
             "names": [
@@ -223,22 +224,22 @@
                 "minecraft:efficiency": {
                     "minLevel": 2,
                     "maxLevel": 5,
-                    "chance": 0.5
+                    "chance": 0.4
                 },
                 "minecraft:unbreaking": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.5
+                    "chance": 0.2
                 },
                 "minecraft:fortune": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.3
+                    "chance": 0.2
                 },
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.4
+                    "chance": 0.2
                 }
             },
             "names": [
@@ -253,22 +254,22 @@
                 "minecraft:efficiency": {
                     "minLevel": 2,
                     "maxLevel": 5,
-                    "chance": 0.5
+                    "chance": 0.3
                 },
                 "minecraft:unbreaking": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.5
+                    "chance": 0.2
                 },
                 "minecraft:fortune": {
                     "minLevel": 1,
                     "maxLevel": 3,
-                    "chance": 0.3
+                    "chance": 0.1
                 },
                 "minecraft:mending": {
                     "minLevel": 1,
                     "maxLevel": 1,
-                    "chance": 0.4
+                    "chance": 0.2
                 }
             },
             "names": [
@@ -290,7 +291,8 @@
         },
         "highClass": {
             "minecraft:diamond": 5,
-            "minecraft:netherite": 2
+            "minecraft:netherite": 2,
+            "minecraft:iron": 1
         }
     },
     "consumables": {
@@ -322,6 +324,7 @@
             "minecraft:birch_planks",
             "minecraft:stick",
             "minecraft:lily_of_the_valley",
+            "minecraft:lily_of_the_valley",
             "minecraft:oak_sapling",
             "minecraft:bone",
             "minecraft:string",
@@ -329,10 +332,13 @@
             "minecraft:gunpowder",
             "minecraft:wheat_seeds",
             "minecraft:beef",
-            "minecraft:chicken",
             "minecraft:porkchop",
             "minecraft:mutton",
-            "minecraft:arrow"
+            "minecraft:arrow",
+            "minecraft:raw_copper",
+            "minecraft:raw_iron",
+            "minecraft:cobbled_deepslate",
+            "minecraft:moss_block"
         ],
         "16Stacking": [
             "minecraft:ender_pearl",
@@ -343,7 +349,23 @@
             "minecraft:flint",
             "minecraft:apple",
             "minecraft:sweet_berries",
-            "minecraft:oak_sign"
+            "minecraft:oak_sign",
+            "minecraft:chicken",
+            "minecraft:lapis_lazuli",
+            "minecraft:leather",
+            "minecraft:hay_block",
+            "minecraft:spider_eye",
+            "minecraft:dripstone_block",
+            "minecraft:clay_ball",
+            "minecraft:pointed_dripstone",
+            "minecraft:glow_ink_sac",
+            "minecraft:ink_sac",
+            "minecraft:white_wool",
+            "minecraft:black_wool",
+            "minecraft:redstone_dust",
+            "minecraft:bone_meal",
+            "minecraft:mossy_cobblestone"
+
         ],
         "1Stacking": [
             "minecraft:shield",
@@ -352,7 +374,15 @@
             "minecraft:iron_hoe",
             "minecraft:clock",
             "minecraft:compass",
-            "minecraft:enchanted_golden_apple"
+            "minecraft:enchanted_golden_apple",
+            "minecraft:water_bucket",
+            "minecraft:lava_bucket",
+            "minecraft:bucket",
+            "minecraft:shield",
+            "minecraft:book",
+            "minecraft:red_bed",
+            "minecraft:yellow_bed",
+            "minecraft:oak_door"
         ],
         "minNumberItems": 10,
         "maxNumberItems": 27

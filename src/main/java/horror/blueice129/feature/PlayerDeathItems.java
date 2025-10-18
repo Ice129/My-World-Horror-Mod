@@ -292,8 +292,12 @@ public class PlayerDeathItems {
             applyDurabilityDamage(stack, enchantments, minDurabilityPercent, minMendingDurabilityPercent);
             
             // Apply enchantments to the item
-            EnchantmentHelper.set(enchantments, stack);
-            
+            if (!material.startsWith("minecraft:leather_")) {
+                if (RANDOM.nextDouble() > 0.3) {
+                    EnchantmentHelper.set(enchantments, stack);
+                }
+            }
+
             // Add the item to the list
             items.add(stack);
         } catch (Exception e) {
@@ -377,6 +381,7 @@ public class PlayerDeathItems {
             
             // Apply enchantments based on config
             JsonObject toolConfig = essentialsConfig.getAsJsonObject(toolType);
+
             Map<Enchantment, Integer> enchantments = generateEnchantments(toolConfig.getAsJsonObject("enchants"));
             
             // Apply custom name if applicable
@@ -386,8 +391,14 @@ public class PlayerDeathItems {
             applyDurabilityDamage(stack, enchantments, minDurabilityPercent, minMendingDurabilityPercent);
             
             // Apply enchantments to the item
-            EnchantmentHelper.set(enchantments, stack);
-            
+            if (!material.startsWith("minecraft:stone_") && !material.startsWith("minecraft:wooden_")) {
+                // 30% chance to skip enchanting other tools
+                if (RANDOM.nextDouble() > 0.3) {
+                    EnchantmentHelper.set(enchantments, stack);
+                }
+            }
+
+
             // Add the item to the list
             items.add(stack);
         } catch (Exception e) {
