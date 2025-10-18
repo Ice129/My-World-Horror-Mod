@@ -49,7 +49,7 @@ public class PlayerDeathItems {
      */
     public static JsonObject getJsonData(MinecraftServer server) {
         // Using correct namespaced path format: namespace:path
-        Identifier resourceId = new Identifier("horror-mod-129", "json/deadPlayerItems.json");
+        Identifier resourceId = new Identifier("horror_mod_129", "json/deadplayeritems.json");
         ResourceManager resourceManager = server.getResourceManager();
         
         try {
