@@ -135,19 +135,6 @@ public class PlayerDeathItems {
     }
     
     /**
-     * Legacy method for backward compatibility - uses world spawn as center
-     */
-    private static BlockPos findRandomSurfaceLocation(ServerWorld world) {
-        // Find a random location that's on solid ground, not in water
-        // Start with world spawn as the center
-        BlockPos worldSpawn = world.getSpawnPos();
-        
-        // Use the StructurePlacer utility to find a suitable location
-        // Between 100 and 500 blocks from world spawn, not in water
-        return StructurePlacer.findSurfaceLocation(world, worldSpawn, null, 100, 500, true);
-    }
-    
-    /**
      * Generates a list of items based on the configuration and agro meter
      * 
      * @param server The Minecraft server instance
