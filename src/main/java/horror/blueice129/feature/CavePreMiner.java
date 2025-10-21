@@ -134,7 +134,7 @@ public class CavePreMiner {
         
         // Check for solid blocks below
         boolean hasSolidBelow = false;
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 8; i++) {
             BlockPos belowPos = pos.down(i);
             if (belowPos.getY() > 55) continue; // don't test surface blocks
             
