@@ -10,6 +10,7 @@ import horror.blueice129.feature.HomeVisitorEvent;
 import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
+import horror.blueice129.feature.CavePreMiner;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -112,6 +113,65 @@ public class DebugCommands {
                                                 context.getSource().sendFeedback(() -> Text.literal("Spawned fleeing entity!"), false);
                                                 return 1;
                                             })
+                                    )
+                                    .then(literal("premine_cave")
+                                            .executes(context -> {
+                                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                                if (player == null) {
+                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                    return 0;
+                                                }
+                                                
+                                                context.getSource().sendFeedback(() -> Text.literal("Attempting to pre-mine a cave..."), false);
+                                                boolean success = CavePreMiner.preMineCave(
+                                                    player.getWorld(), 
+                                                    player.getBlockPos(), 
+                                                    player
+                                                );
+                                                
+                                                if (success) {
+                                                    context.getSource().sendFeedback(() -> Text.literal("Successfully pre-mined a cave!"), false);
+                                                } else {
+                                                    context.getSource().sendError(Text.literal("Failed to find a suitable cave to pre-mine. Try moving to a different location."));
+                                                }
+                                                return Command.SINGLE_SUCCESS;
+                                            })
+                                            .then(argument("attempts", IntegerArgumentType.integer(1, 10))
+                                                  .executes(context -> {
+                                                      ServerPlayerEntity player = context.getSource().getPlayer();
+                                                      if (player == null) {
+                                                          context.getSource().sendError(Text.literal("This command must be run by a player"));
+                                                          return 0;
+                                                      }
+                                                      
+                                                      int attempts = IntegerArgumentType.getInteger(context, "attempts");
+                                                      context.getSource().sendFeedback(() -> Text.literal("Attempting to pre-mine a cave with " + attempts + " attempts..."), false);
+                                                      
+                                                      // Use a mutable wrapper class
+                                                      class MutableResult {
+                                                          public boolean success = false;
+                                                          public int attempts = 0;
+                                                      }
+                                                      final MutableResult result = new MutableResult();
+                                                      
+                                                      for (int i = 0; i < attempts && !result.success; i++) {
+                                                          result.attempts++;
+                                                          result.success = CavePreMiner.preMineCave(
+                                                              player.getWorld(), 
+                                                              player.getBlockPos(), 
+                                                              player
+                                                          );
+                                                      }
+                                                      
+                                                      if (result.success) {
+                                                          final int finalAttempts = result.attempts;
+                                                          context.getSource().sendFeedback(() -> Text.literal("Successfully pre-mined a cave after " + finalAttempts + " attempt(s)!"), false);
+                                                      } else {
+                                                          context.getSource().sendError(Text.literal("Failed to find a suitable cave to pre-mine after " + attempts + " attempts."));
+                                                      }
+                                                      return Command.SINGLE_SUCCESS;
+                                                  })
+                                            )
                                     )
                             )
             );

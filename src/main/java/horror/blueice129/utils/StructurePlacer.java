@@ -68,4 +68,52 @@ public class StructurePlacer {
                         int maxDistance) {
                 return findSurfaceLocation(world, center, player, minDistance, maxDistance, true);
         }
+
+        /**
+         * Finds a suitable surface location within a specified distance range from a
+         * center point without checking line of sight with a player.
+         * 
+         * @param world       The server world to search in.
+         * @param center      The center position to search around.
+         * @param minDistance The minimum distance from the center to consider.
+         * @param maxDistance The maximum distance from the center to consider.
+         * @param includeSnow Whether to include snow in surface detection.
+         * @return A BlockPos representing a suitable surface location, or null if none
+         *         found.
+         */
+        public static BlockPos findSurfaceLocation(ServerWorld world, BlockPos center,
+                        int minDistance, int maxDistance, boolean includeSnow) {
+                int attempts = 100;
+                for (int i = 0; i < attempts; i++) {
+                        // Choose a random radius between minDistance and maxDistance (inclusive of min)
+                        int radius = minDistance + random.nextInt(Math.max(1, maxDistance - minDistance + 1));
+                        // Choose a random angle and convert to x/z offsets so sampling is symmetric
+                        // around the center
+                        double angle = random.nextDouble() * Math.PI * 2.0;
+                        int x = center.getX() + (int) Math.round(Math.cos(angle) * radius);
+                        int z = center.getZ() + (int) Math.round(Math.sin(angle) * radius);
+
+                        // Make sure the chunk at this position is loaded before checking block states
+                        BlockPos checkPos = new BlockPos(x,
+                                        world.getBottomY() + (world.getTopY() - world.getBottomY()) / 2, z);
+                        if (!ChunkLoader.loadChunksInRadius(world, checkPos, 1)) {
+                                continue; // Skip if chunk couldn't be loaded
+                        }
+
+                        int y = findPointSurfaceY(world, x, z, true, true, includeSnow);
+                        if (y == -1)
+                                continue; // No suitable surface found
+                        
+                        return new BlockPos(x, y, z);
+                }
+                return null;
+        }
+
+        /**
+         * Overloaded method that calls the more specific version with default parameters.
+         */
+        public static BlockPos findSurfaceLocation(ServerWorld world, BlockPos center,
+                        int minDistance, int maxDistance) {
+                return findSurfaceLocation(world, center, minDistance, maxDistance, true);
+        }
 }
