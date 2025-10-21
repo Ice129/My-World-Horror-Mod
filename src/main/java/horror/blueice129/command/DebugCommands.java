@@ -1,14 +1,19 @@
 package horror.blueice129.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.feature.HomeVisitorEvent;
+import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
+import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.server.command.CommandManager.argument;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -19,8 +24,6 @@ import net.minecraft.block.Blocks;
 import com.mojang.brigadier.Command;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.server.MinecraftServer;
-
-import static net.minecraft.server.command.CommandManager.literal;
 
 public class DebugCommands {
 
@@ -53,6 +56,10 @@ public class DebugCommands {
                                             .executes(context -> setSmallStructure10s(context.getSource())))
                                     .then(literal("ledgepusher20ticks")
                                             .executes(context -> setLedgePusherCooldown20Ticks(context.getSource())))
+                                    .then(literal("playerdeathitems10s")
+                                            .executes(context -> setPlayerDeathItems10s(context.getSource())))
+                                    .then(literal("trigger_playerdeathitems")
+                                            .executes(context -> triggerPlayerDeathItems(context.getSource())))
                                     .then(literal("place_diamond_pillars")
                                             .executes(context -> placeDiamondPillars(context.getSource())))
                                     .then(literal("ledgepusher")
@@ -109,46 +116,59 @@ public class DebugCommands {
                             )
             );
 
-            dispatcher.register(CommandManager.literal("debug_event")
-                    .then(CommandManager.literal("crafting_table").executes(context -> {
+            // Register event debugging commands
+            dispatcher.register(literal("debug_event")
+                    .then(literal("crafting_table").executes(context -> {
                         return executeEvent(context.getSource(), "crafting_table");
                     }))
-                    .then(CommandManager.literal("furnace").executes(context -> {
+                    .then(literal("furnace").executes(context -> {
                         return executeEvent(context.getSource(), "furnace");
                     }))
-                    .then(CommandManager.literal("cobblestone_pillar").executes(context -> {
+                    .then(literal("cobblestone_pillar").executes(context -> {
                         return executeEvent(context.getSource(), "cobblestone_pillar");
                     }))
-                    .then(CommandManager.literal("single_torch").executes(context -> {
+                    .then(literal("single_torch").executes(context -> {
                         return executeEvent(context.getSource(), "single_torch");
                     }))
-                    .then(CommandManager.literal("torched_area").executes(context -> {
+                    .then(literal("torched_area").executes(context -> {
                         return executeEvent(context.getSource(), "torched_area");
                     }))
-                    .then(CommandManager.literal("tree_mined").executes(context -> {
+                    .then(literal("tree_mined").executes(context -> {
                         return executeEvent(context.getSource(), "tree_mined");
                     }))
-                    .then(CommandManager.literal("deforestation").executes(context -> {
+                    .then(literal("deforestation").executes(context -> {
                         return executeEvent(context.getSource(), "deforestation");
                     }))
-                    .then(CommandManager.literal("flower_patch").executes(context -> {
+                    .then(literal("flower_patch").executes(context -> {
                         return executeEvent(context.getSource(), "flower_patch");
                     }))
-                    .then(CommandManager.literal("watchtower").executes(context -> {
+                    .then(literal("watchtower").executes(context -> {
                         return executeEvent(context.getSource(), "watchtower");
                     }))
-                    .then(CommandManager.literal("starter_base").executes(context -> {
+                    .then(literal("starter_base").executes(context -> {
                         return executeEvent(context.getSource(), "starter_base");
                     }))
-                    .then(CommandManager.literal("pitfall_trap").executes(context -> {
+                    .then(literal("pitfall_trap").executes(context -> {
                         return executeEvent(context.getSource(), "pitfall_trap");
                     }))
-                    .then(CommandManager.literal("chunk_deletion").executes(context -> {
+                    .then(literal("chunk_deletion").executes(context -> {
                         return executeEvent(context.getSource(), "chunk_deletion");
                     }))
-                    .then(CommandManager.literal("burning_forest").executes(context -> {
+                    .then(literal("burning_forest").executes(context -> {
                         return executeEvent(context.getSource(), "burning_forest");
                     }))
+            );
+            
+            // Register agro meter commands
+            dispatcher.register(literal("agro")
+                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
+                    .then(literal("get")
+                            .executes(context -> getAgroMeter(context.getSource())))
+                    .then(literal("set")
+                            .then(argument("level", IntegerArgumentType.integer(0, 10))
+                                    .executes(context -> setAgroMeter(
+                                            context.getSource(),
+                                            IntegerArgumentType.getInteger(context, "level")))))
             );
         }
     }
@@ -236,6 +256,101 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set ledge pusher cooldown: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Sets the player death items timer to 10 seconds
+     */
+    private static int setPlayerDeathItems10s(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            // 10 seconds = 200 ticks
+            horror.blueice129.scheduler.PlayerDeathItemsScheduler.setTimer(server, 200);
+            source.sendFeedback(() -> Text.literal("Set player death items timer to 10 seconds (200 ticks)."), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set player death items timer: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Immediately triggers a player death items event
+     */
+    private static int triggerPlayerDeathItems(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            // Try to get the player who executed the command
+            ServerPlayerEntity player;
+            String playerName;
+            try {
+                player = source.getPlayer();
+                playerName = player.getName().getString();
+            } catch (Exception e) {
+                // If command wasn't executed by a player, try to find any player
+                if (server.getPlayerManager().getPlayerList().isEmpty()) {
+                    source.sendError(Text.literal("No players online to trigger player death items event."));
+                    return 0;
+                }
+                player = server.getPlayerManager().getPlayerList().get(0);
+                playerName = player.getName().getString();
+            }
+            
+            // Store result of the event
+            final boolean success = PlayerDeathItems.triggerEvent(server, player);
+            final String finalPlayerName = playerName;
+            
+            if (success) {
+                source.sendFeedback(() -> Text.literal("Successfully triggered player death items event around player " + finalPlayerName + "."), false);
+                return 1;
+            } else {
+                source.sendError(Text.literal("Failed to trigger player death items event."));
+                return 0;
+            }
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error triggering player death items event: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    /**
+     * Get the current agro meter value
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getAgroMeter(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        try {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            int agroMeter = state.getIntValue("agroMeter", 0);
+            source.sendFeedback(() -> Text.literal("Current agro meter level: " + agroMeter + "/10"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get agro meter level: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Set the agro meter to a specific value
+     * @param source Command source
+     * @param level New agro meter level (0-10)
+     * @return Command success value
+     */
+    private static int setAgroMeter(ServerCommandSource source, int level) {
+        MinecraftServer server = source.getServer();
+        try {
+            // Ensure level is within valid range
+            final int finalLevel = Math.max(0, Math.min(10, level));
+            
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            state.setIntValue("agroMeter", finalLevel);
+            source.sendFeedback(() -> Text.literal("Agro meter level set to: " + finalLevel + "/10"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set agro meter level: " + e.getMessage()));
             return 0;
         }
     }

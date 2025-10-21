@@ -3,6 +3,7 @@ package horror.blueice129;
 import horror.blueice129.command.DebugCommands;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.HomeEventScheduler;
+import horror.blueice129.scheduler.PlayerDeathItemsScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
 import horror.blueice129.scheduler.LedgePusherScheduler;
 import net.fabricmc.api.ModInitializer;
@@ -25,8 +26,6 @@ public class HorrorMod129 implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		// TODO: make sure everything thats needed here is here
-		// TODO: strip mine scheduler file creation and registration
 
 		LOGGER.info("Initializing Horror Mod 129!");
 		
@@ -35,6 +34,7 @@ public class HorrorMod129 implements ModInitializer {
 		HomeEventScheduler.register();
 		SmallStructureScheduler.register();
 		LedgePusherScheduler.register();
+		PlayerDeathItemsScheduler.register();
 		
 		// Register fleeing entity tick handler
 		ServerTickEvents.START_SERVER_TICK.register(horror.blueice129.feature.LedgePusher::onServerTick);

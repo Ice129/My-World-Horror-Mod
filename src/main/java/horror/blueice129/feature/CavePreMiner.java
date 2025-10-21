@@ -417,7 +417,7 @@ public class CavePreMiner {
         while (true) {
             // BlockState state = world.getBlockState(currentPos);
             // if y value is less than 100
-            if (currentPos.getY() >= 100) {
+            if (currentPos.getY() >= 130) {
                 break;
             }
             stairBlocks.add(currentPos);
