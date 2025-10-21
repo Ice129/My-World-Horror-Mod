@@ -603,6 +603,7 @@ public class CavePreMiner {
             if ((world.getBlockState(stairPos).isOf(Blocks.CAVE_AIR) || world.getBlockState(stairPos).isOf(Blocks.AIR)) 
                     && !isAtOrAboveSurface) {
                 world.setBlockState(stairPos, Blocks.COBBLESTONE.getDefaultState());
+                world.setBlockState(stairPos.north(), Blocks.COBBLESTONE.getDefaultState());
             }
 
             // break if is above surface
