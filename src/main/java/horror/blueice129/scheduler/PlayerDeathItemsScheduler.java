@@ -53,7 +53,7 @@ public class PlayerDeathItemsScheduler {
                 HorrorMod129.LOGGER.info("No players online for PlayerDeathItems event, retrying in 2 minutes.");
                 return;
             }
-            
+
             // Select a random player to center the death items around
             net.minecraft.server.network.ServerPlayerEntity player = server.getPlayerManager().getPlayerList()
                     .get(RANDOM.nextInt(server.getPlayerManager().getPlayerList().size()));
