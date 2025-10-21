@@ -4,7 +4,6 @@ import com.google.gson.*;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.ItemEntity;
-// import net.minecraft.item.ArmorItem; // Unused import removed
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -152,10 +151,10 @@ public class PlayerDeathItems {
         String classTier = chooseClassTierBasedOnAgro(agroMeter);
         
         // Add armor items based on the chosen class tier
-        addArmorItems(items, json, classTier);
+        addArmorItems(items, json, classTier, agroMeter);
         
         // Add essential tools (sword, pickaxe, etc.)
-        addEssentialItems(items, json, classTier);
+        addEssentialItems(items, json, classTier, agroMeter);
         
         // Add consumables (food)
         addConsumableItems(items, json);
@@ -165,14 +164,6 @@ public class PlayerDeathItems {
         
         return items;
     }
-    
-    /*
-     * Legacy method for backward compatibility - kept for reference
-     *
-    private static List<ItemStack> generatePlayerItems(MinecraftServer server) {
-        return generatePlayerItems(server, 0); // Default to 0 agro
-    }
-    */
     
     /**
      * Choose a class tier based on agro meter value
@@ -191,18 +182,16 @@ public class PlayerDeathItems {
             // Low agro: mostly low class, some mid class, rare high class
             lowClassProb = 70 - agroMeter * 10;  // 70-40%
             midClassProb = 25 + agroMeter * 5;   // 25-40%
-            // highClassProb = 5 + agroMeter * 5;   // 5-20% - calculated implicitly as 100-(lowClassProb+midClassProb)
         } else if (agroMeter <= 7) {
             // Mid agro: mostly mid class, some low class, increasing high class
             lowClassProb = 40 - (agroMeter - 3) * 10;  // 40-0%
             midClassProb = 40;                         // 40% constant
-            // highClassProb = 20 + (agroMeter - 3) * 10; // 20-60% - calculated implicitly as 100-(lowClassProb+midClassProb)
         } else {
             // High agro: decreasing mid class, increasing high class
             lowClassProb = 0;                          // 0% constant
             midClassProb = 40 - (agroMeter - 7) * 10;  // 40-10%
-            // highClassProb = 60 + (agroMeter - 7) * 10; // 60-90% - calculated implicitly as 100-(lowClassProb+midClassProb)
         }
+        // high class probability is calculated implicitly, as it is just the remainder to 100%, so no need to store it
         
         // Roll based on calculated probabilities
         int roll = RANDOM.nextInt(100);
@@ -223,8 +212,9 @@ public class PlayerDeathItems {
      * @param items List to add items to
      * @param json JSON configuration
      * @param classTier The chosen class tier
+     * @param agroMeter The current agro meter value (0-10)
      */
-    private static void addArmorItems(List<ItemStack> items, JsonObject json, String classTier) {
+    private static void addArmorItems(List<ItemStack> items, JsonObject json, String classTier, int agroMeter) {
         try {
             JsonObject armour = json.getAsJsonObject("armour");
             int minDurabilityPercent = armour.get("minDurabilityPercent").getAsInt();
@@ -247,10 +237,10 @@ public class PlayerDeathItems {
             String bootsMaterial = chooseRandomWeighted(materials, weights);
             
             // Add each piece with its selected material
-            addArmorPiece(items, armour, "helmet", helmetMaterial, minDurabilityPercent, minMendingDurabilityPercent);
-            addArmorPiece(items, armour, "chestplate", chestplateMaterial, minDurabilityPercent, minMendingDurabilityPercent);
-            addArmorPiece(items, armour, "leggings", leggingsMaterial, minDurabilityPercent, minMendingDurabilityPercent);
-            addArmorPiece(items, armour, "boots", bootsMaterial, minDurabilityPercent, minMendingDurabilityPercent);
+            addArmorPiece(items, armour, "helmet", helmetMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
+            addArmorPiece(items, armour, "chestplate", chestplateMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
+            addArmorPiece(items, armour, "leggings", leggingsMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
+            addArmorPiece(items, armour, "boots", bootsMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
         } catch (Exception e) {
             HorrorMod129.LOGGER.error("Error adding armor items: {}", e.getMessage());
         }
@@ -267,7 +257,7 @@ public class PlayerDeathItems {
      * @param minMendingDurabilityPercent Minimum durability percentage for items with Mending
      */
     private static void addArmorPiece(List<ItemStack> items, JsonObject armourConfig, String pieceType, String material, 
-                                    int minDurabilityPercent, int minMendingDurabilityPercent) {
+                                    int minDurabilityPercent, int minMendingDurabilityPercent, int agroMeter) {
         try {
             // Get the item based on material and piece type
             String itemKey = material + "_" + pieceType;
@@ -281,9 +271,9 @@ public class PlayerDeathItems {
             // Create the item stack
             ItemStack stack = new ItemStack(item);
             
-            // Apply enchantments based on config
+            // Apply enchantments based on config and agro meter
             JsonObject pieceConfig = armourConfig.getAsJsonObject(pieceType);
-            Map<Enchantment, Integer> enchantments = generateEnchantments(pieceConfig.getAsJsonObject("enchants"));
+            Map<Enchantment, Integer> enchantments = generateEnchantments(pieceConfig.getAsJsonObject("enchants"), agroMeter);
             
             // Apply custom name if applicable
             applyCustomName(stack, pieceConfig);
@@ -312,8 +302,9 @@ public class PlayerDeathItems {
      * @param items List to add items to
      * @param json JSON configuration
      * @param classTier The chosen class tier
+     * @param agroMeter The current agro meter value (0-10)
      */
-    private static void addEssentialItems(List<ItemStack> items, JsonObject json, String classTier) {
+    private static void addEssentialItems(List<ItemStack> items, JsonObject json, String classTier, int agroMeter) {
         try {
             JsonObject essentials = json.getAsJsonObject("Essentials");
             int minDurabilityPercent = essentials.get("minDurabilityPercent").getAsInt();
@@ -345,10 +336,10 @@ public class PlayerDeathItems {
             } 
             
             // Add each essential tool with its selected material
-            addToolItem(items, essentials, "sword", swordMaterial, minDurabilityPercent, minMendingDurabilityPercent);
-            addToolItem(items, essentials, "pickaxe", pickaxeMaterial, minDurabilityPercent, minMendingDurabilityPercent);
-            addToolItem(items, essentials, "axe", axeMaterial, minDurabilityPercent, minMendingDurabilityPercent);
-            addToolItem(items, essentials, "shovel", shovelMaterial, minDurabilityPercent, minMendingDurabilityPercent);
+            addToolItem(items, essentials, "sword", swordMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
+            addToolItem(items, essentials, "pickaxe", pickaxeMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
+            addToolItem(items, essentials, "axe", axeMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
+            addToolItem(items, essentials, "shovel", shovelMaterial, minDurabilityPercent, minMendingDurabilityPercent, agroMeter);
         } catch (Exception e) {
             HorrorMod129.LOGGER.error("Error adding essential items: {}", e.getMessage());
         }
@@ -365,7 +356,7 @@ public class PlayerDeathItems {
      * @param minMendingDurabilityPercent Minimum durability percentage for items with Mending
      */
     private static void addToolItem(List<ItemStack> items, JsonObject essentialsConfig, String toolType, String material,
-                                 int minDurabilityPercent, int minMendingDurabilityPercent) {
+                                 int minDurabilityPercent, int minMendingDurabilityPercent, int agroMeter) {
         try {
             // Get the item based on material and tool type
             String itemKey = material + "_" + toolType;
@@ -379,10 +370,10 @@ public class PlayerDeathItems {
             // Create the item stack
             ItemStack stack = new ItemStack(item);
             
-            // Apply enchantments based on config
+            // Apply enchantments based on config and agro meter
             JsonObject toolConfig = essentialsConfig.getAsJsonObject(toolType);
 
-            Map<Enchantment, Integer> enchantments = generateEnchantments(toolConfig.getAsJsonObject("enchants"));
+            Map<Enchantment, Integer> enchantments = generateEnchantments(toolConfig.getAsJsonObject("enchants"), agroMeter);
             
             // Apply custom name if applicable
             applyCustomName(stack, toolConfig);
@@ -407,21 +398,27 @@ public class PlayerDeathItems {
     }
     
     /**
-     * Generate enchantments for an item based on the config
+     * Generate enchantments for an item based on the config and agro meter
      * 
      * @param enchantsConfig JSON object containing enchantment configuration
+     * @param agroMeter The current agro meter value (0-10), defaults to 0 if not provided
      * @return Map of enchantments to their levels
      */
-    private static Map<Enchantment, Integer> generateEnchantments(JsonObject enchantsConfig) {
+    private static Map<Enchantment, Integer> generateEnchantments(JsonObject enchantsConfig, int agroMeter) {
         Map<Enchantment, Integer> enchantments = new HashMap<>();
+        
+        // Clamp agro meter between 0 and 10
+        agroMeter = Math.max(0, Math.min(10, agroMeter));
         
         for (Map.Entry<String, JsonElement> entry : enchantsConfig.entrySet()) {
             String enchantId = entry.getKey();
             JsonObject enchantConfig = entry.getValue().getAsJsonObject();
             
             // Check if this enchantment should be applied based on chance
+            // Higher agro meter slightly increases chance of getting enchantments
             double chance = enchantConfig.get("chance").getAsDouble();
-            if (RANDOM.nextDouble() > chance) {
+            double agroBonus = agroMeter * 0.03; // +3% chance per agro level
+            if (RANDOM.nextDouble() > (chance + agroBonus)) {
                 continue;
             }
             
@@ -431,10 +428,47 @@ public class PlayerDeathItems {
                 continue;
             }
             
-            // Get a random level between min and max
+            // Get min and max levels from config
             int minLevel = enchantConfig.get("minLevel").getAsInt();
             int maxLevel = enchantConfig.get("maxLevel").getAsInt();
-            int level = minLevel + RANDOM.nextInt(maxLevel - minLevel + 1);
+            
+            // Calculate level based on agro meter
+            // Higher agro meter increases probability of higher enchantment levels
+            int level;
+            if (agroMeter <= 3) {
+                // Low agro: Mostly lower levels
+                double highLevelChance = 0.2 + (agroMeter * 0.1); // 20-50% chance for higher levels
+                if (RANDOM.nextDouble() < highLevelChance) {
+                    // Use full range
+                    level = minLevel + RANDOM.nextInt(maxLevel - minLevel + 1);
+                } else {
+                    // Use lower half of range
+                    int midLevel = minLevel + (maxLevel - minLevel) / 2;
+                    level = minLevel + RANDOM.nextInt(midLevel - minLevel + 1);
+                }
+            } else if (agroMeter <= 7) {
+                // Mid agro: More balanced distribution, favoring mid-range
+                double highLevelChance = 0.5 + ((agroMeter - 3) * 0.1); // 50-90% chance for higher levels
+                if (RANDOM.nextDouble() < highLevelChance) {
+                    // Use upper half of range
+                    int midLevel = minLevel + (maxLevel - minLevel) / 2;
+                    level = midLevel + RANDOM.nextInt(maxLevel - midLevel + 1);
+                } else {
+                    // Use full range
+                    level = minLevel + RANDOM.nextInt(maxLevel - minLevel + 1);
+                }
+            } else {
+                // High agro: Strongly favors high levels
+                double maxLevelChance = 0.5 + ((agroMeter - 7) * 0.1); // 50-80% chance for max level
+                if (RANDOM.nextDouble() < maxLevelChance) {
+                    // Max level or very close to it
+                    level = maxLevel - RANDOM.nextInt(Math.min(2, maxLevel - minLevel + 1));
+                } else {
+                    // Use upper 2/3 of range
+                    int lowerThird = minLevel + (maxLevel - minLevel) / 3;
+                    level = lowerThird + RANDOM.nextInt(maxLevel - lowerThird + 1);
+                }
+            }
             
             // Add the enchantment
             enchantments.put(enchantment, level);
