@@ -48,9 +48,9 @@ public class PlayerDeathItemsScheduler {
         } else {
             // Check if there are any players online
             if (server.getPlayerManager().getPlayerList().isEmpty()) {
-                // No players online, try again in 2 minutes
-                state.setTimer(TIMER_ID, 2400); // 2 minutes in ticks
-                HorrorMod129.LOGGER.info("No players online for PlayerDeathItems event, retrying in 2 minutes.");
+                // No players online, try again in 1 minutes
+                state.setTimer(TIMER_ID, 1200); // 1 minutes in ticks
+                HorrorMod129.LOGGER.info("No players online for PlayerDeathItems event, retrying in 1 minutes.");
                 return;
             }
             
@@ -66,9 +66,9 @@ public class PlayerDeathItemsScheduler {
                 // Reset the timer with a new random delay
                 state.setTimer(TIMER_ID, getRandomDelay());
             } else {
-                // If event could not be triggered, retry in 5 minutes
-                state.setTimer(TIMER_ID, 6000); // 5 minutes in ticks
-                HorrorMod129.LOGGER.info("PlayerDeathItems event failed, retrying in 5 minutes.");
+                // If event could not be triggered, retry in 1 minutes
+                state.setTimer(TIMER_ID, 1200); // 1 minutes in ticks
+                HorrorMod129.LOGGER.info("PlayerDeathItems event failed, retrying in 1 minutes.");
             }
         }
     }
