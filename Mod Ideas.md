@@ -18,12 +18,16 @@
 
 - digging straight down, check if its 1 or 2 wide regardless, player looking down at you until you see it
 
+- enhanced ability to detect being looked at, especially out of corner of eye while zoomed in using a mod. will require learning how zoom mods work and how to detect if the player is zoomed in, and entity is within fov
+
 ## Sound Ideas
 - block placing and breaking sounds when underground
 
 - seen Blueice129 nametag while somewhere, then hear them mine 3 blocks down, place a block, and they dissapear
 
 - footsteps when player is in a menu for over a few seconds
+
+- increased cave noise percent (like 100% increase, but under same circumstances)
 
 ## Block Event Ideas
 
@@ -56,6 +60,8 @@
 - sand mined from desert
 
 ## Item Ideas
+- map ids already starting at like 5
+
 - when opening a map, areas are pre marked out
   - these areas have random stuff
    - encampments
@@ -68,11 +74,14 @@
 - Compass starts to point in direction of entity base/nearest anomalous activity 
 
 ## Game Mechanic Ideas
-- setting the players renderdistance down slowly
+- setting the players render distance down slowly
 
 - increasing the players graphics settings to try and lag the player out (able to disable this in config as i can see people not wanting this if recording or with bad pcs)
 
 - capping fps to 30 or lower when entity is nearby
 
 - locking music to always be above 50% volume (able to disable in config, or modify the minimum volume)
+
+- setting to moody brightness
+
 
