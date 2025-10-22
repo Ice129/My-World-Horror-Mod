@@ -12,6 +12,8 @@
 
 - be seen crafting or using a furnace
 
+- using your furnaces
+
 - combine multiple interactions, so it can smelt ore, then mine a bit, then come back to smelt more
 
 <!-- - punched off edge when shifting over a ledge - player looking over edge at you before running off -->
@@ -42,8 +44,6 @@
 - enemy base, if you take items or break it, becomes more aggressive 
 
 <!-- - agro meter stored in nbt (ups destructive events) -->
-
-- using your furnaces
 
 - entity strip mines
   - hundreds of blocks long
