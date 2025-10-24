@@ -69,6 +69,7 @@ public class LineOfSightUtils {
 
     /**
      * Checks if a direction is within the player's field of view.
+     * Takes into account the rectangular screen shape and aspect ratio.
      * 
      * @param player    The player
      * @param direction The direction vector to check
@@ -85,18 +86,133 @@ public class LineOfSightUtils {
         float z = MathHelper.cos(yaw) * MathHelper.cos(pitch);
         Vec3d viewVector = new Vec3d(x, y, z).normalize();
 
-        // Calculate the angle between the player's view and the direction
-        double dot = viewVector.dotProduct(direction);
-        double angle = Math.acos(dot);
+        // Normalize the direction
+        direction = direction.normalize();
 
-        // Convert angle to degrees
-        double angleDegrees = angle * (180.0 / Math.PI);
-
-        // Get the player's FOV
+        // Get the player's vertical FOV (in degrees) and convert to radians
         MinecraftClient client = MinecraftClient.getInstance();
-        double fov = client.options.getFov().getValue();
+        double vFovDegrees = client.options.getFov().getValue();
+        double vFovRad = vFovDegrees * (Math.PI / 180.0);
 
-        // Check if the angle is within half the FOV
-        return angleDegrees <= fov / 2.0;
+        // Calculate horizontal FOV based on aspect ratio
+        // hFov = 2 * atan(tan(vFov/2) * aspectRatio)
+        int screenWidth = client.getWindow().getWidth();
+        int screenHeight = client.getWindow().getHeight();
+        double aspectRatio = (double) screenWidth / screenHeight;
+        double hFovRad = 2.0 * Math.atan(Math.tan(vFovRad / 2.0) * aspectRatio);
+
+        // Calculate right vector (horizontal axis perpendicular to view)
+        // Correct formula: rotate view vector 90 degrees right in the horizontal plane
+        Vec3d rightVector = new Vec3d(MathHelper.cos(yaw), 0, MathHelper.sin(yaw)).normalize();
+
+        // Calculate up vector (vertical axis perpendicular to view)
+        Vec3d upVector = viewVector.crossProduct(rightVector).normalize();
+
+        // Calculate horizontal and vertical deviations FROM the center view direction
+        // using atan2 to get signed angles in each plane
+        double viewDot = viewVector.dotProduct(direction);
+        double rightDot = rightVector.dotProduct(direction);
+        double upDot = upVector.dotProduct(direction);
+        
+        // Horizontal angle: deviation left/right from center
+        double horizontalAngle = Math.atan2(rightDot, viewDot);
+        
+        // Vertical angle: deviation up/down from center
+        double verticalAngle = Math.atan2(upDot, viewDot);
+
+        // Add buffer factor to match Minecraft's actual FOV (Minecraft renders slightly beyond the strict bounds)
+        double hFovBuffer = hFovRad / 2.0 * 1.1;
+        double vFovBuffer = vFovRad / 2.0 * 1.1;
+
+        // Must be within both horizontal and vertical FOV bounds
+        return Math.abs(horizontalAngle) <= hFovBuffer && Math.abs(verticalAngle) <= vFovBuffer;
     }
+
+    /**
+     * if block rendered on the players screen
+     * it will take into account the players FOV, eye position,
+     * ray casting to see if the block is occluded by other blocks, check for the faces of the blocks
+     * instead of just the center of the block, and the dimensions of the screen
+     * @param player      The player to check from
+     * @param blockPos    The position of the block to check
+     * @param maxDistance The maximum distance to check
+     * @return true if the block is rendered on the player's screen, false otherwise
+     */
+    public static boolean isBlockRenderedOnScreen(PlayerEntity player, BlockPos blockPos, double maxDistance) {
+        World world = player.getWorld();
+        Vec3d eyePos = player.getEyePos();
+
+        // Calculate the block center and direction from block to player
+        Vec3d blockCenter = new Vec3d(
+                blockPos.getX() + 0.5,
+                blockPos.getY() + 0.5,
+                blockPos.getZ() + 0.5);
+        double distance = eyePos.distanceTo(blockCenter);
+
+        // If target is too far, return false
+        if (distance > maxDistance) {
+            return false;
+        }
+
+        // Direction from block center to player eye (for face culling)
+        Vec3d toPlayer = eyePos.subtract(blockCenter).normalize();
+
+        // Define block faces with their centers and normals
+        Vec3d[] faceCenters = {
+            blockCenter, // Check center first (helps with diagonal visibility)
+            new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ()), // front face (Z=0)
+            new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 1), // back face (Z=1)
+            new Vec3d(blockPos.getX(), blockPos.getY() + 0.5, blockPos.getZ() + 0.5), // left face (X=0)
+            new Vec3d(blockPos.getX() + 1, blockPos.getY() + 0.5, blockPos.getZ() + 0.5), // right face (X=1)
+            new Vec3d(blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5), // bottom face (Y=0)
+            new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() + 0.5) // top face (Y=1)
+        };
+
+        Vec3d[] faceNormals = {
+            new Vec3d(0, 0, 0), // center has no specific normal, won't be culled
+            new Vec3d(0, 0, -1), // front face normal
+            new Vec3d(0, 0, 1),  // back face normal
+            new Vec3d(-1, 0, 0), // left face normal
+            new Vec3d(1, 0, 0),  // right face normal
+            new Vec3d(0, -1, 0), // bottom face normal
+            new Vec3d(0, 1, 0)   // top face normal
+        };
+
+        // Check only front-facing faces (optimization)
+        for (int i = 0; i < faceCenters.length; i++) {
+            Vec3d faceCenter = faceCenters[i];
+            Vec3d faceNormal = faceNormals[i];
+
+            // Skip back-facing faces (skip if normal points away from player)
+            // Center point (i=0) has no normal, so always check it
+            if (i > 0 && faceNormal.dotProduct(toPlayer) < 0.01) {
+                continue;
+            }
+
+            Vec3d direction = faceCenter.subtract(eyePos).normalize();
+            double faceDistance = eyePos.distanceTo(faceCenter);
+
+            // Check if the point is within the player's field of view
+            if (!isWithinFieldOfView(player, direction)) {
+                continue;
+            }
+
+            // Perform the ray trace
+            BlockHitResult hitResult = world.raycast(new RaycastContext(
+                    eyePos,
+                    eyePos.add(direction.multiply(faceDistance)),
+                    RaycastContext.ShapeType.OUTLINE,
+                    RaycastContext.FluidHandling.NONE,
+                    player));
+
+            // If the ray hits this block without being occluded, return true
+            if (hitResult.getType() == HitResult.Type.BLOCK &&
+                    hitResult.getBlockPos().equals(blockPos)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
 }

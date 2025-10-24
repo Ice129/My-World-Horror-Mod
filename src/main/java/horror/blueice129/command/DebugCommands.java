@@ -11,6 +11,7 @@ import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
 import horror.blueice129.feature.CavePreMiner;
+import horror.blueice129.debug.LineOfSightChecker;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -173,6 +174,12 @@ public class DebugCommands {
                                                   })
                                             )
                                     )
+                                    .then(literal("lineofsightglass")
+                                            .executes(context -> fillLineOfSightWithGlass(context.getSource())))
+                                    .then(literal("fovglass")
+                                            .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
+                                    .then(literal("renderedblocksglass")
+                                            .executes(context -> fillRenderedBlocksWithGlass(context.getSource())))
                             )
             );
 
@@ -411,6 +418,75 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set agro meter level: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Fills all non-air blocks in line of sight with green stained glass
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int fillLineOfSightWithGlass(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        try {
+            source.sendFeedback(() -> Text.literal("Filling line of sight with glass (64 block range)..."), false);
+            LineOfSightChecker.fillLineOfSightWithGlass(player, 64.0);
+            source.sendFeedback(() -> Text.literal("Completed line of sight visualization!"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error while filling line of sight: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Fills all non-air blocks within the player's field of view with blue stained glass
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int fillFieldOfViewWithGlass(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        try {
+            source.sendFeedback(() -> Text.literal("Filling field of view with glass (64 block range)..."), false);
+            LineOfSightChecker.fillFieldOfViewWithGlass(player, 64.0);
+            source.sendFeedback(() -> Text.literal("Completed field of view visualization!"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error while filling field of view: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Fills all blocks rendered on the player's screen with yellow stained glass
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int fillRenderedBlocksWithGlass(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        try {
+            source.sendFeedback(() -> Text.literal("Filling rendered blocks with glass (64 block range)..."), false);
+            LineOfSightChecker.fillRenderedBlocksWithGlass(player, 64.0);
+            source.sendFeedback(() -> Text.literal("Completed rendered blocks visualization!"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error while filling rendered blocks: " + e.getMessage()));
             return 0;
         }
     }
