@@ -86,29 +86,6 @@ public class LineOfSightChecker {
         BlockPos playerPos = player.getBlockPos();
         int range = (int) Math.ceil(maxDistance);
 
-        // Get player's view direction and FOV
-        float pitch = player.getPitch() * (MathHelper.PI / 180F);
-        float yaw = player.getYaw() * (MathHelper.PI / 180F);
-        Vec3d viewVector = new Vec3d(
-                -MathHelper.sin(yaw) * MathHelper.cos(pitch),
-                -MathHelper.sin(pitch),
-                MathHelper.cos(yaw) * MathHelper.cos(pitch)
-        ).normalize();
-
-        // Get FOV from client
-        double fovDegrees = 70.0; // Default FOV, safe fallback
-        try {
-            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-            if (client != null && client.options != null) {
-                fovDegrees = client.options.getFov().getValue();
-            }
-        } catch (Exception e) {
-            // Use default FOV if client is not available
-        }
-        double fovRadians = (fovDegrees / 2.0) * (MathHelper.PI / 180.0);
-        double minDotProduct = Math.cos(fovRadians);
-
-        // Only check blocks within a cone in front of the player
         for (int x = -range; x <= range; x++) {
             for (int y = -range; y <= range; y++) {
                 for (int z = -range; z <= range; z++) {
@@ -129,20 +106,17 @@ public class LineOfSightChecker {
                         continue;
                     }
                     
-                    // Only check blocks that are within the FOV cone
-                    Vec3d toBlock = new Vec3d(
+                    // Calculate direction to the block
+                    Vec3d direction = new Vec3d(
                             targetPos.getX() + 0.5 - eyePos.getX(),
                             targetPos.getY() + 0.5 - eyePos.getY(),
                             targetPos.getZ() + 0.5 - eyePos.getZ()
                     ).normalize();
                     
-                    // Skip blocks outside the FOV cone
-                    if (viewVector.dotProduct(toBlock) < minDotProduct) {
-                        continue;
+                    // Check if the block is within the player's field of view
+                    if (LineOfSightUtils.isWithinFieldOfView(player, direction)) {
+                        world.setBlockState(targetPos, net.minecraft.block.Blocks.BLUE_STAINED_GLASS.getDefaultState());
                     }
-                    
-                    // Fill with blue stained glass to distinguish from LOS glass
-                    world.setBlockState(targetPos, net.minecraft.block.Blocks.BLUE_STAINED_GLASS.getDefaultState());
                 }
             }
         }
@@ -218,7 +192,7 @@ public class LineOfSightChecker {
                     
                     // Use the isBlockRenderedOnScreen method to check if the block is rendered
                     if (LineOfSightUtils.isBlockRenderedOnScreen(player, targetPos, maxDistance)) {
-                        world.setBlockState(targetPos, net.minecraft.block.Blocks.YELLOW_STAINED_GLASS.getDefaultState());
+                        world.setBlockState(targetPos, net.minecraft.block.Blocks.BLACK_CONCRETE.getDefaultState());
                     }
                 }
             }
