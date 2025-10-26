@@ -132,31 +132,8 @@ public class LineOfSightChecker {
      */
     public static void fillRenderedBlocksWithGlass(PlayerEntity player, double maxDistance) {
         World world = player.getWorld();
-        Vec3d eyePos = player.getEyePos();
         BlockPos playerPos = player.getBlockPos();
         int range = (int) Math.ceil(maxDistance);
-
-        // Get player's view direction for early FOV filtering
-        float pitch = player.getPitch() * (MathHelper.PI / 180F);
-        float yaw = player.getYaw() * (MathHelper.PI / 180F);
-        Vec3d viewVector = new Vec3d(
-                -MathHelper.sin(yaw) * MathHelper.cos(pitch),
-                -MathHelper.sin(pitch),
-                MathHelper.cos(yaw) * MathHelper.cos(pitch)
-        ).normalize();
-
-        // Get FOV from client
-        double fovDegrees = 70.0; // Default FOV, safe fallback
-        try {
-            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-            if (client != null && client.options != null) {
-                fovDegrees = client.options.getFov().getValue();
-            }
-        } catch (Exception e) {
-            // Use default FOV if client is not available
-        }
-        double fovRadians = (fovDegrees / 2.0) * (MathHelper.PI / 180.0);
-        double minDotProduct = Math.cos(fovRadians);
 
         for (int x = -range; x <= range; x++) {
             for (int y = -range; y <= range; y++) {
@@ -168,27 +145,6 @@ public class LineOfSightChecker {
                         continue;
                     }
                     
-                    // Quick distance check
-                    double distSquared = eyePos.squaredDistanceTo(
-                            targetPos.getX() + 0.5,
-                            targetPos.getY() + 0.5,
-                            targetPos.getZ() + 0.5
-                    );
-                    if (distSquared > maxDistance * maxDistance) {
-                        continue;
-                    }
-                    
-                    // Early FOV filtering to avoid expensive raycast for blocks clearly outside FOV
-                    Vec3d toBlock = new Vec3d(
-                            targetPos.getX() + 0.5 - eyePos.getX(),
-                            targetPos.getY() + 0.5 - eyePos.getY(),
-                            targetPos.getZ() + 0.5 - eyePos.getZ()
-                    ).normalize();
-                    
-                    // Skip blocks outside the FOV cone before expensive check
-                    if (viewVector.dotProduct(toBlock) < minDotProduct) {
-                        continue;
-                    }
                     
                     // Use the isBlockRenderedOnScreen method to check if the block is rendered
                     if (LineOfSightUtils.isBlockRenderedOnScreen(player, targetPos, maxDistance)) {
