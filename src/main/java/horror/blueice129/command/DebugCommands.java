@@ -174,8 +174,6 @@ public class DebugCommands {
                                                   })
                                             )
                                     )
-                                    .then(literal("lineofsightglass")
-                                            .executes(context -> fillLineOfSightWithGlass(context.getSource())))
                                     .then(literal("fovglass")
                                             .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
                                     .then(literal("renderedblocksglass")
@@ -418,29 +416,6 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set agro meter level: " + e.getMessage()));
-            return 0;
-        }
-    }
-    
-    /**
-     * Fills all non-air blocks in line of sight with green stained glass
-     * @param source Command source
-     * @return Command success value
-     */
-    private static int fillLineOfSightWithGlass(ServerCommandSource source) {
-        ServerPlayerEntity player = source.getPlayer();
-        if (player == null) {
-            source.sendError(Text.literal("This command must be run by a player"));
-            return 0;
-        }
-        
-        try {
-            source.sendFeedback(() -> Text.literal("Filling line of sight with glass (64 block range)..."), false);
-            LineOfSightChecker.fillLineOfSightWithGlass(player, 64.0);
-            source.sendFeedback(() -> Text.literal("Completed line of sight visualization!"), false);
-            return 1;
-        } catch (Exception e) {
-            source.sendError(Text.literal("Error while filling line of sight: " + e.getMessage()));
             return 0;
         }
     }

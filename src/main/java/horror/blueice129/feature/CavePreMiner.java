@@ -61,7 +61,7 @@ public class CavePreMiner {
         int lightLevel = world.getLightLevel(pos);
         boolean isLowLight = lightLevel <= 4;
 
-        boolean isInLineOfSight = LineOfSightUtils.isBlockInLineOfSight(player, pos, 16 * 10); // 10 chunks
+        boolean isInLineOfSight = LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10); // 10 chunks
 
         return isSolidTop && isLowLight && !isInLineOfSight && isAirBlock;
     }
@@ -202,7 +202,7 @@ public class CavePreMiner {
             BlockState state = world.getBlockState(currentPos);
             if (BlockTypes.isOreBlock(state)) {
                 // Mine the ore block if not in view
-                if (!LineOfSightUtils.isBlockInLineOfSight(player, currentPos, 16 * 10)) { // 10 chunks
+                if (!LineOfSightUtils.isBlockRenderedOnScreen(player, currentPos, 16 * 10)) { // 10 chunks
                     world.breakBlock(currentPos, false);
                     oresMined++;
                 }
@@ -418,7 +418,7 @@ public class CavePreMiner {
         boolean isAir = state.isOf(Blocks.AIR) || state.isOf(Blocks.CAVE_AIR);
 
         // Check if not in line of sight
-        boolean isInLineOfSight = LineOfSightUtils.isBlockInLineOfSight(player, pos, 16 * 10); // 10 chunks
+        boolean isInLineOfSight = LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10); // 10 chunks
 
         return hasSolidBelow && isAir && !isInLineOfSight;
     }

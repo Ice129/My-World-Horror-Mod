@@ -14,78 +14,6 @@ import net.minecraft.util.math.MathHelper;
  * Utility class for line of sight calculations.
  */
 public class LineOfSightUtils {
-    // TODO: make a simple check to return true is block is 180 degrees behind
-    // player, aka not in the front half of the player
-    // BUG: sometimes misses blocks that are in line of sight
-
-    /**
-     * Checks if a block is within line of sight of a player.
-     * 
-     * @param player      The player to check from
-     * @param blockPos    The position of the block to check
-     * @param maxDistance The maximum distance to check
-     * @return true if the block is within line of sight, false otherwise
-     */
-    public static boolean isBlockInLineOfSight(PlayerEntity player, BlockPos blockPos, double maxDistance) {
-        World world = player.getWorld();
-
-        // ========== STEP 1: GET PLAYER'S EYE POSITION ==========
-        // This is where the camera originates from - right at the player's eyes
-        // All visibility checks start from this point
-        Vec3d eyePos = player.getEyePos();
-
-        // ========== STEP 2: GET THE CENTER POINT OF THE TARGET BLOCK ==========
-        // Blocks are 1x1x1 cubes. The center is at +0.5 in each direction
-        // We use the center because it's the most representative point of the block
-        Vec3d targetPos = new Vec3d(
-                blockPos.getX() + 0.5,
-                blockPos.getY() + 0.5,
-                blockPos.getZ() + 0.5);
-
-        // ========== STEP 3: CALCULATE DIRECTION FROM EYES TO TARGET ==========
-        // This creates a line/ray starting from the player's eyes pointing toward the
-        // block
-        // We normalize it to get a unit direction vector (length = 1)
-        Vec3d direction = targetPos.subtract(eyePos).normalize();
-
-        // ========== STEP 4: CALCULATE DISTANCE TO TARGET BLOCK ==========
-        // How far away is the block from the player's eyes?
-        double distance = eyePos.distanceTo(targetPos);
-
-        // ========== STEP 5: EARLY EXIT - IS THE BLOCK TOO FAR? ==========
-        // If block is beyond maxDistance (e.g., 100 blocks), don't bother checking
-        // This is a performance optimization
-        if (distance > maxDistance) {
-            return false;
-        }
-
-        // ========== STEP 6: CHECK FIELD OF VIEW ==========
-        // Is the block even within the player's visible screen area?
-        // This uses the complex FOV calculation accounting for aspect ratio and FOV
-        // setting
-        // If the block is behind the player or off to the extreme sides, this fails
-        if (!isWithinFieldOfView(player, direction)) {
-            return false;
-        }
-
-        // ========== STEP 7: RAYCAST CHECK - IS THE BLOCK OCCLUDED? ==========
-        // Cast a ray from the player's eyes toward the block
-        // This checks if any solid blocks are in the way blocking the view
-        // Like pointing a laser at the block - does it hit the target or something else
-        // first?
-        BlockHitResult hitResult = world.raycast(new RaycastContext(
-                eyePos,
-                eyePos.add(direction.multiply(distance)),
-                RaycastContext.ShapeType.OUTLINE,
-                RaycastContext.FluidHandling.NONE,
-                player));
-
-        // ========== STEP 8: VERIFY THE RAY HIT THE CORRECT BLOCK ==========
-        // Check if the ray hit a block AND that block is the one we're looking for
-        // If something else blocks the view, this returns false
-        return hitResult.getType() == HitResult.Type.BLOCK &&
-                hitResult.getBlockPos().equals(blockPos);
-    }
 
     /**
      * Checks if a direction is within the player's field of view.
@@ -132,14 +60,14 @@ public class LineOfSightUtils {
         // Horizontal FOV: 180 degrees (90 degrees left, 90 degrees right)
         // Vertical FOV: 120 degrees (60 degrees up, 60 degrees down)
         // This creates a simple rectangular field of view in front of the player
-        double hFovDegrees = 140.0; // 180 degrees horizontal
-        double vFovDegrees = 120.0; // 120 degrees vertical
+        double hFovDegrees = 150.0; // 150 degrees horizontal
+        double vFovDegrees = 130.0; // 130 degrees vertical
 
         // Convert to radians and calculate half-angles
         double hFovRad = hFovDegrees * (Math.PI / 180.0);
         double vFovRad = vFovDegrees * (Math.PI / 180.0);
-        double hFovHalf = hFovRad / 2.0; // 90 degrees in radians
-        double vFovHalf = vFovRad / 2.0; // 60 degrees in radians
+        double hFovHalf = hFovRad / 2.0; // 75 degrees in radians
+        double vFovHalf = vFovRad / 2.0; // 65 degrees in radians
 
         // ========== STEP 5: CREATE A "RIGHT" VECTOR (LEFT-RIGHT AXIS) ==========
         // This is like drawing a line from the player pointing directly to their right
@@ -222,9 +150,6 @@ public class LineOfSightUtils {
         if (!isWithinFieldOfView(player, direction)) {
             return false;
         }
-
-        // ========== DIRECTION FROM BLOCK TO PLAYER (FOR BACKFACE CULLING) ==========
-        Vec3d toPlayer = eyePos.subtract(blockCenter).normalize();
 
         // ========== DEFINE ALL 8 CORNERS OF THE BLOCK ==========
         // Create vectors for all corners of the block with small epsilon offset
