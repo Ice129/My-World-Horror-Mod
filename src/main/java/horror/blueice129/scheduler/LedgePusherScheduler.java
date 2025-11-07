@@ -2,10 +2,8 @@ package horror.blueice129.scheduler;
 
 import horror.blueice129.feature.LedgePusher;
 import horror.blueice129.data.HorrorModPersistentState;
-// import horror.blueice129.HorrorMod129;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-// import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.entity.player.PlayerEntity;
@@ -74,7 +72,6 @@ public class LedgePusherScheduler {
             // HorrorMod129.LOGGER.info("LedgePusherScheduler, cooldown is: " + state.getTimer(cooldownTimerKey));
             return;
         }
-        // say in world chat "checking ledge"
         // server.getPlayerManager().getPlayerList().forEach(p -> 
         //         p.sendMessage(net.minecraft.text.Text.literal("LedgePusherScheduler: Checking ledge..."), false));
         if (ledgePusher.isPlayerOnLedge()) {

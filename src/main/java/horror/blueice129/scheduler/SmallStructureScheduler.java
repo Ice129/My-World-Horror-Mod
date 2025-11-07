@@ -6,7 +6,6 @@ import horror.blueice129.feature.SmallStructureEvent;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.server.MinecraftServer;
-// import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
 
 import net.minecraft.util.math.random.Random;

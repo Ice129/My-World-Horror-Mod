@@ -1,16 +1,12 @@
 package horror.blueice129.utils;
 
-// import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeavesBlock;
-// import net.minecraft.block.FlowerBlock;
 import net.minecraft.util.math.BlockPos;
 import java.util.List;
 import java.util.ArrayList;
-// import horror.blueice129.utils.BlockTypes;
-// import horror.blueice129.utils.ChunkLoader;
 
 /**
  * Utility class for finding the surface level in a Minecraft world.

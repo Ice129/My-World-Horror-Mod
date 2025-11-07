@@ -128,18 +128,19 @@ public class SmallStructureEvent {
             int baseWeight = Integer.parseInt(structure[1]);
             int adjustedWeight = baseWeight;
 
+            // Increase weights for more intrusive structures based on agro meter
             if (id.equals("watchtower")) {
-                adjustedWeight += agroMeter / 4; // increase watchtower weight with agro
+                adjustedWeight += agroMeter / 4; 
             } else if (id.equals("pitfall_trap")) {
-                adjustedWeight += agroMeter / 2; // increase pitfall trap weight with agro
+                adjustedWeight += agroMeter / 2;
             } else if (id.equals("chunk_deletion")) {
-                adjustedWeight += agroMeter / 10; // increase chunk deletion weight with agro
+                adjustedWeight += agroMeter / 10;
             } else if (id.equals("deforestation")) {
-                adjustedWeight += agroMeter / 5; // increase deforestation weight with agro
+                adjustedWeight += agroMeter / 5;
             } else if (id.equals("burning_forest")) {
-                adjustedWeight += agroMeter / 3; // increase burning forest weight with agro
+                adjustedWeight += agroMeter / 3;
             } else if (id.equals("cobblestone_pillar")) {
-                adjustedWeight += agroMeter / 8; // increase cobblestone pillar weight with agro
+                adjustedWeight += agroMeter / 8;
             }
             structure[1] = Integer.toString(adjustedWeight);
         }
@@ -226,7 +227,7 @@ public class SmallStructureEvent {
         }
         // Make sure the chunk is loaded before modifying blocks
         if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), pos, 1)) {
-            return false; // Chunk couldn't be loaded
+            return false;
         }
         // place furnace
         server.getOverworld().setBlockState(pos, Blocks.FURNACE.getDefaultState());
@@ -273,7 +274,7 @@ public class SmallStructureEvent {
         }
         // Make sure the chunk is loaded before modifying blocks
         if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), pos, 1)) {
-            return false; // Chunk couldn't be loaded
+            return false;
         }
         // place torch
         server.getOverworld().setBlockState(pos, Blocks.TORCH.getDefaultState());
@@ -288,7 +289,7 @@ public class SmallStructureEvent {
         }
         // Make sure the chunk is loaded before modifying blocks
         if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), pos, 1)) {
-            return false; // Chunk couldn't be loaded
+            return false; 
         }
 
         // find 5-15 random positions within 15 block radius and place torches

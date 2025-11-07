@@ -102,7 +102,6 @@ public class CavePreMiner {
             for (net.minecraft.util.math.Direction direction : DIRECTIONS) {
                 BlockPos neighborPos = currentPos.offset(direction);
 
-                // Skip already visited positions immediately
                 if (visited.contains(neighborPos)) continue;
                 
                 // Check if neighbor is within 50 blocks of start position using squared distance
@@ -662,10 +661,10 @@ public class CavePreMiner {
             BlockPos surfacePos = StructurePlacer.findSurfaceLocation(serverWorld, entrancePos, 2, 6);
             
             if (surfacePos != null) {
-                // Check if this position is too close to existing torches (minimum 2 blocks apart)
+                // Check if this position is too close to existing torches
                 boolean tooClose = false;
                 for (BlockPos existingPos : placedPositions) {
-                    if (surfacePos.getSquaredDistance(existingPos) < 4) { // 2 blocks squared
+                    if (surfacePos.getSquaredDistance(existingPos) < 4) {
                         tooClose = true;
                         break;
                     }
