@@ -14,10 +14,9 @@ import net.minecraft.util.math.MathHelper;
  * Utility class for line of sight calculations.
  */
 public class LineOfSightUtils {
-    // TODO: make a way to visualize line of sight in-game for debugging
     // TODO: make a simple check to return true is block is 180 degrees behind
     // player, aka not in the front half of the player
-    // BUG: sometimes misses blocks tht are in line of sight
+    // BUG: sometimes misses blocks that are in line of sight
 
     /**
      * Checks if a block is within line of sight of a player.
@@ -227,51 +226,34 @@ public class LineOfSightUtils {
         // ========== DIRECTION FROM BLOCK TO PLAYER (FOR BACKFACE CULLING) ==========
         Vec3d toPlayer = eyePos.subtract(blockCenter).normalize();
 
-        // ========== DEFINE ALL 6 FACES OF THE BLOCK ==========
-        // Each face point is positioned at the center of each block face
-        // Blocks are treated as full 1x1x1 cubes for raycasting
-        Vec3d[] faceCenters = {
-                new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ()), // -Z face
-                new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 1), // +Z face
-                new Vec3d(blockPos.getX(), blockPos.getY() + 0.5, blockPos.getZ() + 0.5), // -X face
-                new Vec3d(blockPos.getX() + 1, blockPos.getY() + 0.5, blockPos.getZ() + 0.5), // +X face
-                new Vec3d(blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5), // -Y face
-                new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() + 0.5) // +Y face
+        // ========== DEFINE ALL 8 CORNERS OF THE BLOCK ==========
+        // Create vectors for all corners of the block with small epsilon offset
+        // Epsilon moves points slightly inward to avoid precision errors at exact block boundaries
+        double epsilon = 0.001;
+        Vec3d[] corners = {
+            // Bottom corners (with epsilon offset inward)
+            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + epsilon, blockPos.getZ() + epsilon),         // 0,0,0
+            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + epsilon, blockPos.getZ() + epsilon),     // 1,0,0
+            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + epsilon, blockPos.getZ() + 1 - epsilon),     // 0,0,1
+            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + epsilon, blockPos.getZ() + 1 - epsilon), // 1,0,1
+            // Top corners (with epsilon offset inward)
+            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + epsilon),         // 0,1,0
+            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + epsilon),     // 1,1,0
+            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + 1 - epsilon),     // 0,1,1
+            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + 1 - epsilon)  // 1,1,1
         };
 
-        // ========== FACE NORMALS (POINTING OUTWARD FROM BLOCK SURFACE) ==========
-        // Used for backface culling - skip faces pointing away from player
-        Vec3d[] faceNormals = {
-                new Vec3d(0, 0, -1), // -Z normal
-                new Vec3d(0, 0, 1), // +Z normal
-                new Vec3d(-1, 0, 0), // -X normal
-                new Vec3d(1, 0, 0), // +X normal
-                new Vec3d(0, -1, 0), // -Y normal
-                new Vec3d(0, 1, 0) // +Y normal
-        };
+        // ========== CHECK EACH CORNER ==========
+        for (Vec3d corner : corners) {
+            // Calculate direction and distance to this corner
+            Vec3d cornerDirection = corner.subtract(eyePos).normalize();
+            double cornerDistance = eyePos.distanceTo(corner);
 
-        // ========== CHECK EACH FRONT-FACING FACE ==========
-        for (int i = 0; i < faceCenters.length; i++) {
-            Vec3d faceCenter = faceCenters[i];
-            Vec3d faceNormal = faceNormals[i];
-
-            // ========== BACKFACE CULLING: SKIP FACES POINTING AWAY ==========
-            // Only check faces that face toward the player (dot product > 0)
-            // This avoids raycasting to faces the player can't see
-            // if (faceNormal.dotProduct(toPlayer) <= 0) {
-            //     continue;
-            // }
-            //TODO: fix this section
-
-            // ========== RAYCAST TO THIS FACE POINT ==========
-            // Cast ray from player's eyes to this face point
-            // Using OUTLINE to treat all blocks as full 1x1x1 cubes
-            Vec3d faceDirection = faceCenter.subtract(eyePos).normalize();
-            double faceDistance = eyePos.distanceTo(faceCenter);
-
+            // ========== RAYCAST TO THIS CORNER ==========
+            // Cast ray from player's eyes to this corner
             BlockHitResult hitResult = world.raycast(new RaycastContext(
                     eyePos,
-                    eyePos.add(faceDirection.multiply(faceDistance)),
+                    eyePos.add(cornerDirection.multiply(cornerDistance)),
                     RaycastContext.ShapeType.OUTLINE,
                     RaycastContext.FluidHandling.NONE,
                     player));
