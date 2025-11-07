@@ -61,7 +61,7 @@ public class CavePreMiner {
         int lightLevel = world.getLightLevel(pos);
         boolean isLowLight = lightLevel <= 4;
 
-        boolean isInLineOfSight = LineOfSightUtils.isBlockInLineOfSight(player, pos, 16 * 10); // 10 chunks
+        boolean isInLineOfSight = LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10); // 10 chunks
 
         return isSolidTop && isLowLight && !isInLineOfSight && isAirBlock;
     }
@@ -102,7 +102,6 @@ public class CavePreMiner {
             for (net.minecraft.util.math.Direction direction : DIRECTIONS) {
                 BlockPos neighborPos = currentPos.offset(direction);
 
-                // Skip already visited positions immediately
                 if (visited.contains(neighborPos)) continue;
                 
                 // Check if neighbor is within 50 blocks of start position using squared distance
@@ -202,7 +201,7 @@ public class CavePreMiner {
             BlockState state = world.getBlockState(currentPos);
             if (BlockTypes.isOreBlock(state)) {
                 // Mine the ore block if not in view
-                if (!LineOfSightUtils.isBlockInLineOfSight(player, currentPos, 16 * 10)) { // 10 chunks
+                if (!LineOfSightUtils.isBlockRenderedOnScreen(player, currentPos, 16 * 10)) { // 10 chunks
                     world.breakBlock(currentPos, false);
                     oresMined++;
                 }
@@ -418,7 +417,7 @@ public class CavePreMiner {
         boolean isAir = state.isOf(Blocks.AIR) || state.isOf(Blocks.CAVE_AIR);
 
         // Check if not in line of sight
-        boolean isInLineOfSight = LineOfSightUtils.isBlockInLineOfSight(player, pos, 16 * 10); // 10 chunks
+        boolean isInLineOfSight = LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10); // 10 chunks
 
         return hasSolidBelow && isAir && !isInLineOfSight;
     }
@@ -662,10 +661,10 @@ public class CavePreMiner {
             BlockPos surfacePos = StructurePlacer.findSurfaceLocation(serverWorld, entrancePos, 2, 6);
             
             if (surfacePos != null) {
-                // Check if this position is too close to existing torches (minimum 2 blocks apart)
+                // Check if this position is too close to existing torches
                 boolean tooClose = false;
                 for (BlockPos existingPos : placedPositions) {
-                    if (surfacePos.getSquaredDistance(existingPos) < 4) { // 2 blocks squared
+                    if (surfacePos.getSquaredDistance(existingPos) < 4) {
                         tooClose = true;
                         break;
                     }

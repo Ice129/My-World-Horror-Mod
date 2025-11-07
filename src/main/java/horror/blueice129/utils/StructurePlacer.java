@@ -6,7 +6,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.entity.player.PlayerEntity;
 
 import static horror.blueice129.utils.SurfaceFinder.findPointSurfaceY;
-import static horror.blueice129.utils.LineOfSightUtils.isBlockInLineOfSight;
+import static horror.blueice129.utils.LineOfSightUtils.isBlockRenderedOnScreen;
 
 /**
  * Utility class for placing structures in the Minecraft world.
@@ -56,7 +56,7 @@ public class StructurePlacer {
                         BlockPos pos = new BlockPos(x, y, z);
 
                         // Check if the position is not in line of sight of the player
-                        if (isBlockInLineOfSight(player, pos, 50))
+                        if (isBlockRenderedOnScreen(player, pos, 50))
                                 continue; // Position is in line of sight, try again
                         return pos;
                 }

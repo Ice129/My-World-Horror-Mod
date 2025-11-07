@@ -17,22 +17,12 @@ import net.minecraft.util.math.random.Random;
  * if last event was unsuccessful, it will try again in 1 minute
  */
 public class CaveMinerScheduler {
-    // Random generator for timing
     private static final Random random = Random.create();
 
-    // Maximum delay between cave miner events (in ticks)
     private static int MAX_DELAY = 72000; // 60 minutes
-
-    // Minimum delay between cave miner events (in ticks)
     private static int MIN_DELAY = 20000; // 20 minutes
 
     private static final String TIMER_ID = "caveMinerTimer";
-
-    // // testing purposes, shorter delays
-    // private static final int MAX_DELAY = 2000; // 2 minutes
-    // private static final int MIN_DELAY = 1000; // 1 minute
-
-    // Timer is now stored in persistent state
 
     /**
      * Registers the tick event to handle the cave miner scheduling.
@@ -78,7 +68,7 @@ public class CaveMinerScheduler {
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
             
             // Get current timer value
-            int currentTimer = state.decrementTimer(TIMER_ID, 1); // Decrement timer by 1 tick
+            int currentTimer = state.decrementTimer(TIMER_ID, 1);
 
             // If the timer has reached zero
             if (currentTimer <= 0) {
@@ -86,8 +76,6 @@ public class CaveMinerScheduler {
                 while (!CavePreMiner.preMineCave(player.getWorld(), player.getBlockPos(), player)) {
                     // If unsuccessful, set a short retry delay
                     int retryDelay = 1200; // 1 minute
-                    // For testing purposes, shorter retry delay
-                    // int retryDelay = 1;
                     state.setTimer(TIMER_ID, retryDelay);
                     HorrorMod129.LOGGER.info("CavePreMiner attempt failed, retrying in 1 minute.");
                     return;

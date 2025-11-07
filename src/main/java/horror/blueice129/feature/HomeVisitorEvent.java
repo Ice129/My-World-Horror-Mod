@@ -7,15 +7,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-// import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.DoorBlock;
-// import net.minecraft.block.SignBlock;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
-// import net.minecraft.nbt.NbtCompound;
 import net.minecraft.block.entity.ChestBlockEntity;
-// import net.minecraft.world.World;
 
 import net.minecraft.util.math.random.Random;
 
@@ -130,7 +126,7 @@ public class HomeVisitorEvent {
             if (blockState.getBlock() instanceof DoorBlock) {
                 if (random.nextDouble() > 0.5)
                     continue; // 50% chance to skip this door
-                if (LineOfSightUtils.isBlockInLineOfSight(player, pos, 50))
+                if (LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 50))
                     continue; // only open if out of line of sight
 
                 doorsOpened++;
@@ -235,7 +231,7 @@ public class HomeVisitorEvent {
 
                 if (random.nextDouble() > 0.05)
                     continue; // 5% chance to plant a flower
-                if (LineOfSightUtils.isBlockInLineOfSight(player, pos, 50))
+                if (LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 50))
                     continue; // only plant if out of line of sight
 
                 world.setBlockState(pos, flowerBlock.getDefaultState());
@@ -300,7 +296,7 @@ public class HomeVisitorEvent {
                     isAreaClear = false;
                 }
 
-                if (LineOfSightUtils.isBlockInLineOfSight(player, pos, 50)) {
+                if (LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 50)) {
                     HorrorMod129.LOGGER.info("Cannot place trap, player has line of sight at " + pos);
                     isAreaClear = false; // only place if out of line of sight
                 }

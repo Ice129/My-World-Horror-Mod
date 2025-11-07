@@ -3,11 +3,8 @@ package horror.blueice129.feature;
 import horror.blueice129.utils.PlayerUtils;
 
 import com.mojang.authlib.GameProfile;
-
-// import horror.blueice129.HorrorMod129;
-
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d; // Used in method parameters
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.entity.player.PlayerEntity;
