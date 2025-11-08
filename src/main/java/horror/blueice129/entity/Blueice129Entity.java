@@ -80,9 +80,17 @@ public class Blueice129Entity extends PathAwareEntity {
         switch (currentState) {
             case PASSIVE:
                 // TODO: Implement transitions from PASSIVE to other states
+                // check if player is within 64 blocks
+                // check if player is within line of sight of the entity
+                // specifically the block where the player's head is located
+                // if the entitiy sees the player for over 5 ticks, transition to PANICED
                 break;
             case PANICED:
                 // TODO: Implement transitions from PANICED to other states
+                // after a certain amount of time panicing, probably 10-20 ticks, transition to
+                // IN_MENUS, passing a param to say to log out after 5-15 ticks
+                // if agro meter high enough, increase chance to enter fleeing/ hiding /
+                // aggravated states
                 break;
             case SURFACE_HIDING:
                 // TODO: Implement transitions from SURFACE_HIDING to other states
@@ -119,12 +127,11 @@ public class Blueice129Entity extends PathAwareEntity {
      */
     @Override
     protected void initGoals() {
-        // test commit
-
-        // Basic goals applicable in all states, can be overridden in state-specific updates
+        // Basic goals applicable in all states, can be overridden in state-specific
+        // updates
         // TODO: Add state-specific goals in updateGoals()
         this.goalSelector.add(0, new SwimGoal(this));
-        this.goalSelector.add(1, new LookAtEntityGoal(this, PlayerEntity.class, 8.0F));
+        this.goalSelector.add(1, new LookAtEntityGoal(this, PlayerEntity.class, 6.0F));
         this.goalSelector.add(5, new LookAroundGoal(this));
     }
 
@@ -135,7 +142,7 @@ public class Blueice129Entity extends PathAwareEntity {
     public static DefaultAttributeContainer.Builder createBlueice129Attributes() {
         return PathAwareEntity.createMobAttributes()
                 .add(EntityAttributes.GENERIC_MAX_HEALTH, 20.0D) // Same as player
-                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.25D) // Slightly slower than player
+                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.1D) // Same as player
                 .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 35.0D); // How far they can detect entities
     }
 }
