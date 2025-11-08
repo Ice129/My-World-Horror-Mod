@@ -119,6 +119,7 @@ public class Blueice129Entity extends PathAwareEntity {
      */
     @Override
     protected void initGoals() {
+        // test commit
 
         // Basic goals applicable in all states, can be overridden in state-specific updates
         // TODO: Add state-specific goals in updateGoals()
