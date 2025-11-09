@@ -1,4 +1,4 @@
-﻿package horror.blueice129.client.entity.model;
+package horror.blueice129.client.entity.model;
 
 import horror.blueice129.entity.Blueice129Entity;
 import net.minecraft.client.model.ModelPart;
