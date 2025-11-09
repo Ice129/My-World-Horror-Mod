@@ -18,7 +18,8 @@ public class Blueice129EntityRenderer extends MobEntityRenderer<Blueice129Entity
      * @param context The entity renderer factory context
      */
     public Blueice129EntityRenderer(EntityRendererFactory.Context context) {
-        super(context, new Blueice129EntityModel(context.getPart(Blueice129EntityModel.LAYER)), 0.5f);
+        // false = standard Steve arms (4px wide), true = Alex arms (3px wide)
+        super(context, new Blueice129EntityModel(context.getPart(Blueice129EntityModel.LAYER), false), 0.5f);
     }
 
     /**

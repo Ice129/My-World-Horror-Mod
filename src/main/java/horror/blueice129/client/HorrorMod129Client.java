@@ -22,8 +22,12 @@ public class HorrorMod129Client implements ClientModInitializer {
         // Register entity renderer
         EntityRendererRegistry.register(HorrorMod129.BLUEICE129_ENTITY, Blueice129EntityRenderer::new);
         
-        // Register entity model layer
-        EntityModelLayerRegistry.registerModelLayer(Blueice129EntityModel.LAYER, Blueice129EntityModel::getTexturedModelData);
+        // Register entity model layer using built-in player model
+        // false = standard Steve arms (4px wide), true = Alex arms (3px wide)
+        EntityModelLayerRegistry.registerModelLayer(Blueice129EntityModel.LAYER, 
+            () -> net.minecraft.client.model.TexturedModelData.of(
+                net.minecraft.client.render.entity.model.PlayerEntityModel.getTexturedModelData(
+                    new net.minecraft.client.model.Dilation(0.0f), false), 64, 64));
         
         HorrorMod129.LOGGER.info("HorrorMod129 client initialization complete");
     }
