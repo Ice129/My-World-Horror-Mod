@@ -1,37 +1,30 @@
 package horror.blueice129.entity;
 
+import horror.blueice129.entity.goals.GoalProfileRegistry;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 
 /**
  * Blueice129 Entity - A custom PathAwareEntity that takes the form of a player
- * character
- * with Blueice129's skin.
+ * character with Blueice129's skin.
  * 
  * PathAwareEntity extends MobEntity, which extends LivingEntity.
  * - LivingEntity has health and can deal damage.
  * - MobEntity has movement controls and AI capabilities.
  * - PathAwareEntity has pathfinding favor and slightly tweaked leash behavior.
+ * 
+ * This entity uses a state-based goal profile system where different behaviors
+ * are activated based on the current EntityState.
  */
 public class Blueice129Entity extends PathAwareEntity {
-
-    // TODO: Implement state-based behavior using currentState
-    // TODO: Implement PASSIVE goal
-    // TODO: Implement PANICED goal
-    // TODO: Implement SURFACE_HIDING goal
-    // TODO: Implement UNDERGROUND_BURROWING goal
-    // TODO: Implement IN_MENUS goal
-    // TODO: Implement INVESTIGATING goal
-    // TODO: Implement UPGRADING_HOUSE goal
 
     private EntityState currentState = EntityState.PASSIVE;
     private final int costlyCheckTickCooldown = 10;
     private int costlyCheckTickCounter = 0;
+    private GoalProfileRegistry goalRegistry;
 
     public enum EntityState {
         PASSIVE, // Default state, does nothing really
@@ -60,12 +53,12 @@ public class Blueice129Entity extends PathAwareEntity {
 
     /**
      * Update AI goals based on the current state.
-     * This method clears existing goals and adds new ones based on state.
+     * This method uses the GoalProfileRegistry to apply the appropriate goal profile.
      */
     private void updateGoals() {
-        // TODO: Clear existing goals
-        // TODO: finish this method
-        // this.goalSelector.remove(null);
+        if (goalRegistry != null) {
+            goalRegistry.applyCurrentProfile();
+        }
     }
 
     /**
@@ -75,7 +68,12 @@ public class Blueice129Entity extends PathAwareEntity {
     public void tick() {
         super.tick();
         costlyCheckTickCounter++;
-        boolean shouldPerformCostlyCheck = costlyCheckTickCounter >= costlyCheckTickCooldown;
+        
+        // Perform costly checks less frequently
+        if (costlyCheckTickCounter >= costlyCheckTickCooldown) {
+            costlyCheckTickCounter = 0;
+            performCostlyStateChecks();
+        }
 
         switch (currentState) {
             case PASSIVE:
@@ -116,23 +114,49 @@ public class Blueice129Entity extends PathAwareEntity {
     public EntityState getState() {
         return currentState;
     }
+    
+    /**
+     * Perform expensive state transition checks
+     * This is called less frequently than tick() to optimize performance
+     */
+    private void performCostlyStateChecks() {
+        // TODO: Implement costly state transition logic here
+        // Examples: Line of sight checks, distance calculations, pathfinding validation
+    }
+    
+    /**
+     * Clear all goals from the goal selector
+     * Helper method for the goal profile system
+     */
+    public void clearGoals() {
+        this.goalSelector.clear(goal -> true); // Remove all goals
+    }
+    
+    /**
+     * Add a goal to the goal selector
+     * Helper method for the goal profile system
+     */
+    public void addGoal(int priority, net.minecraft.entity.ai.goal.Goal goal) {
+        this.goalSelector.add(priority, goal);
+    }
 
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
+        // Initialize the goal profile registry
+        this.goalRegistry = new GoalProfileRegistry(this);
     }
 
     /**
      * Initialize AI goals for the entity.
      * This method is called during entity construction to set up behavior.
+     * The goal profile system handles goal initialization based on the current state.
      */
     @Override
     protected void initGoals() {
-        // Basic goals applicable in all states, can be overridden in state-specific
-        // updates
-        // TODO: Add state-specific goals in updateGoals()
-        this.goalSelector.add(0, new SwimGoal(this));
-        this.goalSelector.add(1, new LookAtEntityGoal(this, PlayerEntity.class, 6.0F));
-        this.goalSelector.add(5, new LookAroundGoal(this));
+        // Apply the initial goal profile (PASSIVE state)
+        if (goalRegistry != null) {
+            goalRegistry.applyCurrentProfile();
+        }
     }
 
     /**
