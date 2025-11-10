@@ -5,6 +5,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 
 /**
@@ -24,6 +25,8 @@ public class Blueice129Entity extends PathAwareEntity {
     private EntityState currentState = EntityState.PASSIVE;
     private final int costlyCheckTickCooldown = 10;
     private int costlyCheckTickCounter = 0;
+    private int ticksInCurrentState = 0;
+    private boolean should_logout_after_menu = false;
     private GoalProfileRegistry goalRegistry;
 
     public enum EntityState {
@@ -48,6 +51,7 @@ public class Blueice129Entity extends PathAwareEntity {
             return;
 
         this.currentState = newState;
+        this.ticksInCurrentState = 0; // Reset the timer when changing states
         updateGoals();
     }
 
@@ -68,20 +72,26 @@ public class Blueice129Entity extends PathAwareEntity {
     public void tick() {
         super.tick();
         costlyCheckTickCounter++;
-        
-        // Perform costly checks less frequently
-        if (costlyCheckTickCounter >= costlyCheckTickCooldown) {
+        ticksInCurrentState++;
+
+        boolean doCostlyChecks = costlyCheckTickCounter >= costlyCheckTickCooldown;
+        boolean seesPlayer = false;
+        if (doCostlyChecks) {
+            seesPlayer = checkEntitySeesPlayer();
             costlyCheckTickCounter = 0;
-            performCostlyStateChecks();
         }
 
         switch (currentState) {
             case PASSIVE:
-                // TODO: Implement transitions from PASSIVE to other states
-                // check if player is within 64 blocks
-                // check if player is within line of sight of the entity
-                // specifically the block where the player's head is located
-                // if the entitiy sees the player for over 5 ticks, transition to PANICED
+                // Check if player is within 64 blocks and within line of sight
+                // If the entity sees the player, transition to PANICED
+                if (doCostlyChecks && seesPlayer) {
+                    setState(EntityState.PANICED);
+                }
+                // check if the player damages the entity
+                if (doCostlyChecks && checkPlayerDamagesEntity()) {
+                    setState(EntityState.PANICED);
+                }
                 break;
             case PANICED:
                 // TODO: Implement transitions from PANICED to other states
@@ -89,6 +99,11 @@ public class Blueice129Entity extends PathAwareEntity {
                 // IN_MENUS, passing a param to say to log out after 5-15 ticks
                 // if agro meter high enough, increase chance to enter fleeing/ hiding /
                 // aggravated states
+                if (ticksInCurrentState > 20 * 3) {
+                    setState(EntityState.IN_MENUS);
+                    should_logout_after_menu = true;
+                }
+
                 break;
             case SURFACE_HIDING:
                 // TODO: Implement transitions from SURFACE_HIDING to other states
@@ -98,6 +113,13 @@ public class Blueice129Entity extends PathAwareEntity {
                 break;
             case IN_MENUS:
                 // TODO: Implement transitions from IN_MENUS to other states
+                if (ticksInCurrentState > 20 && should_logout_after_menu) {
+                    //despawn this entity and send a logout message to the chat
+                    if (this.getWorld().getServer() != null) {
+                        this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text.literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
+                    }
+                    this.remove(RemovalReason.DISCARDED);
+                }
                 break;
             case INVESTIGATING:
                 // TODO: Implement transitions from INVESTIGATING to other states
@@ -114,16 +136,62 @@ public class Blueice129Entity extends PathAwareEntity {
     public EntityState getState() {
         return currentState;
     }
-    
+
     /**
-     * Perform expensive state transition checks
-     * This is called less frequently than tick() to optimize performance
+     * Check if the player has damaged this entity recently
      */
-    private void performCostlyStateChecks() {
-        // TODO: Implement costly state transition logic here
-        // Examples: Line of sight checks, distance calculations, pathfinding validation
+    private boolean checkPlayerDamagesEntity() {
+        // Check if the entity has been recently damaged by a player
+        return this.getRecentDamageSource() != null && this.getRecentDamageSource().getAttacker() instanceof PlayerEntity;
     }
-    
+
+    /**
+     * Check if the entity can see the player within 64 blocks
+     * Performs a raycast from the entity's eye position to the player's position blocks
+     * and checks if the player is within the entity's field of view
+     */
+    private boolean checkEntitySeesPlayer() {
+        // Find the nearest player within 64 blocks
+        PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 64.0);
+        
+        if (nearestPlayer == null) {
+            return false;
+        }
+        
+        // Check if the entity has line of sight to the player
+        if (!this.canSee(nearestPlayer)) {
+            return false;
+        }
+        
+        // Check if the player is within the entity's field of view
+        // Get the direction vector from entity to player
+        double dx = nearestPlayer.getX() - this.getX();
+        double dz = nearestPlayer.getZ() - this.getZ();
+        
+        // Normalize the direction to player
+        double distanceToPlayer = Math.sqrt(dx * dx + dz * dz);
+        if (distanceToPlayer < 0.01) {
+            return true; // Player is extremely close, can definitely see them
+        }
+        
+        dx /= distanceToPlayer;
+        dz /= distanceToPlayer;
+        
+        // Get the entity's look direction (yaw is in degrees)
+        double yawRadians = Math.toRadians(this.getYaw());
+        double lookDirX = -Math.sin(yawRadians);
+        double lookDirZ = Math.cos(yawRadians);
+        
+        // Calculate dot product to determine if player is in front of entity
+        // Dot product > 0 means player is in front (within 180 degree arc)
+        // For a narrower field of view, use a higher threshold (e.g., 0.5 for ~60 degrees)
+        double dotProduct = dx * lookDirX + dz * lookDirZ;
+        
+        // Use a threshold of 0.0 for 180-degree FOV (can see anything in front)
+        // Adjust this value for narrower FOV (0.5 ≈ 60°, 0.7 ≈ 45°, 0.866 ≈ 30°)
+        return dotProduct > 0.7;
+    }
+
     /**
      * Clear all goals from the goal selector
      * Helper method for the goal profile system
@@ -166,7 +234,7 @@ public class Blueice129Entity extends PathAwareEntity {
     public static DefaultAttributeContainer.Builder createBlueice129Attributes() {
         return PathAwareEntity.createMobAttributes()
                 .add(EntityAttributes.GENERIC_MAX_HEALTH, 20.0D) // Same as player
-                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.1D) // Same as player
+                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.25D) // Same as player
                 .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 35.0D); // How far they can detect entities
     }
 }

@@ -20,7 +20,25 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
     
     @Override
     public void tick() {
-        // TODO: Implement erratic head movement
+        // Implement erratic head movement
         // Rapidly change look direction to simulate panic
+        if (entity.getRandom().nextInt(2) == 0) {
+            // Generate random yaw and pitch offsets for erratic movement
+            float yawOffset = (entity.getRandom().nextFloat() - 0.5f) * 100f; // -30 to +30 degrees
+            float pitchOffset = (entity.getRandom().nextFloat() - 0.5f) * 80f; // -20 to +20 degrees
+            
+            // Apply the offsets to current rotation
+            entity.headYaw += yawOffset;
+            entity.prevHeadYaw = entity.headYaw;
+            entity.setPitch(entity.getPitch() + pitchOffset);
+            
+            // Clamp pitch to valid range (-90 to 90 degrees)
+            float currentPitch = entity.getPitch();
+            if (currentPitch > 90f) {
+                entity.setPitch(90f);
+            } else if (currentPitch < -90f) {
+                entity.setPitch(-90f);
+            }
+        }
     }
 }

@@ -63,8 +63,11 @@ public class SmallStructureEvent {
      * @return boolean indicating if the event was successfully triggered
      */
     public static boolean triggerEvent(MinecraftServer server) {
-        ServerPlayerEntity player = server.getPlayerManager().getPlayerList()
-                .get(random.nextInt(server.getPlayerManager().getPlayerList().size()));
+        var playerList = server.getPlayerManager().getPlayerList();
+        if (playerList.isEmpty()) {
+            return false; // No players online
+        }
+        ServerPlayerEntity player = playerList.get(random.nextInt(playerList.size()));
         if (player == null) {
             return false; // No player found
         }

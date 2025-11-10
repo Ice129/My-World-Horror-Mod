@@ -50,7 +50,8 @@ public class PanicedGoal extends BaseBlueice129Goal {
                 double fleeX = entity.getX() + (dx / distance) * 8.0;
                 double fleeZ = entity.getZ() + (dz / distance) * 8.0;
                 
-                entity.getNavigation().startMovingTo(fleeX, entity.getY(), fleeZ, 1.5);
+                // Use speed multiplier of 1.0 since SpeedBoostGoal handles the speed increase
+                entity.getNavigation().startMovingTo(fleeX, entity.getY(), fleeZ, 1.0);
             }
         }
         

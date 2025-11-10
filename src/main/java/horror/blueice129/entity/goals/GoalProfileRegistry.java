@@ -75,10 +75,11 @@ public class GoalProfileRegistry {
     private GoalProfile createPanicedProfile() {
         return GoalProfile.create()
             .addGoal(0, new SwimGoal(entity))
-            .addGoal(1, new PanicedGoal(entity))
-            .addGoal(2, new ErraticHeadMovementGoal(entity))
-            .addGoal(3, new RandomCrouchGoal(entity))
-            .addGoal(4, new HotbarCycleGoal(entity));
+            .addGoal(1, new SpeedBoostGoal(entity, 1.3, EntityState.PANICED))
+            .addGoal(2, new PanicedGoal(entity))
+            .addGoal(3, new ErraticHeadMovementGoal(entity))
+            .addGoal(4, new RandomCrouchGoal(entity))
+            .addGoal(5, new HotbarCycleGoal(entity));
     }
     
     /**
