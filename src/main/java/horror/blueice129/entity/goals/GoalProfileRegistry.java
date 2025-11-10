@@ -41,6 +41,9 @@ public class GoalProfileRegistry {
         
         // PANICED State Profile
         registerProfile(EntityState.PANICED, createPanicedProfile());
+
+        // FLEEING State Profile
+        registerProfile(EntityState.FLEEING, createFleeingProfile());
         
         // SURFACE_HIDING State Profile
         registerProfile(EntityState.SURFACE_HIDING, createSurfaceHidingProfile());
@@ -76,10 +79,20 @@ public class GoalProfileRegistry {
         return GoalProfile.create()
             .addGoal(0, new SwimGoal(entity))
             .addGoal(1, new SpeedBoostGoal(entity, 1.3, EntityState.PANICED))
-            .addGoal(2, new PanicedGoal(entity))
-            .addGoal(3, new ErraticHeadMovementGoal(entity))
-            .addGoal(4, new RandomCrouchGoal(entity))
-            .addGoal(5, new HotbarCycleGoal(entity));
+            // .addGoal(2, new PanicedGoal(entity))
+            .addGoal(2, new ErraticHeadMovementGoal(entity))
+            .addGoal(3, new RandomCrouchGoal(entity))
+            .addGoal(4, new HotbarCycleGoal(entity));
+    }
+
+    /**
+     * Create the goal profile for FLEEING state
+     */
+    private GoalProfile createFleeingProfile() {
+        return GoalProfile.create()
+            .addGoal(0, new SwimGoal(entity))
+            .addGoal(1, new SpeedBoostGoal(entity, 1.5, EntityState.FLEEING))
+            .addGoal(2, new FleeingGoal(entity));
     }
     
     /**
