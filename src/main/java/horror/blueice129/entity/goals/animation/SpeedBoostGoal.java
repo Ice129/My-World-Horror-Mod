@@ -22,7 +22,8 @@ import java.util.UUID;
 public class SpeedBoostGoal extends BaseBlueice129Goal {
     
     // Unique UUID for this speed modifier (randomly generated, persistent)
-    private static final UUID SPEED_MODIFIER_UUID = UUID.fromString("blueice129_speed_boost_UUID");
+    private static final UUID SPEED_MODIFIER_UUID = UUID.fromString("fabbad50-68c0-4165-b67b-9d1c5d525821"); 
+    // ^^^^ remember to have an actual uuid here, otherwise the entity wont summon and you will waste an entire morning figuring that out
     private static final String SPEED_MODIFIER_NAME = "blueice129_speed_boost";
     
     private final Blueice129Entity.EntityState[] activeStates;
