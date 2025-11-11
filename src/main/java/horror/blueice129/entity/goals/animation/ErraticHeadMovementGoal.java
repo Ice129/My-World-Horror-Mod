@@ -23,14 +23,14 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
         // Implement erratic head movement
         // Rapidly change look direction to simulate panic
         if (entity.getRandom().nextInt(2) == 0) {
-            // Generate random yaw and pitch offsets for erratic movement
-            float yawOffset = (entity.getRandom().nextFloat() - 0.5f) * 100f; // -30 to +30 degrees
-            float pitchOffset = (entity.getRandom().nextFloat() - 0.5f) * 80f; // -20 to +20 degrees
+            // random yaw and pitch in any direction 360 degrees
+            float yaw = entity.getRandom().nextFloat() * 360f - 180f;
+            float pitch = entity.getRandom().nextFloat() * 180f - 90f;
             
             // Apply the offsets to current rotation
-            entity.headYaw += yawOffset;
+            entity.headYaw += yaw;
             entity.prevHeadYaw = entity.headYaw;
-            entity.setPitch(entity.getPitch() + pitchOffset);
+            entity.setPitch(entity.getPitch() + pitch);
             
             // Clamp pitch to valid range (-90 to 90 degrees)
             float currentPitch = entity.getPitch();

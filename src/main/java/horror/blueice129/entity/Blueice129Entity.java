@@ -98,7 +98,6 @@ public class Blueice129Entity extends PathAwareEntity {
                 should_logout_after_menu = false;
                 break;
             case PANICED:
-                // TODO: Implement transitions from PANICED to other states
                 // after a certain amount of time panicing, probably 10-20 ticks, transition to
                 // IN_MENUS, passing a param to say to log out after 5-15 ticks
                 // if agro meter high enough, increase chance to enter fleeing/ hiding /
@@ -125,6 +124,10 @@ public class Blueice129Entity extends PathAwareEntity {
                 // if the entity is no loger moving (stuck), go to IN_MENUS
                 if (this.getVelocity().lengthSquared() < 0.01) {
                     setState(EntityState.IN_MENUS);
+                }
+                if (doCostlyChecks && checkPlayerDamagesEntity()) {
+                    setState(EntityState.IN_MENUS);
+                    should_logout_after_menu = true;
                 }
 
 
