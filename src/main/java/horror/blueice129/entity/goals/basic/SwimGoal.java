@@ -10,6 +10,8 @@ import java.util.EnumSet;
  */
 public class SwimGoal extends BaseBlueice129Goal {
     
+    private static final float JUMP_CHANCE = 0.8F;
+    
     public SwimGoal(Blueice129Entity entity) {
         super(entity, 1);
         this.setControls(EnumSet.of(Goal.Control.JUMP));
@@ -27,7 +29,7 @@ public class SwimGoal extends BaseBlueice129Goal {
     
     @Override
     public void tick() {
-        if (entity.getRandom().nextFloat() < 0.8F) {
+        if (entity.getRandom().nextFloat() < JUMP_CHANCE) {
             entity.getJumpControl().setActive();
         }
     }

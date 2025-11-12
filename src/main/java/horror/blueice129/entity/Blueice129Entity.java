@@ -126,7 +126,7 @@ public class Blueice129Entity extends PathAwareEntity {
                 }
                 // if player not within 50 blocks, go back to passive
                 if (doCostlyChecks) {
-                    PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, PLAYER_FLEE_RANGE);
+                    PlayerEntity nearestPlayer = findNearestPlayer(PLAYER_FLEE_RANGE);
                     if (nearestPlayer == null) {
                         setState(EntityState.PASSIVE);
                     }
@@ -178,6 +178,16 @@ public class Blueice129Entity extends PathAwareEntity {
     }
 
     /**
+     * Find the nearest player within the specified range
+     * Helper method to reduce code duplication
+     * @param range The search range in blocks
+     * @return The nearest player within range, or null if none found
+     */
+    private PlayerEntity findNearestPlayer(double range) {
+        return this.getWorld().getClosestPlayer(this, range);
+    }
+
+    /**
      * Check if the player has damaged this entity recently
      */
     private boolean checkPlayerDamagesEntity() {
@@ -193,7 +203,7 @@ public class Blueice129Entity extends PathAwareEntity {
      */
     private boolean checkEntitySeesPlayer() {
         // Find the nearest player within detection range
-        PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, PLAYER_DETECTION_RANGE);
+        PlayerEntity nearestPlayer = findNearestPlayer(PLAYER_DETECTION_RANGE);
 
         if (nearestPlayer == null) {
             return false;

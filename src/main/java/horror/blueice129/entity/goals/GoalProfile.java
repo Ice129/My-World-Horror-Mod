@@ -1,6 +1,7 @@
 package horror.blueice129.entity.goals;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,10 +28,10 @@ public class GoalProfile {
     }
     
     /**
-     * Get all goal entries in this profile
+     * Get all goal entries in this profile as an unmodifiable list
      */
     public List<GoalEntry> getGoals() {
-        return new ArrayList<>(goals);
+        return Collections.unmodifiableList(goals);
     }
     
     /**
