@@ -1,6 +1,7 @@
 package horror.blueice129.entity;
 
 import horror.blueice129.entity.goals.GoalProfileRegistry;
+import horror.blueice129.HorrorMod129;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
@@ -22,7 +23,7 @@ import net.minecraft.world.World;
  */
 public class Blueice129Entity extends PathAwareEntity {
 
-    private EntityState currentState = EntityState.PASSIVE;
+    private EntityState currentState;
     private final int costlyCheckTickCooldown = 10;
     private int costlyCheckTickCounter = 0;
     private int ticksInCurrentState = 0;
@@ -102,7 +103,7 @@ public class Blueice129Entity extends PathAwareEntity {
                 // IN_MENUS, passing a param to say to log out after 5-15 ticks
                 // if agro meter high enough, increase chance to enter fleeing/ hiding /
                 // aggravated states
-                if (ticksInCurrentState > 20 * 30) {
+                if (ticksInCurrentState > 20 * 0.5) {
                     setState(EntityState.FLEEING);
                     should_logout_after_menu = true; // done here so it doesn't log out when implementing higher aggro
                                                      // actions
@@ -110,8 +111,7 @@ public class Blueice129Entity extends PathAwareEntity {
 
                 break;
             case FLEEING:
-                // TODO: Implement transitions from FLEEING to other states
-                if (ticksInCurrentState > 20 * 60) {
+                if (ticksInCurrentState > 20 * 5) {
                     setState(EntityState.IN_MENUS);
                 }
                 // if player not within 50 blocks, go back to passive
@@ -121,12 +121,14 @@ public class Blueice129Entity extends PathAwareEntity {
                         setState(EntityState.PASSIVE);
                     }
                 }
-                // if the entity is no loger moving (stuck), go to IN_MENUS
-                if (this.getVelocity().lengthSquared() < 0.01) {
+                // if the entity is no longer moving (stuck), go to IN_MENUS
+                if (this.getVelocity().lengthSquared() < 0.01 && ticksInCurrentState > 20 * 2) {
                     setState(EntityState.IN_MENUS);
+                    HorrorMod129.LOGGER.info("Blueice129Entity: FLEEING state - entity stuck, transitioning to IN_MENUS");
+                    should_logout_after_menu = true;
                 }
                 if (doCostlyChecks && checkPlayerDamagesEntity()) {
-                    setState(EntityState.IN_MENUS);
+                    setState(EntityState.PANICED);
                     should_logout_after_menu = true;
                 }
 
@@ -243,6 +245,7 @@ public class Blueice129Entity extends PathAwareEntity {
         super(entityType, world);
         // Initialize the goal profile registry
         this.goalRegistry = new GoalProfileRegistry(this);
+        this.currentState = EntityState.PASSIVE;
     }
 
     /**
