@@ -12,6 +12,9 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
     private static final int LOOK_CHANGE_INTERVAL = 1; // Change look direction every tick
     private static final double LOOK_DISTANCE = 10.0; // Distance to look target
     private static final double MIN_ANGLE_DIFFERENCE = Math.PI * 0.6; // Minimum 108 degrees difference
+    private static final double MIN_PITCH_DIFFERENCE = Math.PI * 0.3; // Minimum 54 degrees pitch difference
+    private static final int MAX_ANGLE_ATTEMPTS = 10; // Maximum attempts to find a far enough angle
+    
     private int tickCounter = 0;
     private double lastYaw = 0;
     private double lastPitch = 0;
@@ -25,7 +28,6 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
         return isInState(Blueice129Entity.EntityState.PANICED);
     }
 
-    //IMPROVE: make this better, but its good enough for now
     @Override
     public void tick() {
         tickCounter++;
@@ -42,7 +44,7 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
                 yaw = entity.getRandom().nextDouble() * 2.0 * Math.PI;
                 pitch = (entity.getRandom().nextDouble() - 0.5) * Math.PI;
                 attempts++;
-            } while (attempts < 10 && !isFarEnough(yaw, pitch));
+            } while (attempts < MAX_ANGLE_ATTEMPTS && !isFarEnough(yaw, pitch));
             
             lastYaw = yaw;
             lastPitch = pitch;
@@ -61,7 +63,7 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
      * Check if the new angles are far enough from the previous ones
      */
     private boolean isFarEnough(double yaw, double pitch) {
-        // Calculate angular distance (simplified check using both yaw and pitch difference)
+        // Calculate angular distance using both yaw and pitch difference
         double yawDiff = Math.abs(yaw - lastYaw);
         double pitchDiff = Math.abs(pitch - lastPitch);
         
@@ -71,6 +73,6 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
         }
         
         // Require significant change in at least one axis
-        return yawDiff > MIN_ANGLE_DIFFERENCE || pitchDiff > MIN_ANGLE_DIFFERENCE * 0.5;
+        return yawDiff > MIN_ANGLE_DIFFERENCE || pitchDiff > MIN_PITCH_DIFFERENCE;
     }
 }

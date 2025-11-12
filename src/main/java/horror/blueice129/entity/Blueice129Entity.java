@@ -23,11 +23,21 @@ import net.minecraft.world.World;
  */
 public class Blueice129Entity extends PathAwareEntity {
 
+    // Constants for entity behavior configuration
+    private static final int COSTLY_CHECK_TICK_COOLDOWN = 10;
+    private static final double PLAYER_DETECTION_RANGE = 64.0;
+    private static final double PLAYER_FLEE_RANGE = 50.0;
+    private static final double FIELD_OF_VIEW_THRESHOLD = 0.7; // ~45 degree FOV
+    private static final double VELOCITY_STOPPED_THRESHOLD = 0.01;
+    private static final int PANIC_DURATION_TICKS = 10; // 0.5 seconds (20 ticks = 1 second)
+    private static final int FLEEING_DURATION_TICKS = 100; // 5 seconds
+    private static final int FLEEING_STUCK_CHECK_TICKS = 40; // 2 seconds
+    private static final int LOGOUT_DELAY_TICKS = 20; // 1 second
+
     private EntityState currentState;
-    private final int costlyCheckTickCooldown = 10;
     private int costlyCheckTickCounter = 0;
     private int ticksInCurrentState = 0;
-    private boolean should_logout_after_menu = false;
+    private boolean shouldLogoutAfterMenu = false;
     private GoalProfileRegistry goalRegistry;
 
     public enum EntityState {
@@ -78,7 +88,7 @@ public class Blueice129Entity extends PathAwareEntity {
         costlyCheckTickCounter++;
         ticksInCurrentState++;
 
-        boolean doCostlyChecks = costlyCheckTickCounter >= costlyCheckTickCooldown;
+        boolean doCostlyChecks = costlyCheckTickCounter >= COSTLY_CHECK_TICK_COOLDOWN;
         boolean seesPlayer = false;
         if (doCostlyChecks) {
             seesPlayer = checkEntitySeesPlayer();
@@ -96,40 +106,40 @@ public class Blueice129Entity extends PathAwareEntity {
                 if (doCostlyChecks && checkPlayerDamagesEntity()) {
                     setState(EntityState.PANICED);
                 }
-                should_logout_after_menu = false;
+                shouldLogoutAfterMenu = false;
                 break;
             case PANICED:
                 // after a certain amount of time panicing, probably 10-20 ticks, transition to
                 // IN_MENUS, passing a param to say to log out after 5-15 ticks
                 // if agro meter high enough, increase chance to enter fleeing/ hiding /
                 // aggravated states
-                if (ticksInCurrentState > 20 * 0.5) {
+                if (ticksInCurrentState > PANIC_DURATION_TICKS) {
                     setState(EntityState.FLEEING);
-                    should_logout_after_menu = true; // done here so it doesn't log out when implementing higher aggro
+                    shouldLogoutAfterMenu = true; // done here so it doesn't log out when implementing higher aggro
                                                      // actions
                 }
 
                 break;
             case FLEEING:
-                if (ticksInCurrentState > 20 * 5) {
+                if (ticksInCurrentState > FLEEING_DURATION_TICKS) {
                     setState(EntityState.IN_MENUS);
                 }
                 // if player not within 50 blocks, go back to passive
                 if (doCostlyChecks) {
-                    PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 50.0);
+                    PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, PLAYER_FLEE_RANGE);
                     if (nearestPlayer == null) {
                         setState(EntityState.PASSIVE);
                     }
                 }
                 // if the entity is no longer moving (stuck), go to IN_MENUS
-                if (this.getVelocity().lengthSquared() < 0.01 && ticksInCurrentState > 20 * 2) {
+                if (this.getVelocity().lengthSquared() < VELOCITY_STOPPED_THRESHOLD && ticksInCurrentState > FLEEING_STUCK_CHECK_TICKS) {
                     setState(EntityState.IN_MENUS);
                     HorrorMod129.LOGGER.info("Blueice129Entity: FLEEING state - entity stuck, transitioning to IN_MENUS");
-                    should_logout_after_menu = true;
+                    shouldLogoutAfterMenu = true;
                 }
                 if (doCostlyChecks && checkPlayerDamagesEntity()) {
                     setState(EntityState.PANICED);
-                    should_logout_after_menu = true;
+                    shouldLogoutAfterMenu = true;
                 }
 
 
@@ -142,7 +152,7 @@ public class Blueice129Entity extends PathAwareEntity {
                 break;
             case IN_MENUS:
                 // TODO: Implement transitions from IN_MENUS to other states
-                if (ticksInCurrentState > 20 && should_logout_after_menu) {
+                if (ticksInCurrentState > LOGOUT_DELAY_TICKS && shouldLogoutAfterMenu) {
                     // despawn this entity and send a logout message to the chat
                     if (this.getWorld().getServer() != null) {
                         this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text
@@ -177,14 +187,13 @@ public class Blueice129Entity extends PathAwareEntity {
     }
 
     /**
-     * Check if the entity can see the player within 64 blocks
+     * Check if the entity can see the player within detection range
      * Performs a raycast from the entity's eye position to the player's position
-     * blocks
      * and checks if the player is within the entity's field of view
      */
     private boolean checkEntitySeesPlayer() {
-        // Find the nearest player within 64 blocks
-        PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 64.0);
+        // Find the nearest player within detection range
+        PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, PLAYER_DETECTION_RANGE);
 
         if (nearestPlayer == null) {
             return false;
@@ -202,7 +211,7 @@ public class Blueice129Entity extends PathAwareEntity {
 
         // Normalize the direction to player
         double distanceToPlayer = Math.sqrt(dx * dx + dz * dz);
-        if (distanceToPlayer < 0.01) {
+        if (distanceToPlayer < VELOCITY_STOPPED_THRESHOLD) {
             return true; // Player is extremely close, can definitely see them
         }
 
@@ -220,9 +229,8 @@ public class Blueice129Entity extends PathAwareEntity {
         // degrees)
         double dotProduct = dx * lookDirX + dz * lookDirZ;
 
-        // Use a threshold of 0.0 for 180-degree FOV (can see anything in front)
-        // Adjust this value for narrower FOV (0.5 ≈ 60°, 0.7 ≈ 45°, 0.866 ≈ 30°)
-        return dotProduct > 0.7;
+        // Use configured threshold for field of view
+        return dotProduct > FIELD_OF_VIEW_THRESHOLD;
     }
 
     /**

@@ -41,7 +41,8 @@ public abstract class BaseBlueice129Goal extends Goal {
      */
     @Override
     public final boolean canStart() {
-        if (tickCounter++ < checkInterval) {
+        // Only check conditions at the specified interval
+        if (++tickCounter < checkInterval) {
             return false;
         }
         tickCounter = 0;
