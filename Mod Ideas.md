@@ -84,4 +84,4 @@
 
 - setting to moody brightness
 
-
+- nights will sometimes be 20% - 100% longer occasionally
