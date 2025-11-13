@@ -2,7 +2,7 @@
 ### commented out ideas are implmented
 
 ## Entity Behavior Ideas
-- if Blueice129 sees the player, it has a chance to get scared, look like their mouse shook, go still nd then log out
+- if Blueice129 sees the player, it has a chance to get scared, look like their mouse shook, go still and then log out
 
 - register and remember if Blueice129 is in the world at the moment or not (for entity sightings)
 
@@ -85,3 +85,5 @@
 <!-- - setting to moody brightness -->
 
 - nights will sometimes be 20% - 100% longer occasionally
+
+- background panorama is the same seed, but at night with a building in the distance and maybe a few other human made things like torches and broken trees

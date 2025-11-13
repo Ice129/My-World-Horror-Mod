@@ -6,6 +6,7 @@ import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.MusicVolumeLocker;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
+import horror.blueice129.feature.MouseSensitivityChanger;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.server.MinecraftServer;
@@ -20,6 +21,7 @@ import net.minecraft.util.math.random.Random;
  * - Music Volume: Locks to minimum 50% every 20 ticks (1 second)
  * - Brightness: decreases to moody gradually over 100 ticks, every 10 - 40-agro*2 minutes
  * - FPS: Caps to 30 every 30 - 60-agro*2 minutes
+ * - Mouse Sensitivity: Decreases to minimum over 300 ticks, every 15 - 45-agro*2 minutes
  */
 public class SettingsScheduler {
     private static final Random random = Random.create();
@@ -42,6 +44,13 @@ public class SettingsScheduler {
     private static final int FPS_BASE_MAX_DELAY = 72000; // 60 minutes
     private static final int FPS_BASE_MIN_DELAY = 36000; // 30 minutes
     private static final String TIMER_ID_FPS = "settingsTimerFps";
+
+    // Mouse sensitivity timer settings (15-45 minutes, reduced by agro*2)
+    private static final int SENSITIVITY_BASE_MAX_DELAY = 54000; // 45 minutes
+    private static final int SENSITIVITY_BASE_MIN_DELAY = 18000; // 15 minutes
+    private static final int SENSITIVITY_REDUCTION_TICKS = 300; // 300 ticks (15 seconds) for gradual reduction
+    private static final String TIMER_ID_SENSITIVITY = "settingsTimerMouseSensitivity";
+    private static final String TIMER_ID_SENSITIVITY_PROGRESS = "settingsTimerMouseSensitivityProgress";
 
     /**
      * Registers the tick event to handle the settings scheduler.
@@ -85,6 +94,19 @@ public class SettingsScheduler {
                     state.setTimer(TIMER_ID_FPS, delay);
                     HorrorMod129.LOGGER.info("SettingsScheduler (FPS) initialized with timer: " 
                         + state.getTimer(TIMER_ID_FPS) + " ticks");
+                }
+                
+                // Initialize mouse sensitivity timer
+                if (!state.hasTimer(TIMER_ID_SENSITIVITY)) {
+                    int delay = getRandomDelayWithAgro(state, SENSITIVITY_BASE_MIN_DELAY, SENSITIVITY_BASE_MAX_DELAY);
+                    state.setTimer(TIMER_ID_SENSITIVITY, delay);
+                    HorrorMod129.LOGGER.info("SettingsScheduler (Mouse Sensitivity) initialized with timer: " 
+                        + state.getTimer(TIMER_ID_SENSITIVITY) + " ticks");
+                }
+                
+                // Initialize mouse sensitivity progress timer (starts at 0)
+                if (!state.hasTimer(TIMER_ID_SENSITIVITY_PROGRESS)) {
+                    state.setTimer(TIMER_ID_SENSITIVITY_PROGRESS, 0);
                 }
             }
         });
@@ -146,6 +168,32 @@ public class SettingsScheduler {
                     + FpsLimiter.getCurrentFpsLimit());
                 int delay = getRandomDelayWithAgro(state, FPS_BASE_MIN_DELAY, FPS_BASE_MAX_DELAY);
                 state.setTimer(TIMER_ID_FPS, delay);
+            }
+            
+            // Handle mouse sensitivity timer
+            int sensitivityTimer = state.decrementTimer(TIMER_ID_SENSITIVITY, 1);
+            if (sensitivityTimer <= 0) {
+                // Start the gradual reduction process
+                int progress = state.getTimer(TIMER_ID_SENSITIVITY_PROGRESS);
+                if (progress < SENSITIVITY_REDUCTION_TICKS) {
+                    // Continue reducing sensitivity
+                    double initialSensitivity = MouseSensitivityChanger.getMouseSensitivity();
+                    if (progress == 0) {
+                        // Store initial sensitivity when starting
+                        HorrorMod129.LOGGER.info("Starting mouse sensitivity reduction from " 
+                            + (initialSensitivity * 100) + "%");
+                    }
+                    MouseSensitivityChanger.decreaseMouseSensitivityGradually(0.0, progress, SENSITIVITY_REDUCTION_TICKS);
+                    state.setTimer(TIMER_ID_SENSITIVITY_PROGRESS, progress + 1);
+                    state.setTimer(TIMER_ID_SENSITIVITY, 1); // Check again next tick
+                } else {
+                    // Reduction complete, reset for next cycle
+                    HorrorMod129.LOGGER.info("Mouse sensitivity reduction complete. Current sensitivity: " 
+                        + (MouseSensitivityChanger.getMouseSensitivity() * 100) + "%");
+                    state.setTimer(TIMER_ID_SENSITIVITY_PROGRESS, 0);
+                    int delay = getRandomDelayWithAgro(state, SENSITIVITY_BASE_MIN_DELAY, SENSITIVITY_BASE_MAX_DELAY);
+                    state.setTimer(TIMER_ID_SENSITIVITY, delay);
+                }
             }
         }
     }

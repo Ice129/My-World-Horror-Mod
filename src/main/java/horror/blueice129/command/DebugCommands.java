@@ -15,6 +15,7 @@ import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.MusicVolumeLocker;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
+import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.debug.LineOfSightChecker;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
@@ -285,6 +286,16 @@ public class DebugCommands {
                                             .executes(context -> setFpsLimit(
                                                     context.getSource(),
                                                     IntegerArgumentType.getInteger(context, "fps"))))))
+                    .then(literal("sensitivity")
+                            .then(literal("get")
+                                    .executes(context -> getMouseSensitivity(context.getSource())))
+                            .then(literal("setmin")
+                                    .executes(context -> setMinimumMouseSensitivity(context.getSource())))
+                            .then(literal("set")
+                                    .then(argument("value", IntegerArgumentType.integer(0, 100))
+                                            .executes(context -> setMouseSensitivity(
+                                                    context.getSource(),
+                                                    IntegerArgumentType.getInteger(context, "value"))))))
             );
         }
     }
@@ -704,6 +715,58 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set FPS limit: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Get the current mouse sensitivity
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getMouseSensitivity(ServerCommandSource source) {
+        try {
+            double sensitivity = MouseSensitivityChanger.getMouseSensitivity();
+            source.sendFeedback(() -> Text.literal("Current mouse sensitivity: " + (sensitivity * 100) + "%"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get mouse sensitivity: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Set mouse sensitivity to minimum
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int setMinimumMouseSensitivity(ServerCommandSource source) {
+        try {
+            MouseSensitivityChanger.setToMinimumSensitivity();
+            double newSensitivity = MouseSensitivityChanger.getMouseSensitivity();
+            source.sendFeedback(() -> Text.literal("Mouse sensitivity set to minimum. Current sensitivity: " + (newSensitivity * 100) + "%"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set mouse sensitivity: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Set mouse sensitivity to a custom value (0-100)
+     * @param source Command source
+     * @param value The desired sensitivity as a percentage (0-100)
+     * @return Command success value
+     */
+    private static int setMouseSensitivity(ServerCommandSource source, int value) {
+        try {
+            double sensitivity = value / 100.0;
+            MouseSensitivityChanger.setMouseSensitivity(sensitivity);
+            double newSensitivity = MouseSensitivityChanger.getMouseSensitivity();
+            source.sendFeedback(() -> Text.literal("Mouse sensitivity set to: " + (newSensitivity * 100) + "%"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set mouse sensitivity: " + e.getMessage()));
             return 0;
         }
     }
