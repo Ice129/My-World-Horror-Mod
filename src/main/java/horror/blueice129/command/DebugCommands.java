@@ -11,6 +11,10 @@ import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
 import horror.blueice129.feature.CavePreMiner;
+import horror.blueice129.feature.RenderDistanceChanger;
+import horror.blueice129.feature.MusicVolumeLocker;
+import horror.blueice129.feature.BrightnessChanger;
+import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.debug.LineOfSightChecker;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
@@ -234,6 +238,53 @@ public class DebugCommands {
                                     .executes(context -> setAgroMeter(
                                             context.getSource(),
                                             IntegerArgumentType.getInteger(context, "level")))))
+            );
+            
+            // Register render distance commands
+            dispatcher.register(literal("renderdistance")
+                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
+                    .then(literal("get")
+                            .executes(context -> getRenderDistance(context.getSource())))
+                    .then(literal("set")
+                            .then(argument("distance", IntegerArgumentType.integer(2, 128))
+                                    .executes(context -> setRenderDistance(
+                                            context.getSource(),
+                                            IntegerArgumentType.getInteger(context, "distance")))))
+                    .then(literal("increase")
+                            .then(argument("amount", IntegerArgumentType.integer(1, 32))
+                                    .executes(context -> increaseRenderDistance(
+                                            context.getSource(),
+                                            IntegerArgumentType.getInteger(context, "amount")))))
+                    .then(literal("decrease")
+                            .then(argument("amount", IntegerArgumentType.integer(1, 32))
+                                    .executes(context -> decreaseRenderDistance(
+                                            context.getSource(),
+                                            IntegerArgumentType.getInteger(context, "amount")))))
+            );
+            
+            // Register settings commands
+            dispatcher.register(literal("settings")
+                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
+                    .then(literal("music")
+                            .then(literal("get")
+                                    .executes(context -> getMusicVolume(context.getSource())))
+                            .then(literal("lock")
+                                    .executes(context -> lockMusicVolume(context.getSource()))))
+                    .then(literal("brightness")
+                            .then(literal("get")
+                                    .executes(context -> getBrightness(context.getSource())))
+                            .then(literal("setmoody")
+                                    .executes(context -> setMoodyBrightness(context.getSource()))))
+                    .then(literal("fps")
+                            .then(literal("get")
+                                    .executes(context -> getFpsLimit(context.getSource())))
+                            .then(literal("cap30")
+                                    .executes(context -> capFpsTo30(context.getSource())))
+                            .then(literal("set")
+                                    .then(argument("fps", IntegerArgumentType.integer(10, 260))
+                                            .executes(context -> setFpsLimit(
+                                                    context.getSource(),
+                                                    IntegerArgumentType.getInteger(context, "fps"))))))
             );
         }
     }
@@ -462,6 +513,197 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Error while filling rendered blocks: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Get the current render distance
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getRenderDistance(ServerCommandSource source) {
+        try {
+            int distance = RenderDistanceChanger.getRenderDistance();
+            source.sendFeedback(() -> Text.literal("Current render distance: " + distance + " chunks"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get render distance: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Set the render distance to a specific value
+     * @param source Command source
+     * @param distance New render distance (2-128 chunks)
+     * @return Command success value
+     */
+    private static int setRenderDistance(ServerCommandSource source, int distance) {
+        try {
+            RenderDistanceChanger.setRenderDistance(distance);
+            final int finalDistance = Math.max(2, Math.min(128, distance));
+            source.sendFeedback(() -> Text.literal("Render distance set to: " + finalDistance + " chunks"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set render distance: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Increase the render distance by a specified amount
+     * @param source Command source
+     * @param amount Amount to increase by (1-32 chunks)
+     * @return Command success value
+     */
+    private static int increaseRenderDistance(ServerCommandSource source, int amount) {
+        try {
+            int oldDistance = RenderDistanceChanger.getRenderDistance();
+            RenderDistanceChanger.increaseRenderDistance(amount);
+            int newDistance = RenderDistanceChanger.getRenderDistance();
+            source.sendFeedback(() -> Text.literal("Render distance increased from " + oldDistance + " to " + newDistance + " chunks"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to increase render distance: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Decrease the render distance by a specified amount
+     * @param source Command source
+     * @param amount Amount to decrease by (1-32 chunks)
+     * @return Command success value
+     */
+    private static int decreaseRenderDistance(ServerCommandSource source, int amount) {
+        try {
+            int oldDistance = RenderDistanceChanger.getRenderDistance();
+            RenderDistanceChanger.decreaseRenderDistance(amount);
+            int newDistance = RenderDistanceChanger.getRenderDistance();
+            source.sendFeedback(() -> Text.literal("Render distance decreased from " + oldDistance + " to " + newDistance + " chunks"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to decrease render distance: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Get the current music volume
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getMusicVolume(ServerCommandSource source) {
+        try {
+            double volume = MusicVolumeLocker.getMusicVolume();
+            double minVolume = MusicVolumeLocker.getMinimumMusicVolume();
+            source.sendFeedback(() -> Text.literal("Current music volume: " + (volume * 100) + "% (minimum: " + (minVolume * 100) + "%)"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get music volume: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Lock music volume to minimum 50%
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int lockMusicVolume(ServerCommandSource source) {
+        try {
+            MusicVolumeLocker.enforceMinimumMusicVolume();
+            double newVolume = MusicVolumeLocker.getMusicVolume();
+            source.sendFeedback(() -> Text.literal("Music volume locked to minimum. Current volume: " + (newVolume * 100) + "%"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to lock music volume: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Get the current brightness level
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getBrightness(ServerCommandSource source) {
+        try {
+            double brightness = BrightnessChanger.getBrightness();
+            String description = brightness == 0.0 ? " (moody)" : brightness == 1.0 ? " (bright)" : "";
+            source.sendFeedback(() -> Text.literal("Current brightness: " + (brightness * 100) + "%" + description), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get brightness: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Set brightness to moody (minimum)
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int setMoodyBrightness(ServerCommandSource source) {
+        try {
+            BrightnessChanger.setToMoodyBrightness();
+            double newBrightness = BrightnessChanger.getBrightness();
+            source.sendFeedback(() -> Text.literal("Brightness set to moody (minimum). Current brightness: " + (newBrightness * 100) + "%"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set brightness: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Get the current FPS limit
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getFpsLimit(ServerCommandSource source) {
+        try {
+            int fpsLimit = FpsLimiter.getCurrentFpsLimit();
+            source.sendFeedback(() -> Text.literal("Current FPS limit: " + fpsLimit), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get FPS limit: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Cap FPS to 30
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int capFpsTo30(ServerCommandSource source) {
+        try {
+            FpsLimiter.capFpsTo30();
+            int newFps = FpsLimiter.getCurrentFpsLimit();
+            source.sendFeedback(() -> Text.literal("FPS capped to 30. Current FPS limit: " + newFps), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to cap FPS: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Set a custom FPS limit
+     * @param source Command source
+     * @param fps The desired FPS limit (10-260)
+     * @return Command success value
+     */
+    private static int setFpsLimit(ServerCommandSource source, int fps) {
+        try {
+            FpsLimiter.setFpsLimit(fps);
+            int newFps = FpsLimiter.getCurrentFpsLimit();
+            source.sendFeedback(() -> Text.literal("FPS limit set to: " + newFps), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set FPS limit: " + e.getMessage()));
             return 0;
         }
     }
