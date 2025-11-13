@@ -3,11 +3,9 @@ package horror.blueice129.feature;
 import net.minecraft.client.MinecraftClient;
 
 /**
- * Caps FPS to 30 or lower
  * This feature can create lag and tension when an entity is nearby
  */
 public class FpsLimiter {
-    private static final int TARGET_FPS = 30;
 
     /**
      * Sets the FPS limit to 30
@@ -19,7 +17,7 @@ public class FpsLimiter {
             return;
         }
 
-        client.options.getMaxFps().setValue(TARGET_FPS);
+        client.options.getMaxFps().setValue(30);
         client.options.write();
     }
 
@@ -50,13 +48,5 @@ public class FpsLimiter {
         int clampedFps = Math.max(10, Math.min(260, fps));
         client.options.getMaxFps().setValue(clampedFps);
         client.options.write();
-    }
-
-    /**
-     * Gets the target FPS for limiting
-     * @return Target FPS (30)
-     */
-    public static int getTargetFps() {
-        return TARGET_FPS;
     }
 }

@@ -16,34 +16,31 @@ import net.minecraft.util.math.random.Random;
 /**
  * This class schedules settings modification events
  * Each setting has its own timer and triggers independently
- * - Render Distance: Decreases by 2 every 20-60 minutes
- * - Music Volume: Locks to minimum 50% every 15-45 minutes
- * - Brightness: Sets to moody every 25-55 minutes
- * - FPS: Caps to 30 every 30-60 minutes
+ * - Render Distance: Decreases by 2 every 20 - 40-agro*2 minutes
+ * - Music Volume: Locks to minimum 50% every 20 ticks (1 second)
+ * - Brightness: decreases to moody gradually over 100 ticks, every 10 - 40-agro*2 minutes
+ * - FPS: Caps to 30 every 30 - 60-agro*2 minutes
  */
 public class SettingsScheduler {
     private static final Random random = Random.create();
 
-    // TODO: make these linked with agro meter
-
-    // Render distance timer settings
-    private static final int RENDER_MAX_DELAY = 72000; // 60 minutes
-    private static final int RENDER_MIN_DELAY = 24000; // 20 minutes
+    // Render distance timer settings (20-40 minutes, reduced by agro*2)
+    private static final int RENDER_BASE_MAX_DELAY = 48000; // 40 minutes
+    private static final int RENDER_BASE_MIN_DELAY = 24000; // 20 minutes
     private static final String TIMER_ID_RENDER = "settingsTimerRenderDistance";
 
-    // Music volume timer settings
-    private static final int MUSIC_MAX_DELAY = 21; // 45 minutes
-    private static final int MUSIC_MIN_DELAY = 22; // 15 minutes
+    // Music volume timer settings (every 20 ticks / 1 second)
+    private static final int MUSIC_CHECK_INTERVAL = 20; // 20 ticks (1 second)
     private static final String TIMER_ID_MUSIC = "settingsTimerMusicVolume";
 
-    // Brightness timer settings
-    private static final int BRIGHTNESS_MAX_DELAY = 66000; // 55 minutes
-    private static final int BRIGHTNESS_MIN_DELAY = 30000; // 25 minutes
+    // Brightness timer settings (10-40 minutes, reduced by agro*2)
+    private static final int BRIGHTNESS_BASE_MAX_DELAY = 48000; // 40 minutes
+    private static final int BRIGHTNESS_BASE_MIN_DELAY = 12000; // 10 minutes
     private static final String TIMER_ID_BRIGHTNESS = "settingsTimerBrightness";
 
-    // FPS timer settings
-    private static final int FPS_MAX_DELAY = 72000; // 60 minutes
-    private static final int FPS_MIN_DELAY = 36000; // 30 minutes
+    // FPS timer settings (30-60 minutes, reduced by agro*2)
+    private static final int FPS_BASE_MAX_DELAY = 72000; // 60 minutes
+    private static final int FPS_BASE_MIN_DELAY = 36000; // 30 minutes
     private static final String TIMER_ID_FPS = "settingsTimerFps";
 
     /**
@@ -61,28 +58,31 @@ public class SettingsScheduler {
                 
                 // Initialize render distance timer
                 if (!state.hasTimer(TIMER_ID_RENDER)) {
-                    state.setTimer(TIMER_ID_RENDER, getRandomDelay(RENDER_MIN_DELAY, RENDER_MAX_DELAY));
+                    int delay = getRandomDelayWithAgro(state, RENDER_BASE_MIN_DELAY, RENDER_BASE_MAX_DELAY);
+                    state.setTimer(TIMER_ID_RENDER, delay);
                     HorrorMod129.LOGGER.info("SettingsScheduler (Render Distance) initialized with timer: " 
                         + state.getTimer(TIMER_ID_RENDER) + " ticks");
                 }
                 
                 // Initialize music volume timer
                 if (!state.hasTimer(TIMER_ID_MUSIC)) {
-                    state.setTimer(TIMER_ID_MUSIC, getRandomDelay(MUSIC_MIN_DELAY, MUSIC_MAX_DELAY));
+                    state.setTimer(TIMER_ID_MUSIC, MUSIC_CHECK_INTERVAL);
                     HorrorMod129.LOGGER.info("SettingsScheduler (Music Volume) initialized with timer: " 
                         + state.getTimer(TIMER_ID_MUSIC) + " ticks");
                 }
                 
                 // Initialize brightness timer
                 if (!state.hasTimer(TIMER_ID_BRIGHTNESS)) {
-                    state.setTimer(TIMER_ID_BRIGHTNESS, getRandomDelay(BRIGHTNESS_MIN_DELAY, BRIGHTNESS_MAX_DELAY));
+                    int delay = getRandomDelayWithAgro(state, BRIGHTNESS_BASE_MIN_DELAY, BRIGHTNESS_BASE_MAX_DELAY);
+                    state.setTimer(TIMER_ID_BRIGHTNESS, delay);
                     HorrorMod129.LOGGER.info("SettingsScheduler (Brightness) initialized with timer: " 
                         + state.getTimer(TIMER_ID_BRIGHTNESS) + " ticks");
                 }
                 
                 // Initialize FPS timer
                 if (!state.hasTimer(TIMER_ID_FPS)) {
-                    state.setTimer(TIMER_ID_FPS, getRandomDelay(FPS_MIN_DELAY, FPS_MAX_DELAY));
+                    int delay = getRandomDelayWithAgro(state, FPS_BASE_MIN_DELAY, FPS_BASE_MAX_DELAY);
+                    state.setTimer(TIMER_ID_FPS, delay);
                     HorrorMod129.LOGGER.info("SettingsScheduler (FPS) initialized with timer: " 
                         + state.getTimer(TIMER_ID_FPS) + " ticks");
                 }
@@ -115,7 +115,8 @@ public class SettingsScheduler {
                 RenderDistanceChanger.decreaseRenderDistance(2);
                 HorrorMod129.LOGGER.info("Render distance decreased by 2. New render distance: " 
                     + RenderDistanceChanger.getRenderDistance());
-                state.setTimer(TIMER_ID_RENDER, getRandomDelay(RENDER_MIN_DELAY, RENDER_MAX_DELAY));
+                int delay = getRandomDelayWithAgro(state, RENDER_BASE_MIN_DELAY, RENDER_BASE_MAX_DELAY);
+                state.setTimer(TIMER_ID_RENDER, delay);
             }
             
             // Handle music volume timer - check every 20 ticks (1 second)
@@ -124,7 +125,7 @@ public class SettingsScheduler {
                 MusicVolumeLocker.enforceMinimumMusicVolume();
                 HorrorMod129.LOGGER.info("Music volume locked to minimum. Current volume: " 
                     + (MusicVolumeLocker.getMusicVolume() * 100) + "%");
-                state.setTimer(TIMER_ID_MUSIC, 20); // Check again in 20 ticks (1 second)
+                state.setTimer(TIMER_ID_MUSIC, MUSIC_CHECK_INTERVAL); // Check again in 20 ticks (1 second)
             }
             
             // Handle brightness timer
@@ -133,7 +134,8 @@ public class SettingsScheduler {
                 BrightnessChanger.setToMoodyBrightness();
                 HorrorMod129.LOGGER.info("Brightness set to moody (minimum). Current brightness: " 
                     + BrightnessChanger.getBrightness());
-                state.setTimer(TIMER_ID_BRIGHTNESS, getRandomDelay(BRIGHTNESS_MIN_DELAY, BRIGHTNESS_MAX_DELAY));
+                int delay = getRandomDelayWithAgro(state, BRIGHTNESS_BASE_MIN_DELAY, BRIGHTNESS_BASE_MAX_DELAY);
+                state.setTimer(TIMER_ID_BRIGHTNESS, delay);
             }
             
             // Handle FPS timer
@@ -142,19 +144,29 @@ public class SettingsScheduler {
                 FpsLimiter.capFpsTo30();
                 HorrorMod129.LOGGER.info("FPS capped to 30. Current FPS limit: " 
                     + FpsLimiter.getCurrentFpsLimit());
-                state.setTimer(TIMER_ID_FPS, getRandomDelay(FPS_MIN_DELAY, FPS_MAX_DELAY));
+                int delay = getRandomDelayWithAgro(state, FPS_BASE_MIN_DELAY, FPS_BASE_MAX_DELAY);
+                state.setTimer(TIMER_ID_FPS, delay);
             }
         }
     }
 
     /**
-     * Generates a random delay between min and max.
+     * Generates a random delay between min and max, adjusted by the agro meter.
+     * The delay is reduced by (agro * 2) minutes as per the Javadoc formula.
      * 
-     * @param minDelay Minimum delay in ticks
-     * @param maxDelay Maximum delay in ticks
-     * @return A random number of ticks to wait
+     * @param state The persistent state containing the agro meter
+     * @param baseMinDelay Base minimum delay in ticks
+     * @param baseMaxDelay Base maximum delay in ticks
+     * @return A random number of ticks to wait, adjusted for agro level
      */
-    private static int getRandomDelay(int minDelay, int maxDelay) {
-        return minDelay + random.nextInt(maxDelay - minDelay + 1);
+    private static int getRandomDelayWithAgro(HorrorModPersistentState state, int baseMinDelay, int baseMaxDelay) {
+        int agroMeter = state.getIntValue("agroMeter", 0);
+        // Reduce delays by agro*2 minutes (agro*2 * 60 seconds * 20 ticks)
+        int agroReduction = agroMeter * 2 * 60 * 20;
+        
+        int adjustedMinDelay = Math.max(1, baseMinDelay - agroReduction);
+        int adjustedMaxDelay = Math.max(adjustedMinDelay, baseMaxDelay - agroReduction);
+        
+        return adjustedMinDelay + random.nextInt(adjustedMaxDelay - adjustedMinDelay + 1);
     }
 }
