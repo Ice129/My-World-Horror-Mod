@@ -2,7 +2,7 @@
 ### commented out ideas are implmented
 
 ## Entity Behavior Ideas
-- if Blueice129 sees the player, it has a chance to get scared, look like their mouse shook, go still nd then log out
+- if Blueice129 sees the player, it has a chance to get scared, look like their mouse shook, go still and then log out
 
 - register and remember if Blueice129 is in the world at the moment or not (for entity sightings)
 
@@ -74,14 +74,16 @@
 - Compass starts to point in direction of entity base/nearest anomalous activity 
 
 ## Game Mechanic Ideas
-- setting the players render distance down slowly
+<!-- - setting the players render distance down slowly -->
 
 - increasing the players graphics settings to try and lag the player out (able to disable this in config as i can see people not wanting this if recording or with bad pcs)
 
-- capping fps to 30 or lower when entity is nearby
+<!-- - capping fps to 30 or lower when entity is nearby -->
 
-- locking music to always be above 50% volume (able to disable in config, or modify the minimum volume)
+<!-- - locking music to always be above 50% volume (able to disable in config, or modify the minimum volume) -->
 
-- setting to moody brightness
+<!-- - setting to moody brightness -->
 
 - nights will sometimes be 20% - 100% longer occasionally
+
+- background panorama is the same seed, but at night with a building in the distance and maybe a few other human made things like torches and broken trees
