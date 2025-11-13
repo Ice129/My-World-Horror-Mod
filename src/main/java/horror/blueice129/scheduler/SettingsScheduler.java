@@ -38,7 +38,9 @@ public class SettingsScheduler {
     // Brightness timer settings (10-40 minutes, reduced by agro*2)
     private static final int BRIGHTNESS_BASE_MAX_DELAY = 48000; // 40 minutes
     private static final int BRIGHTNESS_BASE_MIN_DELAY = 12000; // 10 minutes
+    private static final int BRIGHTNESS_REDUCTION_TICKS = 100; // 100 ticks (5 seconds) for gradual reduction
     private static final String TIMER_ID_BRIGHTNESS = "settingsTimerBrightness";
+    private static final String TIMER_ID_BRIGHTNESS_PROGRESS = "settingsTimerBrightnessProgress";
 
     // FPS timer settings (30-60 minutes, reduced by agro*2)
     private static final int FPS_BASE_MAX_DELAY = 72000; // 60 minutes
@@ -86,6 +88,11 @@ public class SettingsScheduler {
                     state.setTimer(TIMER_ID_BRIGHTNESS, delay);
                     HorrorMod129.LOGGER.info("SettingsScheduler (Brightness) initialized with timer: " 
                         + state.getTimer(TIMER_ID_BRIGHTNESS) + " ticks");
+                }
+                
+                // Initialize brightness progress timer (starts at 0)
+                if (!state.hasTimer(TIMER_ID_BRIGHTNESS_PROGRESS)) {
+                    state.setTimer(TIMER_ID_BRIGHTNESS_PROGRESS, 0);
                 }
                 
                 // Initialize FPS timer
@@ -153,11 +160,27 @@ public class SettingsScheduler {
             // Handle brightness timer
             int brightnessTimer = state.decrementTimer(TIMER_ID_BRIGHTNESS, 1);
             if (brightnessTimer <= 0) {
-                BrightnessChanger.setToMoodyBrightness();
-                HorrorMod129.LOGGER.info("Brightness set to moody (minimum). Current brightness: " 
-                    + BrightnessChanger.getBrightness());
-                int delay = getRandomDelayWithAgro(state, BRIGHTNESS_BASE_MIN_DELAY, BRIGHTNESS_BASE_MAX_DELAY);
-                state.setTimer(TIMER_ID_BRIGHTNESS, delay);
+                // Start the gradual reduction process
+                int progress = state.getTimer(TIMER_ID_BRIGHTNESS_PROGRESS);
+                if (progress < BRIGHTNESS_REDUCTION_TICKS) {
+                    // Continue reducing brightness
+                    double initialBrightness = BrightnessChanger.getBrightness();
+                    if (progress == 0) {
+                        // Store initial brightness when starting
+                        HorrorMod129.LOGGER.info("Starting brightness reduction from " 
+                            + (initialBrightness * 100) + "%");
+                    }
+                    BrightnessChanger.decreaseBrightnessGradually(0.0, progress, BRIGHTNESS_REDUCTION_TICKS);
+                    state.setTimer(TIMER_ID_BRIGHTNESS_PROGRESS, progress + 1);
+                    state.setTimer(TIMER_ID_BRIGHTNESS, 1); // Check again next tick
+                } else {
+                    // Reduction complete, reset for next cycle
+                    HorrorMod129.LOGGER.info("Brightness reduction complete. Current brightness: " 
+                        + (BrightnessChanger.getBrightness() * 100) + "%");
+                    state.setTimer(TIMER_ID_BRIGHTNESS_PROGRESS, 0);
+                    int delay = getRandomDelayWithAgro(state, BRIGHTNESS_BASE_MIN_DELAY, BRIGHTNESS_BASE_MAX_DELAY);
+                    state.setTimer(TIMER_ID_BRIGHTNESS, delay);
+                }
             }
             
             // Handle FPS timer

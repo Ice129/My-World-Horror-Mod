@@ -53,249 +53,143 @@ public class DebugCommands {
         if (environment == CommandManager.RegistrationEnvironment.DEDICATED
                 || environment == CommandManager.RegistrationEnvironment.INTEGRATED) {
 
+            // Single base command with all subgroups
             dispatcher.register(
-                    literal("horror129")
-                            .then(literal("debug")
-                                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
-                                    .then(literal("homevisitor")
-                                            .executes(DebugCommands::triggerHomeVisitor))
-                                    .then(literal("smallstructure10s")
-                                            .executes(context -> setSmallStructure10s(context.getSource())))
-                                    .then(literal("ledgepusher20ticks")
-                                            .executes(context -> setLedgePusherCooldown20Ticks(context.getSource())))
-                                    .then(literal("playerdeathitems10s")
-                                            .executes(context -> setPlayerDeathItems10s(context.getSource())))
-                                    .then(literal("trigger_playerdeathitems")
-                                            .executes(context -> triggerPlayerDeathItems(context.getSource())))
-                                    .then(literal("place_diamond_pillars")
-                                            .executes(context -> placeDiamondPillars(context.getSource())))
-                                    .then(literal("ledgepusher")
-                                            .executes(context -> {
-                                                ServerPlayerEntity player = context.getSource().getPlayer();
-                                                if (player == null) {
-                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
-                                                    return 0;
-                                                }
-                                                LedgePusher ledgePusher = new LedgePusher(player, 10);
-                                                if (ledgePusher.isPlayerOnLedge()) {
-                                                    context.getSource().sendFeedback(() -> Text.literal("You are on a ledge!"), false);
-                                                } else {
-                                                    context.getSource().sendFeedback(() -> Text.literal("You are not on a ledge."), false);
-                                                }
-                                                return 1;
-                                            }))
-                                    .then(literal("push")
-                                            .executes(context -> {
-                                                ServerPlayerEntity player = context.getSource().getPlayer();
-                                                if (player == null) {
-                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
-                                                    return 0;
-                                                }
-                                                LedgePusher ledgePusher = new LedgePusher(player, 10);
-                                                ledgePusher.pushPlayer();
-                                                context.getSource().sendFeedback(() -> Text.literal("You have been pushed!"), false);
-                                                return 1;
-                                            })
-                                    )
-                                    .then(literal("spawn_fleeing_entity")
-                                            .executes(context -> {
-                                                ServerPlayerEntity player = context.getSource().getPlayer();
-                                                if (player == null) {
-                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
-                                                    return 0;
-                                                }
-                                                ServerWorld world = (ServerWorld) player.getWorld();
-                                                String direction = horror.blueice129.utils.PlayerUtils.getPlayerCompassDirection(player);
-                                                double[] directionVector = horror.blueice129.utils.PlayerUtils.getDirectionVector(direction);
-                                                
-                                                // Spawn fleeing entity 3 blocks in front of player
-                                                net.minecraft.util.math.Vec3d spawnPos = new net.minecraft.util.math.Vec3d(
-                                                    player.getX() + directionVector[0] * 3,
-                                                    player.getY(),
-                                                    player.getZ() + directionVector[1] * 3
-                                                );
-                                                
-                                                LedgePusher.spawnFleeingEntityStatic(world, spawnPos, directionVector);
-                                                context.getSource().sendFeedback(() -> Text.literal("Spawned fleeing entity!"), false);
-                                                return 1;
-                                            })
-                                    )
-                                    .then(literal("premine_cave")
-                                            .executes(context -> {
-                                                ServerPlayerEntity player = context.getSource().getPlayer();
-                                                if (player == null) {
-                                                    context.getSource().sendError(Text.literal("This command must be run by a player"));
-                                                    return 0;
-                                                }
-                                                
-                                                context.getSource().sendFeedback(() -> Text.literal("Attempting to pre-mine a cave..."), false);
-                                                boolean success = CavePreMiner.preMineCave(
-                                                    player.getWorld(), 
-                                                    player.getBlockPos(), 
-                                                    player
-                                                );
-                                                
-                                                if (success) {
-                                                    context.getSource().sendFeedback(() -> Text.literal("Successfully pre-mined a cave!"), false);
-                                                } else {
-                                                    context.getSource().sendError(Text.literal("Failed to find a suitable cave to pre-mine. Try moving to a different location."));
-                                                }
-                                                return Command.SINGLE_SUCCESS;
-                                            })
-                                            .then(argument("attempts", IntegerArgumentType.integer(1, 10))
-                                                  .executes(context -> {
-                                                      ServerPlayerEntity player = context.getSource().getPlayer();
-                                                      if (player == null) {
-                                                          context.getSource().sendError(Text.literal("This command must be run by a player"));
-                                                          return 0;
-                                                      }
-                                                      
-                                                      int attempts = IntegerArgumentType.getInteger(context, "attempts");
-                                                      context.getSource().sendFeedback(() -> Text.literal("Attempting to pre-mine a cave with " + attempts + " attempts..."), false);
-                                                      
-                                                      // Use a mutable wrapper class
-                                                      class MutableResult {
-                                                          public boolean success = false;
-                                                          public int attempts = 0;
-                                                      }
-                                                      final MutableResult result = new MutableResult();
-                                                      
-                                                      for (int i = 0; i < attempts && !result.success; i++) {
-                                                          result.attempts++;
-                                                          result.success = CavePreMiner.preMineCave(
-                                                              player.getWorld(), 
-                                                              player.getBlockPos(), 
-                                                              player
-                                                          );
-                                                      }
-                                                      
-                                                      if (result.success) {
-                                                          final int finalAttempts = result.attempts;
-                                                          context.getSource().sendFeedback(() -> Text.literal("Successfully pre-mined a cave after " + finalAttempts + " attempt(s)!"), false);
-                                                      } else {
-                                                          context.getSource().sendError(Text.literal("Failed to find a suitable cave to pre-mine after " + attempts + " attempts."));
-                                                      }
-                                                      return Command.SINGLE_SUCCESS;
-                                                  })
-                                            )
-                                    )
-                                    .then(literal("fovglass")
-                                            .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
-                                    .then(literal("renderedblocksglass")
-                                            .executes(context -> fillRenderedBlocksWithGlass(context.getSource())))
-                            )
-            );
-
-            // Register event debugging commands
-            dispatcher.register(literal("debug_event")
-                    .then(literal("crafting_table").executes(context -> {
-                        return executeEvent(context.getSource(), "crafting_table");
-                    }))
-                    .then(literal("furnace").executes(context -> {
-                        return executeEvent(context.getSource(), "furnace");
-                    }))
-                    .then(literal("cobblestone_pillar").executes(context -> {
-                        return executeEvent(context.getSource(), "cobblestone_pillar");
-                    }))
-                    .then(literal("single_torch").executes(context -> {
-                        return executeEvent(context.getSource(), "single_torch");
-                    }))
-                    .then(literal("torched_area").executes(context -> {
-                        return executeEvent(context.getSource(), "torched_area");
-                    }))
-                    .then(literal("tree_mined").executes(context -> {
-                        return executeEvent(context.getSource(), "tree_mined");
-                    }))
-                    .then(literal("deforestation").executes(context -> {
-                        return executeEvent(context.getSource(), "deforestation");
-                    }))
-                    .then(literal("flower_patch").executes(context -> {
-                        return executeEvent(context.getSource(), "flower_patch");
-                    }))
-                    .then(literal("watchtower").executes(context -> {
-                        return executeEvent(context.getSource(), "watchtower");
-                    }))
-                    .then(literal("starter_base").executes(context -> {
-                        return executeEvent(context.getSource(), "starter_base");
-                    }))
-                    .then(literal("pitfall_trap").executes(context -> {
-                        return executeEvent(context.getSource(), "pitfall_trap");
-                    }))
-                    .then(literal("chunk_deletion").executes(context -> {
-                        return executeEvent(context.getSource(), "chunk_deletion");
-                    }))
-                    .then(literal("burning_forest").executes(context -> {
-                        return executeEvent(context.getSource(), "burning_forest");
-                    }))
-            );
-            
-            // Register agro meter commands
-            dispatcher.register(literal("agro")
-                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
-                    .then(literal("get")
+                literal("horror")
+                    .requires(source -> source.hasPermissionLevel(2)) // Require op permission
+                    
+                    // === EVENT TRIGGERS ===
+                    .then(literal("event")
+                        .then(literal("homevisitor")
+                            .executes(DebugCommands::triggerHomeVisitor))
+                        .then(literal("playerdeathitems")
+                            .executes(context -> triggerPlayerDeathItems(context.getSource())))
+                        .then(literal("structure")
+                            .then(literal("crafting_table")
+                                .executes(context -> executeEvent(context.getSource(), "crafting_table")))
+                            .then(literal("furnace")
+                                .executes(context -> executeEvent(context.getSource(), "furnace")))
+                            .then(literal("cobblestone_pillar")
+                                .executes(context -> executeEvent(context.getSource(), "cobblestone_pillar")))
+                            .then(literal("single_torch")
+                                .executes(context -> executeEvent(context.getSource(), "single_torch")))
+                            .then(literal("torched_area")
+                                .executes(context -> executeEvent(context.getSource(), "torched_area")))
+                            .then(literal("tree_mined")
+                                .executes(context -> executeEvent(context.getSource(), "tree_mined")))
+                            .then(literal("deforestation")
+                                .executes(context -> executeEvent(context.getSource(), "deforestation")))
+                            .then(literal("flower_patch")
+                                .executes(context -> executeEvent(context.getSource(), "flower_patch")))
+                            .then(literal("watchtower")
+                                .executes(context -> executeEvent(context.getSource(), "watchtower")))
+                            .then(literal("starter_base")
+                                .executes(context -> executeEvent(context.getSource(), "starter_base")))
+                            .then(literal("pitfall_trap")
+                                .executes(context -> executeEvent(context.getSource(), "pitfall_trap")))
+                            .then(literal("chunk_deletion")
+                                .executes(context -> executeEvent(context.getSource(), "chunk_deletion")))
+                            .then(literal("burning_forest")
+                                .executes(context -> executeEvent(context.getSource(), "burning_forest")))))
+                    
+                    // === TIMER MANAGEMENT ===
+                    .then(literal("timer")
+                        .then(literal("smallstructure")
+                            .then(argument("seconds", IntegerArgumentType.integer(1, 3600))
+                                .executes(context -> setSmallStructureTimer(
+                                    context.getSource(),
+                                    IntegerArgumentType.getInteger(context, "seconds")))))
+                        .then(literal("ledgepusher")
+                            .then(argument("seconds", IntegerArgumentType.integer(1, 3600))
+                                .executes(context -> setLedgePusherTimer(
+                                    context.getSource(),
+                                    IntegerArgumentType.getInteger(context, "seconds")))))
+                        .then(literal("playerdeathitems")
+                            .then(argument("seconds", IntegerArgumentType.integer(1, 3600))
+                                .executes(context -> setPlayerDeathItemsTimer(
+                                    context.getSource(),
+                                    IntegerArgumentType.getInteger(context, "seconds"))))))
+                    
+                    // === AGGRO METER ===
+                    .then(literal("agro")
+                        .then(literal("get")
                             .executes(context -> getAgroMeter(context.getSource())))
-                    .then(literal("set")
+                        .then(literal("set")
                             .then(argument("level", IntegerArgumentType.integer(0, 10))
-                                    .executes(context -> setAgroMeter(
-                                            context.getSource(),
-                                            IntegerArgumentType.getInteger(context, "level")))))
-            );
-            
-            // Register render distance commands
-            dispatcher.register(literal("renderdistance")
-                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
-                    .then(literal("get")
-                            .executes(context -> getRenderDistance(context.getSource())))
-                    .then(literal("set")
-                            .then(argument("distance", IntegerArgumentType.integer(2, 128))
+                                .executes(context -> setAgroMeter(
+                                    context.getSource(),
+                                    IntegerArgumentType.getInteger(context, "level"))))))
+                    
+                    // === CLIENT SETTINGS ===
+                    .then(literal("settings")
+                        .then(literal("render")
+                            .then(literal("get")
+                                .executes(context -> getRenderDistance(context.getSource())))
+                            .then(literal("set")
+                                .then(argument("distance", IntegerArgumentType.integer(2, 128))
                                     .executes(context -> setRenderDistance(
-                                            context.getSource(),
-                                            IntegerArgumentType.getInteger(context, "distance")))))
-                    .then(literal("increase")
-                            .then(argument("amount", IntegerArgumentType.integer(1, 32))
+                                        context.getSource(),
+                                        IntegerArgumentType.getInteger(context, "distance")))))
+                            .then(literal("increase")
+                                .then(argument("amount", IntegerArgumentType.integer(1, 32))
                                     .executes(context -> increaseRenderDistance(
-                                            context.getSource(),
-                                            IntegerArgumentType.getInteger(context, "amount")))))
-                    .then(literal("decrease")
-                            .then(argument("amount", IntegerArgumentType.integer(1, 32))
+                                        context.getSource(),
+                                        IntegerArgumentType.getInteger(context, "amount")))))
+                            .then(literal("decrease")
+                                .then(argument("amount", IntegerArgumentType.integer(1, 32))
                                     .executes(context -> decreaseRenderDistance(
-                                            context.getSource(),
-                                            IntegerArgumentType.getInteger(context, "amount")))))
-            );
-            
-            // Register settings commands
-            dispatcher.register(literal("settings")
-                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
-                    .then(literal("music")
+                                        context.getSource(),
+                                        IntegerArgumentType.getInteger(context, "amount"))))))
+                        .then(literal("music")
                             .then(literal("get")
-                                    .executes(context -> getMusicVolume(context.getSource())))
+                                .executes(context -> getMusicVolume(context.getSource())))
                             .then(literal("lock")
-                                    .executes(context -> lockMusicVolume(context.getSource()))))
-                    .then(literal("brightness")
+                                .executes(context -> lockMusicVolume(context.getSource()))))
+                        .then(literal("brightness")
                             .then(literal("get")
-                                    .executes(context -> getBrightness(context.getSource())))
-                            .then(literal("setmoody")
-                                    .executes(context -> setMoodyBrightness(context.getSource()))))
-                    .then(literal("fps")
+                                .executes(context -> getBrightness(context.getSource())))
+                            .then(literal("moody")
+                                .executes(context -> setMoodyBrightness(context.getSource()))))
+                        .then(literal("fps")
                             .then(literal("get")
-                                    .executes(context -> getFpsLimit(context.getSource())))
-                            .then(literal("cap30")
-                                    .executes(context -> capFpsTo30(context.getSource())))
+                                .executes(context -> getFpsLimit(context.getSource())))
                             .then(literal("set")
-                                    .then(argument("fps", IntegerArgumentType.integer(10, 260))
-                                            .executes(context -> setFpsLimit(
-                                                    context.getSource(),
-                                                    IntegerArgumentType.getInteger(context, "fps"))))))
-                    .then(literal("sensitivity")
+                                .then(argument("fps", IntegerArgumentType.integer(10, 260))
+                                    .executes(context -> setFpsLimit(
+                                        context.getSource(),
+                                        IntegerArgumentType.getInteger(context, "fps"))))))
+                        .then(literal("sensitivity")
                             .then(literal("get")
-                                    .executes(context -> getMouseSensitivity(context.getSource())))
-                            .then(literal("setmin")
-                                    .executes(context -> setMinimumMouseSensitivity(context.getSource())))
+                                .executes(context -> getMouseSensitivity(context.getSource())))
                             .then(literal("set")
-                                    .then(argument("value", IntegerArgumentType.integer(0, 100))
-                                            .executes(context -> setMouseSensitivity(
-                                                    context.getSource(),
-                                                    IntegerArgumentType.getInteger(context, "value"))))))
+                                .then(argument("value", IntegerArgumentType.integer(0, 100))
+                                    .executes(context -> setMouseSensitivity(
+                                        context.getSource(),
+                                        IntegerArgumentType.getInteger(context, "value")))))))
+                    
+                    // === DEBUG TOOLS ===
+                    .then(literal("tool")
+                        .then(literal("ledge")
+                            .then(literal("check")
+                                .executes(context -> checkLedge(context.getSource())))
+                            .then(literal("push")
+                                .executes(context -> pushPlayer(context.getSource())))
+                            .then(literal("spawn_fleeing")
+                                .executes(context -> spawnFleeingEntity(context.getSource()))))
+                        .then(literal("cave")
+                            .then(literal("premine")
+                                .executes(context -> premineCave(context.getSource(), 1))
+                                .then(argument("attempts", IntegerArgumentType.integer(1, 10))
+                                    .executes(context -> premineCave(
+                                        context.getSource(),
+                                        IntegerArgumentType.getInteger(context, "attempts"))))))
+                        .then(literal("visualize")
+                            .then(literal("fov")
+                                .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
+                            .then(literal("rendered")
+                                .executes(context -> fillRenderedBlocksWithGlass(context.getSource())))
+                            .then(literal("trees")
+                                .executes(context -> placeDiamondPillars(context.getSource())))))
             );
         }
     }
@@ -361,12 +255,18 @@ public class DebugCommands {
         return success ? 1 : 0;
     }
 
-    private static int setSmallStructure10s(ServerCommandSource source) {
+    /**
+     * Sets the small structure event timer
+     * @param source Command source
+     * @param seconds Timer duration in seconds
+     * @return Command success value
+     */
+    private static int setSmallStructureTimer(ServerCommandSource source, int seconds) {
         MinecraftServer server = source.getServer();
         try {
-            // 10 seconds = 200 ticks
-            horror.blueice129.scheduler.SmallStructureScheduler.setTimer(server, 200);
-            source.sendFeedback(() -> Text.literal("Set small structure timer to 10 seconds (200 ticks)."), false);
+            int ticks = seconds * 20;
+            horror.blueice129.scheduler.SmallStructureScheduler.setTimer(server, ticks);
+            source.sendFeedback(() -> Text.literal("Small structure timer set to " + seconds + " seconds (" + ticks + " ticks)"), true);
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set small structure timer: " + e.getMessage()));
@@ -374,28 +274,37 @@ public class DebugCommands {
         }
     }
     
-    private static int setLedgePusherCooldown20Ticks(ServerCommandSource source) {
+    /**
+     * Sets the ledge pusher cooldown timer
+     * @param source Command source
+     * @param seconds Timer duration in seconds
+     * @return Command success value
+     */
+    private static int setLedgePusherTimer(ServerCommandSource source, int seconds) {
         MinecraftServer server = source.getServer();
         try {
-            // Set cooldown to 20 ticks (1 second)
-            horror.blueice129.scheduler.LedgePusherScheduler.setTimer(server, 20);
-            source.sendFeedback(() -> Text.literal("Set ledge pusher cooldown to 20 ticks (1 second)."), false);
+            int ticks = seconds * 20;
+            horror.blueice129.scheduler.LedgePusherScheduler.setTimer(server, ticks);
+            source.sendFeedback(() -> Text.literal("Ledge pusher timer set to " + seconds + " seconds (" + ticks + " ticks)"), true);
             return 1;
         } catch (Exception e) {
-            source.sendError(Text.literal("Failed to set ledge pusher cooldown: " + e.getMessage()));
+            source.sendError(Text.literal("Failed to set ledge pusher timer: " + e.getMessage()));
             return 0;
         }
     }
     
     /**
-     * Sets the player death items timer to 10 seconds
+     * Sets the player death items timer
+     * @param source Command source
+     * @param seconds Timer duration in seconds
+     * @return Command success value
      */
-    private static int setPlayerDeathItems10s(ServerCommandSource source) {
+    private static int setPlayerDeathItemsTimer(ServerCommandSource source, int seconds) {
         MinecraftServer server = source.getServer();
         try {
-            // 10 seconds = 200 ticks
-            horror.blueice129.scheduler.PlayerDeathItemsScheduler.setTimer(server, 200);
-            source.sendFeedback(() -> Text.literal("Set player death items timer to 10 seconds (200 ticks)."), false);
+            int ticks = seconds * 20;
+            horror.blueice129.scheduler.PlayerDeathItemsScheduler.setTimer(server, ticks);
+            source.sendFeedback(() -> Text.literal("Player death items timer set to " + seconds + " seconds (" + ticks + " ticks)"), true);
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set player death items timer: " + e.getMessage()));
@@ -685,23 +594,6 @@ public class DebugCommands {
     }
     
     /**
-     * Cap FPS to 30
-     * @param source Command source
-     * @return Command success value
-     */
-    private static int capFpsTo30(ServerCommandSource source) {
-        try {
-            FpsLimiter.capFpsTo30();
-            int newFps = FpsLimiter.getCurrentFpsLimit();
-            source.sendFeedback(() -> Text.literal("FPS capped to 30. Current FPS limit: " + newFps), true);
-            return 1;
-        } catch (Exception e) {
-            source.sendError(Text.literal("Failed to cap FPS: " + e.getMessage()));
-            return 0;
-        }
-    }
-    
-    /**
      * Set a custom FPS limit
      * @param source Command source
      * @param fps The desired FPS limit (10-260)
@@ -736,23 +628,6 @@ public class DebugCommands {
     }
     
     /**
-     * Set mouse sensitivity to minimum
-     * @param source Command source
-     * @return Command success value
-     */
-    private static int setMinimumMouseSensitivity(ServerCommandSource source) {
-        try {
-            MouseSensitivityChanger.setToMinimumSensitivity();
-            double newSensitivity = MouseSensitivityChanger.getMouseSensitivity();
-            source.sendFeedback(() -> Text.literal("Mouse sensitivity set to minimum. Current sensitivity: " + (newSensitivity * 100) + "%"), true);
-            return 1;
-        } catch (Exception e) {
-            source.sendError(Text.literal("Failed to set mouse sensitivity: " + e.getMessage()));
-            return 0;
-        }
-    }
-    
-    /**
      * Set mouse sensitivity to a custom value (0-100)
      * @param source Command source
      * @param value The desired sensitivity as a percentage (0-100)
@@ -768,6 +643,133 @@ public class DebugCommands {
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to set mouse sensitivity: " + e.getMessage()));
             return 0;
+        }
+    }
+    
+    // ===== DEBUG TOOL METHODS =====
+    
+    /**
+     * Check if the player is on a ledge
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int checkLedge(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        LedgePusher ledgePusher = new LedgePusher(player, 10);
+        if (ledgePusher.isPlayerOnLedge()) {
+            source.sendFeedback(() -> Text.literal("You are on a ledge!"), false);
+        } else {
+            source.sendFeedback(() -> Text.literal("You are not on a ledge"), false);
+        }
+        return 1;
+    }
+    
+    /**
+     * Push the player off a ledge
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int pushPlayer(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        LedgePusher ledgePusher = new LedgePusher(player, 10);
+        ledgePusher.pushPlayer();
+        source.sendFeedback(() -> Text.literal("Player pushed!"), true);
+        return 1;
+    }
+    
+    /**
+     * Spawn a fleeing entity in front of the player
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int spawnFleeingEntity(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        ServerWorld world = (ServerWorld) player.getWorld();
+        String direction = horror.blueice129.utils.PlayerUtils.getPlayerCompassDirection(player);
+        double[] directionVector = horror.blueice129.utils.PlayerUtils.getDirectionVector(direction);
+        
+        // Spawn fleeing entity 3 blocks in front of player
+        net.minecraft.util.math.Vec3d spawnPos = new net.minecraft.util.math.Vec3d(
+            player.getX() + directionVector[0] * 3,
+            player.getY(),
+            player.getZ() + directionVector[1] * 3
+        );
+        
+        LedgePusher.spawnFleeingEntityStatic(world, spawnPos, directionVector);
+        source.sendFeedback(() -> Text.literal("Spawned fleeing entity!"), false);
+        return 1;
+    }
+    
+    /**
+     * Pre-mine a cave near the player
+     * @param source Command source
+     * @param attempts Number of attempts to find a suitable cave
+     * @return Command success value
+     */
+    private static int premineCave(ServerCommandSource source, int attempts) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        if (attempts == 1) {
+            source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave..."), false);
+            boolean success = CavePreMiner.preMineCave(
+                player.getWorld(),
+                player.getBlockPos(),
+                player
+            );
+            
+            if (success) {
+                source.sendFeedback(() -> Text.literal("Successfully pre-mined a cave!"), false);
+                return Command.SINGLE_SUCCESS;
+            } else {
+                source.sendError(Text.literal("Failed to find a suitable cave. Try a different location."));
+                return 0;
+            }
+        } else {
+            source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave with " + attempts + " attempts..."), false);
+            
+            // Use a mutable wrapper class
+            class MutableResult {
+                public boolean success = false;
+                public int attempts = 0;
+            }
+            final MutableResult result = new MutableResult();
+            
+            for (int i = 0; i < attempts && !result.success; i++) {
+                result.attempts++;
+                result.success = CavePreMiner.preMineCave(
+                    player.getWorld(),
+                    player.getBlockPos(),
+                    player
+                );
+            }
+            
+            if (result.success) {
+                final int finalAttempts = result.attempts;
+                source.sendFeedback(() -> Text.literal("Successfully pre-mined a cave after " + finalAttempts + " attempt(s)!"), false);
+                return Command.SINGLE_SUCCESS;
+            } else {
+                source.sendError(Text.literal("Failed to find a suitable cave after " + attempts + " attempts"));
+                return 0;
+            }
         }
     }
 }

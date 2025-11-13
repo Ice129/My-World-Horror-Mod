@@ -54,4 +54,35 @@ public class BrightnessChanger {
     public static double getMoodyBrightness() {
         return MOODY_BRIGHTNESS;
     }
+
+    /**
+     * Gradually decreases brightness over time
+     * This method should be called repeatedly to create a smooth transition
+     * @param targetBrightness The target brightness to reach
+     * @param currentProgress Current progress (0 to totalTicks)
+     * @param totalTicks Total number of ticks for the transition
+     */
+    public static void decreaseBrightnessGradually(double targetBrightness, int currentProgress, int totalTicks) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) {
+            return;
+        }
+
+        SimpleOption<Double> gamma = client.options.getGamma();
+        if (gamma == null) {
+            return;
+        }
+
+        double currentBrightness = gamma.getValue();
+        
+        // Calculate the new brightness based on progress
+        // Linear interpolation from current to target
+        double progress = (double) currentProgress / totalTicks;
+        double newBrightness = currentBrightness - ((currentBrightness - targetBrightness) * progress / totalTicks);
+        
+        // Clamp and set the new brightness
+        double clampedBrightness = Math.max(targetBrightness, Math.min(currentBrightness, newBrightness));
+        gamma.setValue(clampedBrightness);
+        client.options.write();
+    }
 }
