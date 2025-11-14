@@ -54,11 +54,16 @@ public class MouseSensitivityChanger {
      * Gradually decreases mouse sensitivity over time
      * This method should be called repeatedly to create a smooth transition
      * @param initialSensitivity The initial sensitivity at the start of the transition
-     * @param targetSensitivity The target sensitivity to reach
+     * @param targetSensitivity The target sensitivity to reach (must be <= initialSensitivity)
      * @param currentProgress Current progress (0 to totalTicks)
      * @param totalTicks Total number of ticks for the transition
+     * @throws IllegalArgumentException if targetSensitivity > initialSensitivity
      */
     public static void decreaseMouseSensitivityGradually(double initialSensitivity, double targetSensitivity, int currentProgress, int totalTicks) {
+        if (targetSensitivity > initialSensitivity) {
+            throw new IllegalArgumentException("targetSensitivity (" + targetSensitivity + ") must be <= initialSensitivity (" + initialSensitivity + ") for decreaseMouseSensitivityGradually");
+        }
+
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) {
             return;

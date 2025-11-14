@@ -59,11 +59,16 @@ public class BrightnessChanger {
      * Gradually decreases brightness over time
      * This method should be called repeatedly to create a smooth transition
      * @param initialBrightness The initial brightness at the start of the transition
-     * @param targetBrightness The target brightness to reach
+     * @param targetBrightness The target brightness to reach (must be <= initialBrightness)
      * @param currentProgress Current progress (0 to totalTicks)
      * @param totalTicks Total number of ticks for the transition
+     * @throws IllegalArgumentException if targetBrightness > initialBrightness
      */
     public static void decreaseBrightnessGradually(double initialBrightness, double targetBrightness, int currentProgress, int totalTicks) {
+        if (targetBrightness > initialBrightness) {
+            throw new IllegalArgumentException("targetBrightness (" + targetBrightness + ") must be <= initialBrightness (" + initialBrightness + ") for decreaseBrightnessGradually");
+        }
+
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) {
             return;
