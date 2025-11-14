@@ -78,7 +78,7 @@ public class BrightnessChanger {
         // Calculate the new brightness based on progress
         // Linear interpolation from current to target
         double progress = (double) currentProgress / totalTicks;
-        double newBrightness = currentBrightness - ((currentBrightness - targetBrightness) * progress / totalTicks);
+        double newBrightness = currentBrightness - ((currentBrightness - targetBrightness) * progress);
         
         // Clamp and set the new brightness
         double clampedBrightness = Math.max(targetBrightness, Math.min(currentBrightness, newBrightness));
