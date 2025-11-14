@@ -16,6 +16,7 @@ import horror.blueice129.feature.MusicVolumeLocker;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
+import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.debug.LineOfSightChecker;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
@@ -165,7 +166,16 @@ public class DebugCommands {
                                 .then(argument("value", IntegerArgumentType.integer(0, 100))
                                     .executes(context -> setMouseSensitivity(
                                         context.getSource(),
-                                        IntegerArgumentType.getInteger(context, "value")))))))
+                                        IntegerArgumentType.getInteger(context, "value"))))))
+                        .then(literal("smoothlighting")
+                            .then(literal("get")
+                                .executes(context -> getSmoothLighting(context.getSource())))
+                            .then(literal("enable")
+                                .executes(context -> enableSmoothLighting(context.getSource())))
+                            .then(literal("disable")
+                                .executes(context -> disableSmoothLighting(context.getSource())))
+                            .then(literal("toggle")
+                                .executes(context -> toggleSmoothLighting(context.getSource())))))
                     
                     // === DEBUG TOOLS ===
                     .then(literal("tool")
@@ -770,6 +780,72 @@ public class DebugCommands {
                 source.sendError(Text.literal("Failed to find a suitable cave after " + attempts + " attempts"));
                 return 0;
             }
+        }
+    }
+    
+    /**
+     * Get the current smooth lighting state
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getSmoothLighting(ServerCommandSource source) {
+        try {
+            boolean enabled = SmoothLightingChanger.isSmoothLightingEnabled();
+            source.sendFeedback(() -> Text.literal("Smooth lighting is " + (enabled ? "enabled" : "disabled")), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get smooth lighting state: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Enable smooth lighting
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int enableSmoothLighting(ServerCommandSource source) {
+        try {
+            SmoothLightingChanger.enableSmoothLighting();
+            source.sendFeedback(() -> Text.literal("Smooth lighting enabled"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to enable smooth lighting: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Disable smooth lighting
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int disableSmoothLighting(ServerCommandSource source) {
+        try {
+            SmoothLightingChanger.disableSmoothLighting();
+            source.sendFeedback(() -> Text.literal("Smooth lighting disabled"), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to disable smooth lighting: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Toggle smooth lighting on/off
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int toggleSmoothLighting(ServerCommandSource source) {
+        try {
+            boolean wasEnabled = SmoothLightingChanger.isSmoothLightingEnabled();
+            SmoothLightingChanger.toggleSmoothLighting();
+            boolean isEnabled = SmoothLightingChanger.isSmoothLightingEnabled();
+            source.sendFeedback(() -> Text.literal("Smooth lighting toggled from " + (wasEnabled ? "enabled" : "disabled") + " to " + (isEnabled ? "enabled" : "disabled")), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to toggle smooth lighting: " + e.getMessage()));
+            return 0;
         }
     }
 }

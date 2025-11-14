@@ -7,6 +7,7 @@ import horror.blueice129.feature.MusicVolumeLocker;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
+import horror.blueice129.feature.SmoothLightingChanger;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.server.MinecraftServer;
@@ -22,8 +23,10 @@ import net.minecraft.util.math.random.Random;
  * - Brightness: decreases to moody gradually over 100 ticks, every 10 - 40-agro*2 minutes
  * - FPS: Caps to 30 every 30 - 60-agro*2 minutes
  * - Mouse Sensitivity: Decreases to minimum over 300 ticks, every 15 - 45-agro*2 minutes
+ * - Smooth Lighting: Disables smooth lighting every 10 - 25-agro*2 minutes
  */
 public class SettingsScheduler {
+    //TODO: use switch or other way to trigger these. 
     private static final Random random = Random.create();
 
     // Render distance timer settings (20-40 minutes, reduced by agro*2)
@@ -53,6 +56,11 @@ public class SettingsScheduler {
     private static final int SENSITIVITY_REDUCTION_TICKS = 300; // 300 ticks (15 seconds) for gradual reduction
     private static final String TIMER_ID_SENSITIVITY = "settingsTimerMouseSensitivity";
     private static final String TIMER_ID_SENSITIVITY_PROGRESS = "settingsTimerMouseSensitivityProgress";
+
+    // Smooth lighting timer settings (10-25 minutes, reduced by agro*2)
+    private static final int SMOOTH_LIGHTING_BASE_MAX_DELAY = 20 * 60 * 25; // 25 minutes
+    private static final int SMOOTH_LIGHTING_BASE_MIN_DELAY = 20 * 60 * 10; // 10 minutes
+    private static final String TIMER_ID_SMOOTH_LIGHTING = "settingsTimerSmoothLighting";
 
     /**
      * Registers the tick event to handle the settings scheduler.
@@ -114,6 +122,14 @@ public class SettingsScheduler {
                 // Initialize mouse sensitivity progress timer (starts at 0)
                 if (!state.hasTimer(TIMER_ID_SENSITIVITY_PROGRESS)) {
                     state.setTimer(TIMER_ID_SENSITIVITY_PROGRESS, 0);
+                }
+                
+                // Initialize smooth lighting timer
+                if (!state.hasTimer(TIMER_ID_SMOOTH_LIGHTING)) {
+                    int delay = getRandomDelayWithAgro(state, SMOOTH_LIGHTING_BASE_MIN_DELAY, SMOOTH_LIGHTING_BASE_MAX_DELAY);
+                    state.setTimer(TIMER_ID_SMOOTH_LIGHTING, delay);
+                    HorrorMod129.LOGGER.info("SettingsScheduler (Smooth Lighting) initialized with timer: " 
+                        + state.getTimer(TIMER_ID_SMOOTH_LIGHTING) + " ticks");
                 }
             }
         });
@@ -217,6 +233,16 @@ public class SettingsScheduler {
                     int delay = getRandomDelayWithAgro(state, SENSITIVITY_BASE_MIN_DELAY, SENSITIVITY_BASE_MAX_DELAY);
                     state.setTimer(TIMER_ID_SENSITIVITY, delay);
                 }
+            }
+            
+            // Handle smooth lighting timer
+            int smoothLightingTimer = state.decrementTimer(TIMER_ID_SMOOTH_LIGHTING, 1);
+            if (smoothLightingTimer <= 0) {
+                SmoothLightingChanger.disableSmoothLighting();
+                HorrorMod129.LOGGER.info("Smooth lighting disabled. Current state: " 
+                    + (SmoothLightingChanger.isSmoothLightingEnabled() ? "enabled" : "disabled"));
+                int delay = getRandomDelayWithAgro(state, SMOOTH_LIGHTING_BASE_MIN_DELAY, SMOOTH_LIGHTING_BASE_MAX_DELAY);
+                state.setTimer(TIMER_ID_SMOOTH_LIGHTING, delay);
             }
         }
     }
