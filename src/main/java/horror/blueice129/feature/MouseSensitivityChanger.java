@@ -53,11 +53,12 @@ public class MouseSensitivityChanger {
     /**
      * Gradually decreases mouse sensitivity over time
      * This method should be called repeatedly to create a smooth transition
+     * @param initialSensitivity The initial sensitivity at the start of the transition
      * @param targetSensitivity The target sensitivity to reach
      * @param currentProgress Current progress (0 to totalTicks)
      * @param totalTicks Total number of ticks for the transition
      */
-    public static void decreaseMouseSensitivityGradually(double targetSensitivity, int currentProgress, int totalTicks) {
+    public static void decreaseMouseSensitivityGradually(double initialSensitivity, double targetSensitivity, int currentProgress, int totalTicks) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) {
             return;
@@ -67,16 +68,14 @@ public class MouseSensitivityChanger {
         if (mouseSensitivity == null) {
             return;
         }
-
-        double currentSensitivity = mouseSensitivity.getValue();
         
         // Calculate the new sensitivity based on progress
-        // Linear interpolation from current to target
+        // Linear interpolation from initial to target
         double progress = (double) currentProgress / totalTicks;
-        double newSensitivity = currentSensitivity - ((currentSensitivity - targetSensitivity) * progress / totalTicks);
+        double newSensitivity = initialSensitivity + ((targetSensitivity - initialSensitivity) * progress);
         
         // Clamp and set the new sensitivity
-        double clampedSensitivity = Math.max(targetSensitivity, Math.min(currentSensitivity, newSensitivity));
+        double clampedSensitivity = Math.max(targetSensitivity, Math.min(initialSensitivity, newSensitivity));
         mouseSensitivity.setValue(clampedSensitivity);
         client.options.write();
     }

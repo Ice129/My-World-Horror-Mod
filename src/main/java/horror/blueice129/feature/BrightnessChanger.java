@@ -58,11 +58,12 @@ public class BrightnessChanger {
     /**
      * Gradually decreases brightness over time
      * This method should be called repeatedly to create a smooth transition
+     * @param initialBrightness The initial brightness at the start of the transition
      * @param targetBrightness The target brightness to reach
      * @param currentProgress Current progress (0 to totalTicks)
      * @param totalTicks Total number of ticks for the transition
      */
-    public static void decreaseBrightnessGradually(double targetBrightness, int currentProgress, int totalTicks) {
+    public static void decreaseBrightnessGradually(double initialBrightness, double targetBrightness, int currentProgress, int totalTicks) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) {
             return;
@@ -72,16 +73,14 @@ public class BrightnessChanger {
         if (gamma == null) {
             return;
         }
-
-        double currentBrightness = gamma.getValue();
         
         // Calculate the new brightness based on progress
-        // Linear interpolation from current to target
+        // Linear interpolation from initial to target
         double progress = (double) currentProgress / totalTicks;
-        double newBrightness = currentBrightness - ((currentBrightness - targetBrightness) * progress);
+        double newBrightness = initialBrightness + ((targetBrightness - initialBrightness) * progress);
         
         // Clamp and set the new brightness
-        double clampedBrightness = Math.max(targetBrightness, Math.min(currentBrightness, newBrightness));
+        double clampedBrightness = Math.max(targetBrightness, Math.min(initialBrightness, newBrightness));
         gamma.setValue(clampedBrightness);
         client.options.write();
     }
