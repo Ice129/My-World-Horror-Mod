@@ -175,8 +175,10 @@ public class SettingsScheduler {
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             int musicTimer = state.decrementTimer(TIMER_ID_MUSIC, 1);
             if (musicTimer <= 0) {
-                MusicVolumeLocker.enforceMinimumMusicVolume();
-                HorrorMod129.LOGGER.info("Music volume enforced to minimum");
+                boolean changed = MusicVolumeLocker.enforceMinimumMusicVolume();
+                if (changed) {
+                    HorrorMod129.LOGGER.info("Music volume enforced to minimum");
+                }
                 state.setTimer(TIMER_ID_MUSIC, MUSIC_CHECK_INTERVAL); // Check again in 20 ticks (1 second)
             }
         }

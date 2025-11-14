@@ -6,6 +6,11 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.SimpleOption;
 import net.minecraft.sound.SoundCategory;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 /**
  * Locks music volume to a minimum of 50%
  * This feature can be disabled in the config
@@ -18,7 +23,7 @@ public class MusicVolumeLocker {
      * Ensures music volume is at least 50%
      * If current volume is below minimum, it will be set to the minimum
      * MUST be called from the client thread
-     * @return true if volume was changed, false otherwise
+     * @return true if volume was below 50% and was increased to 50%, false otherwise
      */
     public static boolean enforceMinimumMusicVolume() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -26,22 +31,37 @@ public class MusicVolumeLocker {
             return false;
         }
 
-        // Execute on client thread to avoid RenderSystem threading issues
+        // Use CompletableFuture to get the result from the client thread execution
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        
         client.execute(() -> {
-            SimpleOption<Double> musicVolume = client.options.getSoundVolumeOption(SoundCategory.MUSIC);
-            if (musicVolume == null) {
-                return;
-            }
+            try {
+                SimpleOption<Double> musicVolume = client.options.getSoundVolumeOption(SoundCategory.MUSIC);
+                if (musicVolume == null) {
+                    future.complete(false);
+                    return;
+                }
 
-            double currentVolume = musicVolume.getValue();
-            if (currentVolume < MIN_MUSIC_VOLUME) {
-                musicVolume.setValue(MIN_MUSIC_VOLUME);
-                client.options.write();
+                double currentVolume = musicVolume.getValue();
+                if (currentVolume < MIN_MUSIC_VOLUME) {
+                    musicVolume.setValue(MIN_MUSIC_VOLUME);
+                    client.options.write();
+                    future.complete(true);
+                } else {
+                    future.complete(false);
+                }
+            } catch (Exception e) {
+                future.completeExceptionally(e);
             }
         });
-        // Note: Return value is no longer accurate due to async execution
-        // Consider refactoring if precise return value is needed
-        return false;
+
+        // Wait for the result with a timeout
+        try {
+            return future.get(5, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            // If we can't get the result, assume no change was made
+            return false;
+        }
     }
 
     /**
