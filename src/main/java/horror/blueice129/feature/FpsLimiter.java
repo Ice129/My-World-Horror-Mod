@@ -1,15 +1,19 @@
 package horror.blueice129.feature;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 
 /**
  * This feature can create lag and tension when an entity is nearby
  */
+@Environment(EnvType.CLIENT)
 public class FpsLimiter {
 
     /**
      * Sets the FPS limit to 30
      * This will cap the game's frame rate to create a more tense atmosphere
+     * MUST be called from the client thread
      */
     public static void capFpsTo30() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -17,8 +21,11 @@ public class FpsLimiter {
             return;
         }
 
-        client.options.getMaxFps().setValue(30);
-        client.options.write();
+        // Execute on client thread to avoid RenderSystem threading issues
+        client.execute(() -> {
+            client.options.getMaxFps().setValue(30);
+            client.options.write();
+        });
     }
 
     /**
@@ -36,6 +43,7 @@ public class FpsLimiter {
 
     /**
      * Sets a custom FPS limit
+     * MUST be called from the client thread
      * @param fps The desired FPS limit (minimum 10, maximum 260)
      */
     public static void setFpsLimit(int fps) {
@@ -44,9 +52,12 @@ public class FpsLimiter {
             return;
         }
 
-        // Clamp FPS between 10 and 260
-        int clampedFps = Math.max(10, Math.min(260, fps));
-        client.options.getMaxFps().setValue(clampedFps);
-        client.options.write();
+        // Execute on client thread to avoid RenderSystem threading issues
+        client.execute(() -> {
+            // Clamp FPS between 10 and 260
+            int clampedFps = Math.max(10, Math.min(260, fps));
+            client.options.getMaxFps().setValue(clampedFps);
+            client.options.write();
+        });
     }
 }

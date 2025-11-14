@@ -1,5 +1,7 @@
 package horror.blueice129.feature;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.SimpleOption;
 
@@ -7,12 +9,14 @@ import net.minecraft.client.option.SimpleOption;
  * Changes brightness settings to moody (minimum)
  * This feature creates an eerie atmosphere by forcing dark lighting
  */
+@Environment(EnvType.CLIENT)
 public class BrightnessChanger {
     private static final double MOODY_BRIGHTNESS = 0.0; // Minimum brightness (moody)
 
     /**
      * Sets brightness to moody (minimum)
      * This is the darkest lighting setting in Minecraft
+     * MUST be called from the client thread
      */
     public static void setToMoodyBrightness() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -20,13 +24,16 @@ public class BrightnessChanger {
             return;
         }
 
-        SimpleOption<Double> gamma = client.options.getGamma();
-        if (gamma == null) {
-            return;
-        }
+        // Execute on client thread to avoid RenderSystem threading issues
+        client.execute(() -> {
+            SimpleOption<Double> gamma = client.options.getGamma();
+            if (gamma == null) {
+                return;
+            }
 
-        gamma.setValue(MOODY_BRIGHTNESS);
-        client.options.write();
+            gamma.setValue(MOODY_BRIGHTNESS);
+            client.options.write();
+        });
     }
 
     /**
@@ -58,6 +65,7 @@ public class BrightnessChanger {
     /**
      * Gradually decreases brightness over time
      * This method should be called repeatedly to create a smooth transition
+     * MUST be called from the client thread
      * @param initialBrightness The initial brightness at the start of the transition
      * @param targetBrightness The target brightness to reach (must be <= initialBrightness)
      * @param currentProgress Current progress (0 to totalTicks)
@@ -74,19 +82,22 @@ public class BrightnessChanger {
             return;
         }
 
-        SimpleOption<Double> gamma = client.options.getGamma();
-        if (gamma == null) {
-            return;
-        }
-        
-        // Calculate the new brightness based on progress
-        // Linear interpolation from initial to target
-        double progress = (double) currentProgress / totalTicks;
-        double newBrightness = initialBrightness + ((targetBrightness - initialBrightness) * progress);
-        
-        // Clamp and set the new brightness
-        double clampedBrightness = Math.max(targetBrightness, Math.min(initialBrightness, newBrightness));
-        gamma.setValue(clampedBrightness);
-        client.options.write();
+        // Execute on client thread to avoid RenderSystem threading issues
+        client.execute(() -> {
+            SimpleOption<Double> gamma = client.options.getGamma();
+            if (gamma == null) {
+                return;
+            }
+            
+            // Calculate the new brightness based on progress
+            // Linear interpolation from initial to target
+            double progress = (double) currentProgress / totalTicks;
+            double newBrightness = initialBrightness + ((targetBrightness - initialBrightness) * progress);
+            
+            // Clamp and set the new brightness
+            double clampedBrightness = Math.max(targetBrightness, Math.min(initialBrightness, newBrightness));
+            gamma.setValue(clampedBrightness);
+            client.options.write();
+        });
     }
 }

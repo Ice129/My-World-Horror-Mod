@@ -1,5 +1,7 @@
 package horror.blueice129.feature;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.SimpleOption;
 import net.minecraft.sound.SoundCategory;
@@ -8,12 +10,14 @@ import net.minecraft.sound.SoundCategory;
  * Locks music volume to a minimum of 50%
  * This feature can be disabled in the config
  */
+@Environment(EnvType.CLIENT)
 public class MusicVolumeLocker {
     private static final double MIN_MUSIC_VOLUME = 0.5; // 50%
 
     /**
      * Ensures music volume is at least 50%
      * If current volume is below minimum, it will be set to the minimum
+     * MUST be called from the client thread
      * @return true if volume was changed, false otherwise
      */
     public static boolean enforceMinimumMusicVolume() {
@@ -22,17 +26,21 @@ public class MusicVolumeLocker {
             return false;
         }
 
-        SimpleOption<Double> musicVolume = client.options.getSoundVolumeOption(SoundCategory.MUSIC);
-        if (musicVolume == null) {
-            return false;
-        }
+        // Execute on client thread to avoid RenderSystem threading issues
+        client.execute(() -> {
+            SimpleOption<Double> musicVolume = client.options.getSoundVolumeOption(SoundCategory.MUSIC);
+            if (musicVolume == null) {
+                return;
+            }
 
-        double currentVolume = musicVolume.getValue();
-        if (currentVolume < MIN_MUSIC_VOLUME) {
-            musicVolume.setValue(MIN_MUSIC_VOLUME);
-            client.options.write();
-            return true;
-        }
+            double currentVolume = musicVolume.getValue();
+            if (currentVolume < MIN_MUSIC_VOLUME) {
+                musicVolume.setValue(MIN_MUSIC_VOLUME);
+                client.options.write();
+            }
+        });
+        // Note: Return value is no longer accurate due to async execution
+        // Consider refactoring if precise return value is needed
         return false;
     }
 

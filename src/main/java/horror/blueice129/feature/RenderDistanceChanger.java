@@ -1,9 +1,12 @@
 package horror.blueice129.feature;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 
 /**
  * can modify and get the clients render distance
  */
+@Environment(EnvType.CLIENT)
 public class RenderDistanceChanger {
     public static int getRenderDistance() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -18,10 +21,13 @@ public class RenderDistanceChanger {
         if (client == null) {
             return;
         }
-        // Clamp distance between 2 and 128 chunks
-        int clampedDistance = Math.max(2, Math.min(128, distance));
-        client.options.getViewDistance().setValue(clampedDistance);
-        client.options.write();
+        // Execute on client thread to avoid RenderSystem threading issues
+        client.execute(() -> {
+            // Clamp distance between 2 and 128 chunks
+            int clampedDistance = Math.max(2, Math.min(128, distance));
+            client.options.getViewDistance().setValue(clampedDistance);
+            client.options.write();
+        });
     }
     
     public static void increaseRenderDistance(int amount) {
