@@ -14,23 +14,26 @@ public class MusicVolumeLocker {
     /**
      * Ensures music volume is at least 50%
      * If current volume is below minimum, it will be set to the minimum
+     * @return true if volume was changed, false otherwise
      */
-    public static void enforceMinimumMusicVolume() {
+    public static boolean enforceMinimumMusicVolume() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) {
-            return;
+            return false;
         }
 
         SimpleOption<Double> musicVolume = client.options.getSoundVolumeOption(SoundCategory.MUSIC);
         if (musicVolume == null) {
-            return;
+            return false;
         }
 
         double currentVolume = musicVolume.getValue();
         if (currentVolume < MIN_MUSIC_VOLUME) {
             musicVolume.setValue(MIN_MUSIC_VOLUME);
             client.options.write();
+            return true;
         }
+        return false;
     }
 
     /**

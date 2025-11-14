@@ -170,10 +170,11 @@ public class SettingsScheduler {
         // Handle music volume timer - check every 20 ticks (1 second)
         int musicTimer = state.decrementTimer(TIMER_ID_MUSIC, 1);
         if (musicTimer <= 0) {
-            //TODO: only log if changed
-            MusicVolumeLocker.enforceMinimumMusicVolume();
-            HorrorMod129.LOGGER.info("Music volume locked to minimum. Current volume: "
-                    + (MusicVolumeLocker.getMusicVolume() * 100) + "%");
+            boolean changed = MusicVolumeLocker.enforceMinimumMusicVolume();
+            if (changed) {
+                HorrorMod129.LOGGER.info("Music volume locked to minimum. Current volume: "
+                        + (MusicVolumeLocker.getMusicVolume() * 100) + "%");
+            }
             state.setTimer(TIMER_ID_MUSIC, MUSIC_CHECK_INTERVAL); // Check again in 20 ticks (1 second)
         }
 
