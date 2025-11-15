@@ -27,6 +27,9 @@ public class SurfaceFinder {
      *                      ignored when determining the surface.
      * @param avoidWater    If true, water blocks will be avoided when determining
      *                      the surface.
+     * @param includeSnow   If true, snow blocks will be treated as valid surface blocks
+     *                      even when ignoreFoliage is true. If false, snow is treated
+     *                      like other foliage and skipped when ignoreFoliage is true.
      * @return The Y coordinate of the surface, or -1 if no suitable surface is
      *         found.
      */
@@ -48,11 +51,26 @@ public class SurfaceFinder {
 
             // Check if the block is not air
             if (!block.isAir()) {
-                // If ignoring foliage, check if the block is foliage
-                if (ignoreFoliage && BlockTypes.isFoliage(block.getBlock(), includeSnow)) {
+                // Special handling for snow: if includeSnow is true, treat it as a valid surface
+                // even when ignoreFoliage is true
+                if (block.getBlock() == Blocks.SNOW && includeSnow) {
+                    // If avoiding water, check if the block below snow is water
+                    if (avoidWater) {
+                        BlockState belowBlock = world.getBlockState(pos.down());
+                        if (BlockTypes.isWater(belowBlock.getBlock())) {
+                            return -1;
+                        }
+                    }
+                    // Snow is a valid surface when includeSnow is true
+                    return y;
+                }
+                
+                // If ignoring foliage, check if the block is foliage (excluding snow when includeSnow is true)
+                if (ignoreFoliage && BlockTypes.isFoliage(block.getBlock(), false)) {
                     y--;
                     continue;
                 }
+                
                 // If avoiding water, check if the block is water
                 if (avoidWater && BlockTypes.isWater(block.getBlock())) {
                     return -1;
