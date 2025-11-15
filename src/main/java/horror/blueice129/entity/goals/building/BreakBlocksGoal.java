@@ -12,7 +12,7 @@ import java.util.EnumSet;
 public class BreakBlocksGoal extends BaseBlueice129Goal {
     
     public BreakBlocksGoal(Blueice129Entity entity) {
-        super(entity, 15);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
     }
     

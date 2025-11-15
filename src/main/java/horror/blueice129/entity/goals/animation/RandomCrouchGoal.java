@@ -10,7 +10,7 @@ import horror.blueice129.entity.goals.BaseBlueice129Goal;
 public class RandomCrouchGoal extends BaseBlueice129Goal {
     
     public RandomCrouchGoal(Blueice129Entity entity) {
-        super(entity, 5);
+        super(entity);
     }
     
     @Override

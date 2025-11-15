@@ -11,7 +11,7 @@ import java.util.EnumSet;
 public class LookAroundGoal extends BaseBlueice129Goal {
     
     public LookAroundGoal(Blueice129Entity entity) {
-        super(entity, 20);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.LOOK));
     }
     

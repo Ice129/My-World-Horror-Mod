@@ -63,7 +63,6 @@ We use a **State-Based Goal Profile System** where each entity state has a prede
 All custom goals extend this base class, which provides:
 - Access to the Blueice129Entity instance
 - Simplified lifecycle methods
-- Check intervals for performance optimization
 - State checking utilities
 
 **Key Methods:**
@@ -74,12 +73,6 @@ protected void onStart();                      // Initialize when starting
 protected void onStop();                       // Cleanup when stopping
 public abstract void tick();                   // What to do each tick
 protected boolean isInState(EntityState);      // Check current state
-```
-
-**Check Intervals:**
-Not every goal needs to check conditions every tick. Use the `checkInterval` constructor parameter:
-```java
-new MyGoal(entity, 20); // Check every 20 ticks (1 second)
 ```
 
 #### 2. `GoalProfile` (Goal Container)
@@ -421,16 +414,7 @@ public void tick() {
 
 ## Performance Considerations
 
-### 1. Use Check Intervals
-```java
-// BAD: Checks every tick (expensive)
-new MyGoal(entity, 1);
-
-// GOOD: Checks every 20 ticks (1 second)
-new MyGoal(entity, 20);
-```
-
-### 2. Cache Calculations
+### 1. Cache Expensive Calculations
 ```java
 private PlayerEntity cachedPlayer = null;
 private int cacheTimer = 0;
@@ -543,7 +527,7 @@ public class PathfindingHelper {
 2. Multiple goals can run simultaneously if they don't conflict
 3. State-based profiles make complex behaviors manageable
 4. BaseBlueice129Goal simplifies goal creation
-5. Use check intervals and caching for performance
+5. Keep shouldStart() checks lightweight and cache expensive calculations
 6. System is expandable - add new goals/states easily
 
 **To Add a New Behavior:**

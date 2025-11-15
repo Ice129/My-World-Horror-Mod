@@ -12,7 +12,7 @@ import java.util.EnumSet;
 public class ClearAreaGoal extends BaseBlueice129Goal {
     
     public ClearAreaGoal(Blueice129Entity entity) {
-        super(entity, 30);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
     }
     

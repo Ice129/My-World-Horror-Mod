@@ -2,11 +2,13 @@ package horror.blueice129.entity;
 
 import horror.blueice129.entity.goals.GoalProfileRegistry;
 import horror.blueice129.HorrorMod129;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 
 /**
@@ -24,8 +26,6 @@ import net.minecraft.world.World;
 public class Blueice129Entity extends PathAwareEntity {
 
     private EntityState currentState;
-    private final int costlyCheckTickCooldown = 10;
-    private int costlyCheckTickCounter = 0;
     private int ticksInCurrentState = 0;
     private boolean should_logout_after_menu = false;
     private GoalProfileRegistry goalRegistry;
@@ -75,38 +75,36 @@ public class Blueice129Entity extends PathAwareEntity {
     @Override
     public void tick() {
         super.tick();
-        costlyCheckTickCounter++;
         ticksInCurrentState++;
 
-        boolean doCostlyChecks = costlyCheckTickCounter >= costlyCheckTickCooldown;
-        boolean seesPlayer = false;
-        if (doCostlyChecks) {
-            seesPlayer = checkEntitySeesPlayer();
-            costlyCheckTickCounter = 0;
-        }
+        boolean seesPlayer = checkEntitySeesPlayer();
 
         switch (currentState) {
             case PASSIVE:
-                // Check if player is within 64 blocks and within line of sight
                 // If the entity sees the player, transition to PANICED
-                if (doCostlyChecks && seesPlayer) {
+                //TESTING!!!!!!!!!!!!!!!!!!!!!!!!!
+                if (seesPlayer) {
+                    setState(EntityState.SURFACE_HIDING);
+                    break;
+                }
+
+                if (seesPlayer) {
                     setState(EntityState.PANICED);
                 }
                 // check if the player damages the entity
-                if (doCostlyChecks && checkPlayerDamagesEntity()) {
+                if (checkPlayerDamagesEntity()) {
                     setState(EntityState.PANICED);
                 }
                 should_logout_after_menu = false;
                 break;
             case PANICED:
-                // after a certain amount of time panicing, probably 10-20 ticks, transition to
-                // IN_MENUS, passing a param to say to log out after 5-15 ticks
+                // after a certain amount of time panicing, transition to IN_MENUS
                 // if agro meter high enough, increase chance to enter fleeing/ hiding /
                 // aggravated states
                 if (ticksInCurrentState > 20 * 0.5) {
                     setState(EntityState.FLEEING);
-                    should_logout_after_menu = true; // done here so it doesn't log out when implementing higher aggro
-                                                     // actions
+                    should_logout_after_menu = true;
+                    // done here so it doesn't log out when implementing higher aggro actions
                 }
 
                 break;
@@ -115,23 +113,21 @@ public class Blueice129Entity extends PathAwareEntity {
                     setState(EntityState.IN_MENUS);
                 }
                 // if player not within 50 blocks, go back to passive
-                if (doCostlyChecks) {
-                    PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 50.0);
-                    if (nearestPlayer == null) {
-                        setState(EntityState.PASSIVE);
-                    }
+                PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 50.0D);
+                if (nearestPlayer == null) {
+                    setState(EntityState.SURFACE_HIDING);
                 }
                 // if the entity is no longer moving (stuck), go to IN_MENUS
                 if (this.getVelocity().lengthSquared() < 0.01 && ticksInCurrentState > 20 * 2) {
                     setState(EntityState.IN_MENUS);
-                    HorrorMod129.LOGGER.info("Blueice129Entity: FLEEING state - entity stuck, transitioning to IN_MENUS");
+                    HorrorMod129.LOGGER
+                            .info("Blueice129Entity: FLEEING state - entity stuck, transitioning to IN_MENUS");
                     should_logout_after_menu = true;
                 }
-                if (doCostlyChecks && checkPlayerDamagesEntity()) {
+                if (checkPlayerDamagesEntity()) {
                     setState(EntityState.PANICED);
                     should_logout_after_menu = true;
                 }
-
 
                 break;
             case SURFACE_HIDING:
@@ -246,6 +242,27 @@ public class Blueice129Entity extends PathAwareEntity {
         // Initialize the goal profile registry
         this.goalRegistry = new GoalProfileRegistry(this);
         this.currentState = EntityState.PASSIVE;
+    }
+
+    /**
+     * Check if a Blueice129 entity can spawn in the world.
+     * Ensures only one instance exists at a time.
+     * 
+     * @param world The world to check
+     * @return true if no Blueice129 entity exists, false otherwise
+     */
+    public static boolean canSpawn(World world) {
+        if (world.isClient) {
+            return true; // Client-side doesn't need to check
+        }
+        
+        // Check if any Blueice129Entity already exists in the world
+        for (Entity entity : ((ServerWorld) world).iterateEntities()) {
+            if (entity instanceof Blueice129Entity && entity.isAlive()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

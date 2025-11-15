@@ -17,7 +17,7 @@ public class ErraticHeadMovementGoal extends BaseBlueice129Goal {
     private double lastPitch = 0;
 
     public ErraticHeadMovementGoal(Blueice129Entity entity) {
-        super(entity, 1);
+        super(entity);
     }
 
     @Override

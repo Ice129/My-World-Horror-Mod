@@ -102,8 +102,7 @@ public class GoalProfileRegistry {
         return GoalProfile.create()
             .addGoal(0, new SwimGoal(entity))
             .addGoal(1, new HideBehindStructuresGoal(entity))
-            .addGoal(2, new AlwaysCrouchGoal(entity))
-            .addGoal(3, new PeekGoal(entity));
+            .addGoal(2, new AlwaysCrouchGoal(entity));
     }
     
     /**

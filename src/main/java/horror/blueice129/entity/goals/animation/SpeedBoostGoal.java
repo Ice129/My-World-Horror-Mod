@@ -37,7 +37,7 @@ public class SpeedBoostGoal extends BaseBlueice129Goal {
      * @param activeStates The states where this boost should be active
      */
     public SpeedBoostGoal(Blueice129Entity entity, double speedMultiplier, Blueice129Entity.EntityState... activeStates) {
-        super(entity, 1);
+        super(entity);
         this.speedMultiplier = speedMultiplier;
         this.activeStates = activeStates;
         this.setControls(EnumSet.noneOf(Goal.Control.class)); // Doesn't control anything, just modifies attributes

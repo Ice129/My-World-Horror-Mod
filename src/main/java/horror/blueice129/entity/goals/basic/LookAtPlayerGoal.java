@@ -16,7 +16,7 @@ public class LookAtPlayerGoal extends BaseBlueice129Goal {
     private int lookTime;
     
     public LookAtPlayerGoal(Blueice129Entity entity, float range) {
-        super(entity, 10);
+        super(entity);
         this.range = range;
         this.setControls(EnumSet.of(Goal.Control.LOOK));
     }

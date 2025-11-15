@@ -12,7 +12,7 @@ public class WanderGoal extends BaseBlueice129Goal {
     private final WanderAroundFarGoal vanillaGoal;
     
     public WanderGoal(Blueice129Entity entity, double speed) {
-        super(entity, 120);
+        super(entity);
         this.vanillaGoal = new WanderAroundFarGoal(entity, speed);
     }
     

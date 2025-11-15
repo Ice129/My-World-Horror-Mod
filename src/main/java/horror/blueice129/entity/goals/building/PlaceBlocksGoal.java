@@ -12,7 +12,7 @@ import java.util.EnumSet;
 public class PlaceBlocksGoal extends BaseBlueice129Goal {
     
     public PlaceBlocksGoal(Blueice129Entity entity) {
-        super(entity, 20);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
     }
     

@@ -16,7 +16,7 @@ public class FollowPlayerUndergroundGoal extends BaseBlueice129Goal {
     private final double followDistance = 16.0;
     
     public FollowPlayerUndergroundGoal(Blueice129Entity entity) {
-        super(entity, 10);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE));
     }
     

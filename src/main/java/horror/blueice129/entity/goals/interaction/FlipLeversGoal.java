@@ -12,7 +12,7 @@ import java.util.EnumSet;
 public class FlipLeversGoal extends BaseBlueice129Goal {
     
     public FlipLeversGoal(Blueice129Entity entity) {
-        super(entity, 25);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
     }
     

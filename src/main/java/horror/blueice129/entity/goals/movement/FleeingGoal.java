@@ -15,7 +15,7 @@ public class FleeingGoal extends BaseBlueice129Goal {
     private int playerRefreshCooldown = 0;
     
     public FleeingGoal(Blueice129Entity entity) {
-        super(entity, 5);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK, Goal.Control.JUMP));
     }
     

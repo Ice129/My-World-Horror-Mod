@@ -12,7 +12,7 @@ import java.util.EnumSet;
 public class StayUndergroundGoal extends BaseBlueice129Goal {
     
     public StayUndergroundGoal(Blueice129Entity entity) {
-        super(entity, 10);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE));
     }
     

@@ -11,7 +11,7 @@ import java.util.EnumSet;
 public class SwimGoal extends BaseBlueice129Goal {
     
     public SwimGoal(Blueice129Entity entity) {
-        super(entity, 1);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.JUMP));
     }
     

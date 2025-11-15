@@ -9,7 +9,7 @@ import horror.blueice129.entity.goals.BaseBlueice129Goal;
 public class StandStillGoal extends BaseBlueice129Goal {
     
     public StandStillGoal(Blueice129Entity entity) {
-        super(entity, 1);
+        super(entity);
     }
     
     @Override

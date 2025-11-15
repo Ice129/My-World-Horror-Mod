@@ -12,7 +12,7 @@ import java.util.EnumSet;
 public class PressButtonsGoal extends BaseBlueice129Goal {
     
     public PressButtonsGoal(Blueice129Entity entity) {
-        super(entity, 25);
+        super(entity);
         this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
     }
     

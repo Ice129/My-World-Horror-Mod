@@ -187,7 +187,7 @@ public void tick() {
 ## Lifecycle Hook Reference
 
 ```java
-// Called when goal should activate (checked every checkInterval ticks)
+// Called when goal should activate (checked every tick)
 @Override
 protected boolean shouldStart() {
     return true; // Return true to activate
@@ -317,32 +317,19 @@ double distSquared = entity.squaredDistanceTo(otherEntity);
 
 ---
 
-## Check Interval Guidelines
-
-```
-1  tick  - Needs instant response (combat, danger)
-5  ticks - High frequency (0.25 seconds)
-10 ticks - Medium frequency (0.5 seconds) 
-20 ticks - Normal frequency (1 second) - RECOMMENDED DEFAULT
-40 ticks - Low frequency (2 seconds)
-100 ticks - Rare checks (5 seconds)
-```
-
----
-
 ## Common Mistakes to Avoid
 
 1. **❌ Don't forget control flags**
    ```java
    // BAD: No control flags set
    public MyGoal(Blueice129Entity entity) {
-       super(entity, 20);
+       super(entity);
        // Missing: this.setControls(...)
    }
    
    // GOOD: Control flags specified
    public MyGoal(Blueice129Entity entity) {
-       super(entity, 20);
+       super(entity);
        this.setControls(EnumSet.of(Goal.Control.MOVE));
    }
    ```
@@ -379,16 +366,25 @@ double distSquared = entity.squaredDistanceTo(otherEntity);
    }
    ```
 
-4. **❌ Don't check expensive conditions every tick**
+4. **❌ Don't check expensive conditions in shouldStart()**
    ```java
-   // BAD: Expensive check every tick
-   public MyGoal(Blueice129Entity entity) {
-       super(entity, 1); // Checks every tick
+   // BAD: Expensive pathfinding check in shouldStart()
+   @Override
+   protected boolean shouldStart() {
+       return entity.getNavigation().findPathTo(targetPos, 64) != null; // Slow!
    }
    
-   // GOOD: Use appropriate interval
-   public MyGoal(Blueice129Entity entity) {
-       super(entity, 20); // Checks every second
+   // GOOD: Cache expensive calculations
+   private BlockPos cachedPath = null;
+   private int cacheTimer = 0;
+   
+   @Override
+   protected boolean shouldStart() {
+       if (cacheTimer-- <= 0) {
+           cachedPath = findNearestTarget(); // Only run every 20 ticks
+           cacheTimer = 20;
+       }
+       return cachedPath != null;
    }
    ```
 
@@ -422,9 +418,9 @@ protected void onStop() {
    - Check for conflicting control flags
 
 3. **Monitor performance:**
+   - Keep shouldStart() checks lightweight (simple state/boolean checks)
+   - Cache expensive calculations (pathfinding, world queries) with timers
    - Check tick time (should be <1ms per goal)
-   - Reduce check intervals if needed
-   - Cache expensive calculations
 
 ---
 

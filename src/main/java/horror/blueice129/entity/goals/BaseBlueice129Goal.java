@@ -13,26 +13,13 @@ import net.minecraft.entity.ai.goal.Goal;
 public abstract class BaseBlueice129Goal extends Goal {
     
     protected final Blueice129Entity entity;
-    protected final int checkInterval;
-    protected int tickCounter;
     
     /**
-     * Create a new base goal with default check interval of 1 (every tick)
+     * Create a new base goal
      * @param entity The Blueice129Entity this goal belongs to
      */
     public BaseBlueice129Goal(Blueice129Entity entity) {
-        this(entity, 1);
-    }
-    
-    /**
-     * Create a new base goal with custom check interval
-     * @param entity The Blueice129Entity this goal belongs to
-     * @param checkInterval How often to check conditions (in ticks)
-     */
-    public BaseBlueice129Goal(Blueice129Entity entity, int checkInterval) {
         this.entity = entity;
-        this.checkInterval = checkInterval;
-        this.tickCounter = 0;
     }
     
     /**
@@ -41,10 +28,6 @@ public abstract class BaseBlueice129Goal extends Goal {
      */
     @Override
     public final boolean canStart() {
-        if (tickCounter++ < checkInterval) {
-            return false;
-        }
-        tickCounter = 0;
         return shouldStart();
     }
     
