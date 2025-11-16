@@ -32,7 +32,8 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
     private int searchCooldown = 0;
     private static final int SEARCH_RADIUS = 50;
     private static final int PLAYER_DETECTION_RANGE = 64;
-    private static final int MAX_CANDIDATES_TO_EVALUATE = 3;
+    // private static final int MAX_CANDIDATES_TO_EVALUATE = 3;
+    private static final int MAX_STALK_DISTANCE = 35; // Maximum distance from player while stalking
     
     public HideBehindStructuresGoal(Blueice129Entity entity) {
         super(entity);
@@ -53,12 +54,19 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
             PathVisualizer.cleanupExpiredBlocks(serverWorld, world.getTime());
         }
         
-        // Refresh player and search for hiding spots periodically (every 20 ticks)
+        // Refresh player and search for hiding spots periodically (every tick for responsive stalking)
         if (searchCooldown <= 0) {
             targetPlayer = entity.getWorld().getClosestPlayer(entity, PLAYER_DETECTION_RANGE);
             
-            // Only search for new spot if we don't have one or navigation is idle/completed
-            if (currentHidingSpot == null || entity.getNavigation().isIdle()) {
+            // Check if entity has drifted beyond max stalk distance - force re-search
+            boolean beyondStalkDistance = false;
+            if (targetPlayer != null) {
+                double distanceToPlayer = entity.getBlockPos().getSquaredDistance(targetPlayer.getBlockPos());
+                beyondStalkDistance = distanceToPlayer > (MAX_STALK_DISTANCE * MAX_STALK_DISTANCE);
+            }
+            
+            // Search for new spot if: no spot, navigation idle, or beyond stalk distance
+            if (currentHidingSpot == null || entity.getNavigation().isIdle() || beyondStalkDistance) {
                 BlockPos newSpot = findValidHidingSpot();
                 
                 // Visualize the new path if it changed
@@ -84,12 +92,38 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
         
         // Move to hiding spot if we have one
         if (currentHidingSpot != null) {
-            entity.getNavigation().startMovingTo(
-                currentHidingSpot.getX(), 
-                currentHidingSpot.getY(), 
-                currentHidingSpot.getZ(), 
-                1.3
-            );
+            // Check if entity is currently hidden from player view
+            BlockPos entityPos = entity.getBlockPos();
+            boolean isCurrentlyHidden = targetPlayer != null && 
+                !PathVisibilityScorer.isPositionVisible(
+                    targetPlayer, 
+                    world, 
+                    entityPos, 
+                    PLAYER_DETECTION_RANGE
+                );
+            
+            // Calculate distance to target hiding spot
+            double distanceToTarget = Math.sqrt(entityPos.getSquaredDistance(currentHidingSpot));
+            
+            // Only stop navigation if BOTH conditions are met:
+            // 1. Entity is currently hidden from player
+            // 2. Entity is reasonably close to target (within 5 blocks) OR very close (within 2 blocks)
+            boolean shouldStopMoving = isCurrentlyHidden && 
+                                      !entity.getNavigation().isIdle() && 
+                                      distanceToTarget <= 5.0;
+            
+            if (shouldStopMoving) {
+                entity.getNavigation().stop();
+                // Keep currentHidingSpot - entity is in a good hidden position
+            } else {
+                // Continue moving toward hiding spot
+                entity.getNavigation().startMovingTo(
+                    currentHidingSpot.getX(), 
+                    currentHidingSpot.getY(), 
+                    currentHidingSpot.getZ(), 
+                    1.3
+                );
+            }
         }
     }
     
@@ -151,6 +185,12 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
                 
                 BlockPos groundPos = new BlockPos(x, surfaceY, z);
                 
+                // Check distance from player - enforce max stalk distance
+                double distanceFromPlayer = groundPos.getSquaredDistance(playerPos);
+                if (distanceFromPlayer > (MAX_STALK_DISTANCE * MAX_STALK_DISTANCE)) {
+                    continue; // Too far from player for stalking behavior
+                }
+                
                 // Check if this is a valid hiding spot
                 if (isValidHidingSpot(groundPos)) {
                     // Prefer positions away from player (dot product check)
@@ -175,23 +215,11 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
             return null; // No valid hiding spot found
         }
         
-        // Sort candidates by distance from player (furthest first)
-        candidates.sort((a, b) -> 
-            Double.compare(
-                b.getSquaredDistance(playerPos),
-                a.getSquaredDistance(playerPos)
-            )
-        );
-        
-        // Evaluate top candidates by path visibility
-        int candidatesToEvaluate = Math.min(MAX_CANDIDATES_TO_EVALUATE, candidates.size());
-        BlockPos bestSpot = null;
-        int bestScore = Integer.MAX_VALUE;
-        
-        for (int i = 0; i < candidatesToEvaluate; i++) {
-            BlockPos candidate = candidates.get(i);
-            
-            // Score the path to this candidate
+        // Sort candidates by visibility score first (lowest = best hiding), 
+        // then by distance from player (closer for stalking, but still hidden)
+        // Pre-score all candidates for better sorting
+        List<ScoredCandidate> scoredCandidates = new ArrayList<>();
+        for (BlockPos candidate : candidates) {
             int visibilityScore = PathVisibilityScorer.scorePath(
                 targetPlayer,
                 world,
@@ -199,15 +227,30 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
                 candidate, 
                 SEARCH_RADIUS
             );
-            
-            // Prefer paths with lower visibility scores
-            if (visibilityScore >= 0 && visibilityScore < bestScore) {
-                bestScore = visibilityScore;
-                bestSpot = candidate;
+            if (visibilityScore >= 0) {
+                scoredCandidates.add(new ScoredCandidate(candidate, visibilityScore));
             }
         }
         
-        return bestSpot;
+        if (scoredCandidates.isEmpty()) {
+            return null;
+        }
+        
+        // Sort by visibility score (lower = better), break ties with closer distance
+        scoredCandidates.sort((a, b) -> {
+            int scoreCompare = Integer.compare(a.score, b.score);
+            if (scoreCompare != 0) {
+                return scoreCompare;
+            }
+            // If scores equal, prefer closer to player (for stalking)
+            return Double.compare(
+                a.pos.getSquaredDistance(playerPos),
+                b.pos.getSquaredDistance(playerPos)
+            );
+        });
+        
+        // Return the best candidate (already sorted by score, then distance)
+        return scoredCandidates.get(0).pos;
     }
     
     private boolean isValidHidingSpot(BlockPos pos) {
@@ -243,5 +286,18 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
             
         // Valid if none of the positions are visible
         return !groundVisible && !air1Visible && !air2Visible;
+    }
+    
+    /**
+     * Helper class to store a candidate position with its visibility score
+     */
+    private static class ScoredCandidate {
+        final BlockPos pos;
+        final int score;
+        
+        ScoredCandidate(BlockPos pos, int score) {
+            this.pos = pos;
+            this.score = score;
+        }
     }
 }

@@ -2,6 +2,7 @@ package horror.blueice129.entity;
 
 import horror.blueice129.entity.goals.GoalProfileRegistry;
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.data.HorrorModPersistentState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
@@ -78,15 +79,20 @@ public class Blueice129Entity extends PathAwareEntity {
         ticksInCurrentState++;
 
         boolean seesPlayer = checkEntitySeesPlayer();
+        int agroMeter = 0;
+        if (!this.getWorld().isClient && this.getWorld().getServer() != null) {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(this.getWorld().getServer());
+            agroMeter = state.getIntValue("agroMeter", 0);
+        }
 
         switch (currentState) {
             case PASSIVE:
                 // If the entity sees the player, transition to PANICED
-                //TESTING!!!!!!!!!!!!!!!!!!!!!!!!!
-                if (seesPlayer) {
-                    setState(EntityState.SURFACE_HIDING);
-                    break;
-                }
+                // //TESTING!!!!!!!!!!!!!!!!!!!!!!!!!
+                // if (seesPlayer) {
+                //     setState(EntityState.SURFACE_HIDING);
+                //     break;
+                // }
 
                 if (seesPlayer) {
                     setState(EntityState.PANICED);
@@ -109,12 +115,17 @@ public class Blueice129Entity extends PathAwareEntity {
 
                 break;
             case FLEEING:
-                if (ticksInCurrentState > 20 * 5) {
+                if (ticksInCurrentState > 20 * 5 && agroMeter < 5) {
                     setState(EntityState.IN_MENUS);
                 }
 
                 PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 50.0D);
-                if (nearestPlayer == null) {
+                if (nearestPlayer == null && ticksInCurrentState > 20 * 8 && agroMeter >= 5) {
+                    if (agroMeter >= 5) {
+                        setState(EntityState.SURFACE_HIDING);
+                    } else {
+                        setState(EntityState.PASSIVE);
+                    }
                     setState(EntityState.SURFACE_HIDING);
                 }
                 // if the entity is no longer moving (stuck), go to IN_MENUS
@@ -131,7 +142,24 @@ public class Blueice129Entity extends PathAwareEntity {
 
                 break;
             case SURFACE_HIDING:
-                // TODO: Implement transitions from SURFACE_HIDING to other states
+                // Check for player proximity or damage - transition to IN_MENUS and logout
+                PlayerEntity hidingNearestPlayer = this.getWorld().getClosestPlayer(this, 64.0D);
+                
+                // If damaged by player, immediately go to menus and logout
+                if (checkPlayerDamagesEntity()) {
+                    setState(EntityState.IN_MENUS);
+                    should_logout_after_menu = true;
+                    break;
+                }
+                
+                // If player gets within 7 blocks, go to menus and logout
+                if (hidingNearestPlayer != null) {
+                    double distanceSquared = this.squaredDistanceTo(hidingNearestPlayer);
+                    if (distanceSquared <= 49.0) { // 7 * 7 = 49
+                        setState(EntityState.IN_MENUS);
+                        should_logout_after_menu = true;
+                    }
+                }
                 break;
             case UNDERGROUND_BURROWING:
                 // TODO: Implement transitions from UNDERGROUND_BURROWING to other states
@@ -241,7 +269,21 @@ public class Blueice129Entity extends PathAwareEntity {
         super(entityType, world);
         // Initialize the goal profile registry
         this.goalRegistry = new GoalProfileRegistry(this);
-        this.currentState = EntityState.PASSIVE;
+        
+        // Set initial state based on agro meter
+        if (!world.isClient && world.getServer() != null) {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
+            int agroMeter = state.getIntValue("agroMeter", 0);
+            
+            if (agroMeter > 5) {
+                this.currentState = EntityState.SURFACE_HIDING;
+            } else {
+                this.currentState = EntityState.PASSIVE;
+            }
+        } else {
+            // Default to PASSIVE on client or if server is unavailable
+            this.currentState = EntityState.PASSIVE;
+        }
     }
 
     /**
