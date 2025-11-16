@@ -112,7 +112,7 @@ public class Blueice129Entity extends PathAwareEntity {
                 if (ticksInCurrentState > 20 * 5) {
                     setState(EntityState.IN_MENUS);
                 }
-                // if player not within 50 blocks, go back to passive
+
                 PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 50.0D);
                 if (nearestPlayer == null) {
                     setState(EntityState.SURFACE_HIDING);
