@@ -102,7 +102,8 @@ public class GoalProfileRegistry {
         return GoalProfile.create()
             .addGoal(0, new SwimGoal(entity))
             .addGoal(1, new HideBehindStructuresGoal(entity))
-            .addGoal(2, new AlwaysCrouchGoal(entity));
+            .addGoal(2, new AlwaysCrouchGoal(entity))
+            .addGoal(3, new CrouchSpeedGoal(entity));
     }
     
     /**
@@ -114,7 +115,8 @@ public class GoalProfileRegistry {
             .addGoal(1, new StayUndergroundGoal(entity))
             .addGoal(2, new FollowPlayerUndergroundGoal(entity))
             .addGoal(3, new MimicPlayerMiningGoal(entity))
-            .addGoal(4, new AlwaysCrouchGoal(entity));
+            .addGoal(4, new AlwaysCrouchGoal(entity))
+            .addGoal(5, new CrouchSpeedGoal(entity));
     }
     
     /**

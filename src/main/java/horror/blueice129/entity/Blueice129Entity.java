@@ -10,6 +10,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.world.World;
 
 /**
@@ -267,6 +268,11 @@ public class Blueice129Entity extends PathAwareEntity {
 
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
+        
+        // Set custom name to display "Blueice129" like a player
+        this.setCustomName(Text.literal("Blueice129"));
+        this.setCustomNameVisible(true);
+        
         // Initialize the goal profile registry
         this.goalRegistry = new GoalProfileRegistry(this);
         
