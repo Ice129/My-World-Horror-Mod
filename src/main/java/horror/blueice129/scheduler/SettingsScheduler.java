@@ -3,17 +3,18 @@ package horror.blueice129.scheduler;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.feature.RenderDistanceChanger;
-import horror.blueice129.feature.MusicVolumeLocker;
+// import horror.blueice129.feature.MusicVolumeLocker;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
+import horror.blueice129.utils.EntityUtils;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.World;
 
 import net.minecraft.util.math.random.Random;
 
@@ -28,248 +29,120 @@ import net.minecraft.util.math.random.Random;
  * - Mouse Sensitivity: Decreases to minimum over 300 ticks, every 15 -
  * 45-agro*2 minutes
  * - Smooth Lighting: Disables smooth lighting every 10 - 25-agro*2 minutes
+ * 
+ * Runs on the client side but accesses server's persistent state for timer management
  */
+@Environment(EnvType.CLIENT)
 public class SettingsScheduler {
     // TODO: use switch or other way to trigger these.
     private static final Random random = Random.create();
 
-    // Render distance timer settings (20-40 minutes, reduced by agro*2)
-    private static final int RENDER_BASE_MAX_DELAY = 48000; // 40 minutes
-    private static final int RENDER_BASE_MIN_DELAY = 24000; // 20 minutes
-    private static final String TIMER_ID_RENDER = "settingsTimerRenderDistance";
+    private enum SettingType {
+        RENDER_DISTANCE,
+        // MUSIC_VOLUME,
+        BRIGHTNESS,
+        FPS,
+        MOUSE_SENSITIVITY,
+        SMOOTH_LIGHTING
+    }
 
-    // Music volume timer settings (every 20 ticks / 1 second)
-    private static final int MUSIC_CHECK_INTERVAL = 20; // 20 ticks (1 second)
-    private static final String TIMER_ID_MUSIC = "settingsTimerMusicVolume";
+    private static final int minProximityToEntity = 15;
+    private static final String TIMER_ID = "settingsTimer";
 
-    // Brightness timer settings (10-40 minutes, reduced by agro*2)
-    private static final int BRIGHTNESS_BASE_MAX_DELAY = 48000; // 40 minutes
-    private static final int BRIGHTNESS_BASE_MIN_DELAY = 12000; // 10 minutes
-    private static final int BRIGHTNESS_REDUCTION_TICKS = 100; // 100 ticks (5 seconds) for gradual reduction
-    private static final String TIMER_ID_BRIGHTNESS = "settingsTimerBrightness";
-    private static final String TIMER_ID_BRIGHTNESS_PROGRESS = "settingsTimerBrightnessProgress";
-    private static final String BRIGHTNESS_INITIAL_VALUE = "brightnessInitialValue";
-
-    // FPS timer settings (30-60 minutes, reduced by agro*2)
-    private static final int FPS_BASE_MAX_DELAY = 72000; // 60 minutes
-    private static final int FPS_BASE_MIN_DELAY = 36000; // 30 minutes
-    private static final String TIMER_ID_FPS = "settingsTimerFps";
-
-    // Mouse sensitivity timer settings (15-45 minutes, reduced by agro*2)
-    private static final int SENSITIVITY_BASE_MAX_DELAY = 54000; // 45 minutes
-    private static final int SENSITIVITY_BASE_MIN_DELAY = 18000; // 15 minutes
-    private static final int SENSITIVITY_REDUCTION_TICKS = 300; // 300 ticks (15 seconds) for gradual reduction
-    private static final String TIMER_ID_SENSITIVITY = "settingsTimerMouseSensitivity";
-    private static final String TIMER_ID_SENSITIVITY_PROGRESS = "settingsTimerMouseSensitivityProgress";
-    private static final String SENSITIVITY_INITIAL_VALUE = "sensitivityInitialValue";
-
-    // Smooth lighting timer settings (10-25 minutes, reduced by agro*2)
-    private static final int SMOOTH_LIGHTING_BASE_MAX_DELAY = 20 * 60 * 25; // 25 minutes
-    private static final int SMOOTH_LIGHTING_BASE_MIN_DELAY = 20 * 60 * 10; // 10 minutes
-    private static final String TIMER_ID_SMOOTH_LIGHTING = "settingsTimerSmoothLighting";
+    private static final String ENTITY_COOLDOWN_ID = "entityProximityCooldown";
 
     /**
      * Registers the tick event to handle the settings scheduler.
-     * This should be called during mod initialization.
+     * This should be called during client initialization.
+     * Runs on client side but accesses server persistent state for timers.
      */
     public static void register() {
-        ServerTickEvents.END_SERVER_TICK.register(SettingsScheduler::onServerTick);
+        if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) {
+            return; // Exit if not running on the client side
+        }
 
-        // Register server world loading event to initialize timers if needed
-        ServerWorldEvents.LOAD.register((server, world) -> {
-            if (world.getRegistryKey() == World.OVERWORLD) {
-                HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        ClientTickEvents.END_CLIENT_TICK.register(SettingsScheduler::onClientTick);
 
-                // Initialize render distance timer
-                if (!state.hasTimer(TIMER_ID_RENDER)) {
-                    int delay = getRandomDelayWithAgro(state, RENDER_BASE_MIN_DELAY, RENDER_BASE_MAX_DELAY);
-                    state.setTimer(TIMER_ID_RENDER, delay);
-                    HorrorMod129.LOGGER.info("SettingsScheduler (Render Distance) initialized with timer: "
-                            + state.getTimer(TIMER_ID_RENDER) + " ticks");
-                }
-
-                // Initialize music volume timer
-                if (!state.hasTimer(TIMER_ID_MUSIC)) {
-                    state.setTimer(TIMER_ID_MUSIC, MUSIC_CHECK_INTERVAL);
-                    HorrorMod129.LOGGER.info("SettingsScheduler (Music Volume) initialized with timer: "
-                            + state.getTimer(TIMER_ID_MUSIC) + " ticks");
-                }
-
-                // Initialize brightness timer
-                if (!state.hasTimer(TIMER_ID_BRIGHTNESS)) {
-                    int delay = getRandomDelayWithAgro(state, BRIGHTNESS_BASE_MIN_DELAY, BRIGHTNESS_BASE_MAX_DELAY);
-                    state.setTimer(TIMER_ID_BRIGHTNESS, delay);
-                    HorrorMod129.LOGGER.info("SettingsScheduler (Brightness) initialized with timer: "
-                            + state.getTimer(TIMER_ID_BRIGHTNESS) + " ticks");
-                }
-
-                // Initialize brightness progress timer (starts at 0)
-                if (!state.hasTimer(TIMER_ID_BRIGHTNESS_PROGRESS)) {
-                    state.setTimer(TIMER_ID_BRIGHTNESS_PROGRESS, 0);
-                }
-
-                // Initialize FPS timer
-                if (!state.hasTimer(TIMER_ID_FPS)) {
-                    int delay = getRandomDelayWithAgro(state, FPS_BASE_MIN_DELAY, FPS_BASE_MAX_DELAY);
-                    state.setTimer(TIMER_ID_FPS, delay);
-                    HorrorMod129.LOGGER.info("SettingsScheduler (FPS) initialized with timer: "
-                            + state.getTimer(TIMER_ID_FPS) + " ticks");
-                }
-
-                // Initialize mouse sensitivity timer
-                if (!state.hasTimer(TIMER_ID_SENSITIVITY)) {
-                    int delay = getRandomDelayWithAgro(state, SENSITIVITY_BASE_MIN_DELAY, SENSITIVITY_BASE_MAX_DELAY);
-                    state.setTimer(TIMER_ID_SENSITIVITY, delay);
-                    HorrorMod129.LOGGER.info("SettingsScheduler (Mouse Sensitivity) initialized with timer: "
-                            + state.getTimer(TIMER_ID_SENSITIVITY) + " ticks");
-                }
-
-                // Initialize mouse sensitivity progress timer (starts at 0)
-                if (!state.hasTimer(TIMER_ID_SENSITIVITY_PROGRESS)) {
-                    state.setTimer(TIMER_ID_SENSITIVITY_PROGRESS, 0);
-                }
-
-                // Initialize smooth lighting timer
-                if (!state.hasTimer(TIMER_ID_SMOOTH_LIGHTING)) {
-                    int delay = getRandomDelayWithAgro(state, SMOOTH_LIGHTING_BASE_MIN_DELAY,
-                            SMOOTH_LIGHTING_BASE_MAX_DELAY);
-                    state.setTimer(TIMER_ID_SMOOTH_LIGHTING, delay);
-                    HorrorMod129.LOGGER.info("SettingsScheduler (Smooth Lighting) initialized with timer: "
-                            + state.getTimer(TIMER_ID_SMOOTH_LIGHTING) + " ticks");
-                }
-            }
-        });
-
-        HorrorMod129.LOGGER.info("Registered SettingsScheduler");
+        HorrorMod129.LOGGER.info("Registered SettingsScheduler (client-side)");
     }
 
     /**
-     * Called every server tick.
+     * Called every client tick.
      * Updates all timers and triggers the appropriate setting modifications when
      * timers reach zero.
-     * Music volume is checked every 20 ticks (1 second) to enforce the minimum.
+     * Accesses server persistent state through the integrated server.
      * 
-     * @param server The Minecraft server instance
+     * @param client The Minecraft client instance
      */
-    private static void onServerTick(MinecraftServer server) {
-        // Skip if the server is empty
-        if (server.getCurrentPlayerCount() == 0) {
+    private static void onClientTick(MinecraftClient client) {
+        // Skip if not in-game or no server available
+        if (client.world == null || client.getServer() == null) {
             return;
         }
 
+        MinecraftServer server = client.getServer();
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
 
-        // Handle render distance timer (CLIENT-SIDE ONLY)
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            int renderTimer = state.decrementTimer(TIMER_ID_RENDER, 1);
-            if (renderTimer <= 0) {
-                RenderDistanceChanger.decreaseRenderDistance(2);
-                HorrorMod129.LOGGER.info("Render distance decreased by 2. New render distance: "
+        // Initialize timer on first run
+        if (!state.hasTimer(TIMER_ID)) {
+            int agroMeter = state.getIntValue("agroMeter", 0);
+            state.setTimer(TIMER_ID, Math.max(1, 20 * 60 * 60 - (agroMeter * 2 * 60 * 20))); // Initial timer set to 1 hour - (agro*2 minutes), minimum 1 tick
+            HorrorMod129.LOGGER.info("SettingsScheduler initialized with timer: " + state.getTimer(TIMER_ID) + " ticks");
+        }
+
+        int mainTimer = state.decrementTimer(TIMER_ID, 1);
+        if (mainTimer > 0) {
+            return;
+        }
+
+        if (state.getTimer(ENTITY_COOLDOWN_ID) > 0) {
+            state.decrementTimer(ENTITY_COOLDOWN_ID, 1);
+            // Reset main timer to avoid repeated checks during cooldown
+            state.setTimer(TIMER_ID, getRandomDelayWithAgro(state, 20 * 60 * 30, 20 * 60 * 60));
+            return;
+        }
+
+        // TODO: Implement proper entity proximity check when entity is added
+        // For now, using placeholder - will always return false
+        boolean isNearEntity = EntityUtils.isEntityNearPlayer(null, null, minProximityToEntity);
+        if (isNearEntity) {
+            // Set cooldown to avoid immediate retriggering
+            state.setTimer(ENTITY_COOLDOWN_ID, 20 * 60 * 6); // 6 minute cooldown
+            // continue
+        }
+
+
+
+        SettingType[] settings = SettingType.values();
+        SettingType settingToTrigger = settings[random.nextInt(settings.length)];
+        switch (settingToTrigger) {
+            case RENDER_DISTANCE:
+                RenderDistanceChanger.decreaseRenderDistance(4);
+                HorrorMod129.LOGGER.info("Render distance decreased by 4. New render distance: "
                         + RenderDistanceChanger.getRenderDistance());
-                int delay = getRandomDelayWithAgro(state, RENDER_BASE_MIN_DELAY, RENDER_BASE_MAX_DELAY);
-                state.setTimer(TIMER_ID_RENDER, delay);
-            }
-        }
-
-        // Handle music volume timer - check every 20 ticks (1 second) (CLIENT-SIDE ONLY)
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            int musicTimer = state.decrementTimer(TIMER_ID_MUSIC, 1);
-            if (musicTimer <= 0) {
-                boolean changed = MusicVolumeLocker.enforceMinimumMusicVolume();
-                if (changed) {
-                    HorrorMod129.LOGGER.info("Music volume enforced to minimum");
-                }
-                state.setTimer(TIMER_ID_MUSIC, MUSIC_CHECK_INTERVAL); // Check again in 20 ticks (1 second)
-            }
-        }
-
-        // Handle brightness timer (CLIENT-SIDE ONLY)
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            int brightnessTimer = state.decrementTimer(TIMER_ID_BRIGHTNESS, 1);
-            if (brightnessTimer <= 0) {
-                // Start the gradual reduction process
-                int progress = state.getTimer(TIMER_ID_BRIGHTNESS_PROGRESS);
-                if (progress < BRIGHTNESS_REDUCTION_TICKS) {
-                    // Continue reducing brightness
-                    double initialBrightness;
-                    if (progress == 0) {
-                        // Store initial brightness when starting
-                        initialBrightness = BrightnessChanger.getBrightness();
-                        state.setIntValue(BRIGHTNESS_INITIAL_VALUE, (int)(initialBrightness * 1000));
-                        HorrorMod129.LOGGER.info("Starting brightness reduction from "
-                                + (initialBrightness * 100) + "%");
-                    } else {
-                        // Retrieve stored initial brightness
-                        initialBrightness = state.getIntValue(BRIGHTNESS_INITIAL_VALUE, 1000) / 1000.0;
-                    }
-                    BrightnessChanger.decreaseBrightnessGradually(initialBrightness, 0.0, progress, BRIGHTNESS_REDUCTION_TICKS);
-                    state.setTimer(TIMER_ID_BRIGHTNESS_PROGRESS, progress + 1);
-                    state.setTimer(TIMER_ID_BRIGHTNESS, 1); // Check again next tick
-                } else {
-                    // Reduction complete, reset for next cycle
-                    HorrorMod129.LOGGER.info("Brightness reduction complete");
-                    state.setTimer(TIMER_ID_BRIGHTNESS_PROGRESS, 0);
-                    state.removeIntValue(BRIGHTNESS_INITIAL_VALUE);
-                    int delay = getRandomDelayWithAgro(state, BRIGHTNESS_BASE_MIN_DELAY, BRIGHTNESS_BASE_MAX_DELAY);
-                    state.setTimer(TIMER_ID_BRIGHTNESS, delay);
-                }
-            }
-        }
-
-        // Handle FPS timer (CLIENT-SIDE ONLY)
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            int fpsTimer = state.decrementTimer(TIMER_ID_FPS, 1);
-            if (fpsTimer <= 0) {
+                break;
+            case BRIGHTNESS:
+                BrightnessChanger.setToMoodyBrightness();
+                HorrorMod129.LOGGER.info("Brightness set to moody");
+                break;
+            case FPS:
                 FpsLimiter.capFpsTo30();
                 HorrorMod129.LOGGER.info("FPS capped to 30");
-                int delay = getRandomDelayWithAgro(state, FPS_BASE_MIN_DELAY, FPS_BASE_MAX_DELAY);
-                state.setTimer(TIMER_ID_FPS, delay);
-            }
-        }
-
-        // Handle mouse sensitivity timer (CLIENT-SIDE ONLY)
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            int sensitivityTimer = state.decrementTimer(TIMER_ID_SENSITIVITY, 1);
-            if (sensitivityTimer <= 0) {
-                // Start the gradual reduction process
-                int progress = state.getTimer(TIMER_ID_SENSITIVITY_PROGRESS);
-                if (progress < SENSITIVITY_REDUCTION_TICKS) {
-                    // Continue reducing sensitivity
-                    double initialSensitivity;
-                    if (progress == 0) {
-                        // Store initial sensitivity when starting
-                        initialSensitivity = MouseSensitivityChanger.getMouseSensitivity();
-                        state.setIntValue(SENSITIVITY_INITIAL_VALUE, (int)(initialSensitivity * 1000));
-                        HorrorMod129.LOGGER.info("Starting mouse sensitivity reduction from "
-                                + (initialSensitivity * 100) + "%");
-                    } else {
-                        // Retrieve stored initial sensitivity
-                        initialSensitivity = state.getIntValue(SENSITIVITY_INITIAL_VALUE, 500) / 1000.0;
-                    }
-                    MouseSensitivityChanger.decreaseMouseSensitivityGradually(initialSensitivity, 0.0, progress, SENSITIVITY_REDUCTION_TICKS);
-                    state.setTimer(TIMER_ID_SENSITIVITY_PROGRESS, progress + 1);
-                    state.setTimer(TIMER_ID_SENSITIVITY, 1); // Check again next tick
-                } else {
-                    // Reduction complete, reset for next cycle
-                    HorrorMod129.LOGGER.info("Mouse sensitivity reduction complete");
-                    state.setTimer(TIMER_ID_SENSITIVITY_PROGRESS, 0);
-                    state.removeIntValue(SENSITIVITY_INITIAL_VALUE);
-                    int delay = getRandomDelayWithAgro(state, SENSITIVITY_BASE_MIN_DELAY, SENSITIVITY_BASE_MAX_DELAY);
-                    state.setTimer(TIMER_ID_SENSITIVITY, delay);
-                }
-            }
-        }
-
-        // Handle smooth lighting timer (CLIENT-SIDE ONLY)
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            int smoothLightingTimer = state.decrementTimer(TIMER_ID_SMOOTH_LIGHTING, 1);
-            if (smoothLightingTimer <= 0) {
+                break;
+            case MOUSE_SENSITIVITY:
+                MouseSensitivityChanger.decreaseMouseSensitivity(0.20);
+                HorrorMod129.LOGGER.info("Mouse sensitivity decreased by 20%. New sensitivity: "
+                        + MouseSensitivityChanger.getMouseSensitivity());
+                break;
+            case SMOOTH_LIGHTING:
                 SmoothLightingChanger.disableSmoothLighting();
                 HorrorMod129.LOGGER.info("Smooth lighting disabled");
-                int delay = getRandomDelayWithAgro(state, SMOOTH_LIGHTING_BASE_MIN_DELAY, SMOOTH_LIGHTING_BASE_MAX_DELAY);
-                state.setTimer(TIMER_ID_SMOOTH_LIGHTING, delay);
-            }
+                break;
+            default:
+                break;
         }
+        state.setTimer(TIMER_ID, getRandomDelayWithAgro(state, 20 * 60 * 30, 20 * 60 * 60));
+        // Reset main timer to 30-60 minutes - (agro*2 minutes)
     }
 
     /**
