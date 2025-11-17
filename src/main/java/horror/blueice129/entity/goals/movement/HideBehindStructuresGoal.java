@@ -33,7 +33,7 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
     private static final int SEARCH_RADIUS = 50;
     private static final int PLAYER_DETECTION_RANGE = 64;
     // private static final int MAX_CANDIDATES_TO_EVALUATE = 3;
-    private static final int MAX_STALK_DISTANCE = 35; // Maximum distance from player while stalking
+    private static final int MAX_STALK_DISTANCE = 20; // Maximum distance from player while stalking
     
     public HideBehindStructuresGoal(Blueice129Entity entity) {
         super(entity);
@@ -121,7 +121,7 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
                     currentHidingSpot.getX(), 
                     currentHidingSpot.getY(), 
                     currentHidingSpot.getZ(), 
-                    1.3
+                    0.5 // Slower speed for testing. default is 1.3
                 );
             }
         }
