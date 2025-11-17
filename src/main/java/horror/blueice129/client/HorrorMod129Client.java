@@ -2,6 +2,8 @@ package horror.blueice129.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.scheduler.SettingsScheduler;
+import horror.blueice129.scheduler.MinMusicSetter;
 
 /**
  * Client entry point for the horror mod.
@@ -12,5 +14,11 @@ public class HorrorMod129Client implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         HorrorMod129.LOGGER.info("Initializing HorrorMod129 client");
+        
+        // Register client-side schedulers
+        SettingsScheduler.register();
+        MinMusicSetter.initialize();
+        
+        HorrorMod129.LOGGER.info("HorrorMod129 client initialization complete");
     }
 }

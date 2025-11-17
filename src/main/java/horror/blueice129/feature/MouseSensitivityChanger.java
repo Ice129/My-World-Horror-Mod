@@ -58,42 +58,12 @@ public class MouseSensitivityChanger {
     }
 
     /**
-     * Gradually decreases mouse sensitivity over time
-     * This method should be called repeatedly to create a smooth transition
-     * MUST be called from the client thread
-     * @param initialSensitivity The initial sensitivity at the start of the transition
-     * @param targetSensitivity The target sensitivity to reach (must be <= initialSensitivity)
-     * @param currentProgress Current progress (0 to totalTicks)
-     * @param totalTicks Total number of ticks for the transition
-     * @throws IllegalArgumentException if targetSensitivity > initialSensitivity
+     * Decreases mouse sensitivity by a specific amount.
+     * @param amount The amount to decrease, in the range 0.0 to 1.0 (e.g., 0.20 for 20%).
      */
-    public static void decreaseMouseSensitivityGradually(double initialSensitivity, double targetSensitivity, int currentProgress, int totalTicks) {
-        if (targetSensitivity > initialSensitivity) {
-            throw new IllegalArgumentException("targetSensitivity (" + targetSensitivity + ") must be <= initialSensitivity (" + initialSensitivity + ") for decreaseMouseSensitivityGradually");
-        }
-
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) {
-            return;
-        }
-
-        // Execute on client thread to avoid RenderSystem threading issues
-        client.execute(() -> {
-            SimpleOption<Double> mouseSensitivity = client.options.getMouseSensitivity();
-            if (mouseSensitivity == null) {
-                return;
-            }
-            
-            // Calculate the new sensitivity based on progress
-            // Linear interpolation from initial to target
-            double progress = (double) currentProgress / totalTicks;
-            double newSensitivity = initialSensitivity + ((targetSensitivity - initialSensitivity) * progress);
-            
-            // Clamp and set the new sensitivity
-            double clampedSensitivity = Math.max(targetSensitivity, Math.min(initialSensitivity, newSensitivity));
-            mouseSensitivity.setValue(clampedSensitivity);
-            client.options.write();
-        });
+    public static void decreaseMouseSensitivity(double amount) {
+        double currentSensitivity = getMouseSensitivity();
+        setMouseSensitivity(currentSensitivity - amount);
     }
 
     /**
