@@ -2,6 +2,7 @@ package horror.blueice129.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import horror.blueice129.HorrorMod129;
@@ -95,6 +96,18 @@ public class DebugCommands {
                     
                     // === TIMER MANAGEMENT ===
                     .then(literal("timer")
+                        .then(literal("get")
+                            .then(argument("timerId", StringArgumentType.word())
+                                .executes(context -> getTimer(
+                                    context.getSource(),
+                                    StringArgumentType.getString(context, "timerId")))))
+                        .then(literal("set")
+                            .then(argument("timerId", StringArgumentType.word())
+                                .then(argument("ticks", IntegerArgumentType.integer(0))
+                                    .executes(context -> setTimer(
+                                        context.getSource(),
+                                        StringArgumentType.getString(context, "timerId"),
+                                        IntegerArgumentType.getInteger(context, "ticks"))))))
                         .then(literal("smallstructure")
                             .then(argument("seconds", IntegerArgumentType.integer(1, 3600))
                                 .executes(context -> setSmallStructureTimer(
@@ -266,7 +279,58 @@ public class DebugCommands {
     }
 
     /**
-     * Sets the small structure event timer
+     * Gets a timer value dynamically by its ID from persistent state
+     * @param source Command source
+     * @param timerId The ID of the timer to retrieve
+     * @return Command success value
+     */
+    private static int getTimer(ServerCommandSource source, String timerId) {
+        MinecraftServer server = source.getServer();
+        try {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            int ticks = state.getTimer(timerId);
+            double seconds = ticks / 20.0;
+            double minutes = seconds / 60.0;
+            
+            source.sendFeedback(() -> Text.literal(
+                String.format("Timer '%s': %d ticks (%.1f seconds, %.2f minutes)", 
+                    timerId, ticks, seconds, minutes)
+            ), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to get timer '" + timerId + "': " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Sets a timer value dynamically by its ID in persistent state
+     * @param source Command source
+     * @param timerId The ID of the timer to set
+     * @param ticks The timer value in ticks
+     * @return Command success value
+     */
+    private static int setTimer(ServerCommandSource source, String timerId, int ticks) {
+        MinecraftServer server = source.getServer();
+        try {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            state.setTimer(timerId, ticks);
+            double seconds = ticks / 20.0;
+            double minutes = seconds / 60.0;
+            
+            source.sendFeedback(() -> Text.literal(
+                String.format("Timer '%s' set to %d ticks (%.1f seconds, %.2f minutes)", 
+                    timerId, ticks, seconds, minutes)
+            ), true);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to set timer '" + timerId + "': " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Sets the small structure timer
      * @param source Command source
      * @param seconds Timer duration in seconds
      * @return Command success value

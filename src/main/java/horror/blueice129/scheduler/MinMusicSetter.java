@@ -29,7 +29,7 @@ public class MinMusicSetter {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Only run if in-game and not paused
-            if (client.world == null || client.isPaused()) {
+            if (client.world == null) {
                 return;
             }
 
