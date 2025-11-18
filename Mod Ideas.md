@@ -74,14 +74,14 @@
 - Compass starts to point in direction of entity base/nearest anomalous activity 
 
 ## Game Mechanic Ideas
-- setting the players render distance down slowly
+<!-- - setting the players render distance down slowly -->
 
 - increasing the players graphics settings to try and lag the player out (able to disable this in config as i can see people not wanting this if recording or with bad pcs)
 
-- capping fps to 30 or lower when entity is nearby
+<!-- - capping fps to 30 or lower when entity is nearby -->
 
-- locking music to always be above 50% volume (able to disable in config, or modify the minimum volume)
+<!-- - locking music to always be above 50% volume (able to disable in config, or modify the minimum volume) -->
 
-- setting to moody brightness
+<!-- - setting to moody brightness -->
 
-
+- nights will sometimes be 20% - 100% longer occasionally
