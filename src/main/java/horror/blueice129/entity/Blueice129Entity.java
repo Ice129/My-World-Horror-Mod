@@ -116,6 +116,7 @@ public class Blueice129Entity extends PathAwareEntity {
 
                 break;
             case FLEEING:
+            // BUG: logs out instead of surface hiding. says its stuck while in fleeing
                 if (ticksInCurrentState > 20 * 5 && agroMeter < 5) {
                     setState(EntityState.IN_MENUS);
                 }
@@ -127,7 +128,7 @@ public class Blueice129Entity extends PathAwareEntity {
                     } else {
                         setState(EntityState.PASSIVE);
                     }
-                    setState(EntityState.SURFACE_HIDING);
+                    // setState(EntityState.SURFACE_HIDING);
                 }
                 // if the entity is no longer moving (stuck), go to IN_MENUS
                 if (this.getVelocity().lengthSquared() < 0.01 && ticksInCurrentState > 20 * 2) {
