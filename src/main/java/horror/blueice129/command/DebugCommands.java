@@ -915,6 +915,11 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to disable smooth lighting: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    /**
      * Set the state of the nearest Blueice129 entity
      * @param source Command source
      * @param stateName Name of the state to set
@@ -990,6 +995,11 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to toggle smooth lighting: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    /**
      * Get the current state of the nearest Blueice129 entity
      * @param source Command source
      * @return Command success value
