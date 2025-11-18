@@ -19,6 +19,8 @@ import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.debug.LineOfSightChecker;
+import horror.blueice129.entity.Blueice129Entity;
+import net.minecraft.entity.Entity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -213,6 +215,28 @@ public class DebugCommands {
                                 .executes(context -> fillRenderedBlocksWithGlass(context.getSource())))
                             .then(literal("trees")
                                 .executes(context -> placeDiamondPillars(context.getSource())))))
+            );
+            
+            // Register entity state commands
+            dispatcher.register(literal("blueice129")
+                    .requires(source -> source.hasPermissionLevel(2)) // Require permission level 2 (op)
+                    .then(literal("state")
+                            .then(literal("passive")
+                                    .executes(context -> setEntityState(context.getSource(), "PASSIVE")))
+                            .then(literal("paniced")
+                                    .executes(context -> setEntityState(context.getSource(), "PANICED")))
+                            .then(literal("surface_hiding")
+                                    .executes(context -> setEntityState(context.getSource(), "SURFACE_HIDING")))
+                            .then(literal("underground_burrowing")
+                                    .executes(context -> setEntityState(context.getSource(), "UNDERGROUND_BURROWING")))
+                            .then(literal("in_menus")
+                                    .executes(context -> setEntityState(context.getSource(), "IN_MENUS")))
+                            .then(literal("investigating")
+                                    .executes(context -> setEntityState(context.getSource(), "INVESTIGATING")))
+                            .then(literal("upgrading_house")
+                                    .executes(context -> setEntityState(context.getSource(), "UPGRADING_HOUSE")))
+                            .then(literal("get")
+                                    .executes(context -> getEntityState(context.getSource()))))
             );
         }
     }
@@ -891,6 +915,63 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to disable smooth lighting: " + e.getMessage()));
+     * Set the state of the nearest Blueice129 entity
+     * @param source Command source
+     * @param stateName Name of the state to set
+     * @return Command success value
+     */
+    private static int setEntityState(ServerCommandSource source, String stateName) {
+        try {
+            ServerPlayerEntity player = source.getPlayer();
+            if (player == null) {
+                source.sendError(Text.literal("This command must be run by a player"));
+                return 0;
+            }
+            
+            ServerWorld world = (ServerWorld) player.getWorld();
+            
+            // Find the nearest Blueice129 entity within 64 blocks
+            Blueice129Entity nearestEntity = null;
+            double nearestDistance = 64.0 * 64.0; // Squared distance for efficiency
+            
+            for (Entity entity : world.iterateEntities()) {
+                if (entity instanceof Blueice129Entity) {
+                    double distSquared = player.squaredDistanceTo(entity);
+                    if (distSquared < nearestDistance) {
+                        nearestDistance = distSquared;
+                        nearestEntity = (Blueice129Entity) entity;
+                    }
+                }
+            }
+            
+            if (nearestEntity == null) {
+                source.sendError(Text.literal("No Blueice129 entity found within 64 blocks"));
+                return 0;
+            }
+            
+            // Convert state name to enum
+            Blueice129Entity.EntityState newState;
+            try {
+                newState = Blueice129Entity.EntityState.valueOf(stateName);
+            } catch (IllegalArgumentException e) {
+                source.sendError(Text.literal("Invalid state name: " + stateName));
+                return 0;
+            }
+            
+            // Set the state
+            nearestEntity.setState(newState);
+            
+            final String finalStateName = stateName.toLowerCase().replace('_', ' ');
+            final double finalDistance = Math.sqrt(nearestDistance);
+            source.sendFeedback(() -> Text.literal(
+                String.format("Set Blueice129 entity state to '%s' (%.1f blocks away)", 
+                    finalStateName, finalDistance)
+            ), true);
+            
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error setting entity state: " + e.getMessage()));
+            e.printStackTrace();
             return 0;
         }
     }
@@ -909,6 +990,53 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Failed to toggle smooth lighting: " + e.getMessage()));
+     * Get the current state of the nearest Blueice129 entity
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getEntityState(ServerCommandSource source) {
+        try {
+            ServerPlayerEntity player = source.getPlayer();
+            if (player == null) {
+                source.sendError(Text.literal("This command must be run by a player"));
+                return 0;
+            }
+            
+            ServerWorld world = (ServerWorld) player.getWorld();
+            
+            // Find the nearest Blueice129 entity within 64 blocks
+            Blueice129Entity nearestEntity = null;
+            double nearestDistance = 64.0 * 64.0; // Squared distance for efficiency
+            
+            for (Entity entity : world.iterateEntities()) {
+                if (entity instanceof Blueice129Entity) {
+                    double distSquared = player.squaredDistanceTo(entity);
+                    if (distSquared < nearestDistance) {
+                        nearestDistance = distSquared;
+                        nearestEntity = (Blueice129Entity) entity;
+                    }
+                }
+            }
+            
+            if (nearestEntity == null) {
+                source.sendError(Text.literal("No Blueice129 entity found within 64 blocks"));
+                return 0;
+            }
+            
+            // Get the current state
+            Blueice129Entity.EntityState currentState = nearestEntity.getState();
+            final String stateName = currentState.toString().toLowerCase().replace('_', ' ');
+            final double finalDistance = Math.sqrt(nearestDistance);
+            
+            source.sendFeedback(() -> Text.literal(
+                String.format("Blueice129 entity state: '%s' (%.1f blocks away)", 
+                    stateName, finalDistance)
+            ), false);
+            
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error getting entity state: " + e.getMessage()));
+            e.printStackTrace();
             return 0;
         }
     }
