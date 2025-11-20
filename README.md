@@ -2,7 +2,7 @@
 
 # My World.jar
 ## A Vanilla-Style Psychological Horror Experience for Minecraft
-#### *Version 0.2.1-beta - Early Access*
+#### *Version 0.2.2-beta - Early Access*
 
 Horror lives in the familiar; The breaking of dirt, torches leading the way home, a door left open. This isn't just your world anymore - it's something else.
 
