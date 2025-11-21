@@ -95,6 +95,10 @@ public class Blueice129Entity extends PathAwareEntity {
                 //     break;
                 // }
 
+                if (ticksInCurrentState < 20 * 3) {
+                    break; // wait at least 3 seconds before checking for transitions
+                }
+
                 if (seesPlayer) {
                     setState(EntityState.PANICED);
                 }
@@ -119,16 +123,15 @@ public class Blueice129Entity extends PathAwareEntity {
             // BUG: logs out instead of surface hiding. says its stuck while in fleeing
                 if (ticksInCurrentState > 20 * 5 && agroMeter < 5) {
                     setState(EntityState.IN_MENUS);
+                    break;
                 }
 
-                PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 50.0D);
+                PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 15.0D);
                 if (nearestPlayer == null && ticksInCurrentState > 20 * 8 && agroMeter >= 5) {
                     if (agroMeter >= 5) {
                         setState(EntityState.SURFACE_HIDING);
-                    } else {
-                        setState(EntityState.PASSIVE);
+                        break;
                     }
-                    // setState(EntityState.SURFACE_HIDING);
                 }
                 // if the entity is no longer moving (stuck), go to IN_MENUS
                 if (this.getVelocity().lengthSquared() < 0.01 && ticksInCurrentState > 20 * 2) {
@@ -136,10 +139,12 @@ public class Blueice129Entity extends PathAwareEntity {
                     HorrorMod129.LOGGER
                             .info("Blueice129Entity: FLEEING state - entity stuck, transitioning to IN_MENUS");
                     should_logout_after_menu = true;
+                    break;
                 }
                 if (checkPlayerDamagesEntity()) {
                     setState(EntityState.PANICED);
                     should_logout_after_menu = true;
+                    break;
                 }
 
                 break;
@@ -337,5 +342,13 @@ public class Blueice129Entity extends PathAwareEntity {
                 .add(EntityAttributes.GENERIC_MAX_HEALTH, 20.0D) // Same as player
                 .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.25D) // Same as player
                 .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 35.0D); // How far they can detect entities
+    }
+
+    /**
+     * Override to make the nametag always visible, not just when looking at it
+     */
+    @Override
+    public boolean shouldRenderName() {
+        return true;
     }
 }
