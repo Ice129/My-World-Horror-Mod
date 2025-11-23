@@ -31,6 +31,7 @@ public class Blueice129Entity extends PathAwareEntity {
     private int ticksInCurrentState = 0;
     private boolean should_logout_after_menu = false;
     private GoalProfileRegistry goalRegistry;
+    private EntityState previousState = null;
 
     public enum EntityState {
         PASSIVE, // Default state, does nothing really
@@ -77,6 +78,12 @@ public class Blueice129Entity extends PathAwareEntity {
     @Override
     public void tick() {
         super.tick();
+        if (this.previousState != this.currentState) {
+            HorrorMod129.LOGGER.info("Blueice129Entity: State changed to " + this.currentState + " from "
+                    + this.previousState + " after " + this.ticksInCurrentState + " ticks.");
+            this.previousState = this.currentState;
+        }
+
         ticksInCurrentState++;
 
         boolean seesPlayer = checkEntitySeesPlayer();
@@ -91,8 +98,8 @@ public class Blueice129Entity extends PathAwareEntity {
                 // If the entity sees the player, transition to PANICED
                 // //TESTING!!!!!!!!!!!!!!!!!!!!!!!!!
                 // if (seesPlayer) {
-                //     setState(EntityState.SURFACE_HIDING);
-                //     break;
+                // setState(EntityState.SURFACE_HIDING);
+                // break;
                 // }
 
                 if (ticksInCurrentState < 20 * 3) {
@@ -112,27 +119,35 @@ public class Blueice129Entity extends PathAwareEntity {
                 // after a certain amount of time panicing, transition to IN_MENUS
                 // if agro meter high enough, increase chance to enter fleeing/ hiding /
                 // aggravated states
-                if (ticksInCurrentState > 20 * 0.5) {
+                // if not agro, transition to fleeing after .5 seconds
+                if (ticksInCurrentState > 20 * 0.5 && agroMeter < 5) {
                     setState(EntityState.FLEEING);
                     should_logout_after_menu = true;
                     // done here so it doesn't log out when implementing higher aggro actions
                 }
 
-                break;
-            case FLEEING:
-            // BUG: logs out instead of surface hiding. says its stuck while in fleeing
-                if (ticksInCurrentState > 20 * 5 && agroMeter < 5) {
-                    setState(EntityState.IN_MENUS);
-                    break;
-                }
-
-                PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 15.0D);
-                if (nearestPlayer == null && ticksInCurrentState > 20 * 8 && agroMeter >= 5) {
+                if (ticksInCurrentState > 20 * 5 && agroMeter >= 5) {
                     if (agroMeter >= 5) {
                         setState(EntityState.SURFACE_HIDING);
                         break;
                     }
                 }
+
+                break;
+            case FLEEING:
+                // BUG: logs out instead of surface hiding. says its stuck while in fleeing
+                if (ticksInCurrentState > 20 * 5 && agroMeter < 5) {
+                    setState(EntityState.IN_MENUS);
+                    break;
+                }
+
+                // PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 15.0D);
+                // if (nearestPlayer == null && ticksInCurrentState > 20 * 8 && agroMeter >= 5) {
+                //     if (agroMeter >= 5) {
+                //         setState(EntityState.SURFACE_HIDING);
+                //         break;
+                //     }
+                // }
                 // if the entity is no longer moving (stuck), go to IN_MENUS
                 if (this.getVelocity().lengthSquared() < 0.01 && ticksInCurrentState > 20 * 2) {
                     setState(EntityState.IN_MENUS);
@@ -151,20 +166,32 @@ public class Blueice129Entity extends PathAwareEntity {
             case SURFACE_HIDING:
                 // Check for player proximity or damage - transition to IN_MENUS and logout
                 PlayerEntity hidingNearestPlayer = this.getWorld().getClosestPlayer(this, 64.0D);
-                
+
                 // If damaged by player, immediately go to menus and logout
                 if (checkPlayerDamagesEntity()) {
                     setState(EntityState.IN_MENUS);
                     should_logout_after_menu = true;
+                    HorrorMod129.LOGGER.info(
+                            "Blueice129Entity: SURFACE_HIDING state - damaged by player, transitioning to IN_MENUS");
                     break;
                 }
-                
-                // If player gets within 7 blocks, go to menus and logout
-                if (hidingNearestPlayer != null) {
+
+                // If player gets within 3 blocks (reduced from 7), go to menus and logout
+                if (hidingNearestPlayer != null && ticksInCurrentState > 20 * 2) {
                     double distanceSquared = this.squaredDistanceTo(hidingNearestPlayer);
-                    if (distanceSquared <= 49.0) { // 7 * 7 = 49
+                    double actualDistance = Math.sqrt(distanceSquared);
+                    
+                    // Log when player is getting close (for debugging)
+                    if (actualDistance <= 10.0 && ticksInCurrentState % 40 == 0) {
+                        HorrorMod129.LOGGER.info(
+                                "Blueice129Entity: SURFACE_HIDING state - player is " + String.format("%.1f", actualDistance) + " blocks away");
+                    }
+                    
+                    if (distanceSquared <= 9.0) { // 3 * 3 = 9 (reduced from 7 blocks)
                         setState(EntityState.IN_MENUS);
                         should_logout_after_menu = true;
+                        HorrorMod129.LOGGER.info(
+                                "Blueice129Entity: SURFACE_HIDING state - player too close (" + String.format("%.1f", actualDistance) + " blocks), transitioning to IN_MENUS");
                     }
                 }
                 break;
@@ -172,7 +199,6 @@ public class Blueice129Entity extends PathAwareEntity {
                 // TODO: Implement transitions from UNDERGROUND_BURROWING to other states
                 break;
             case IN_MENUS:
-                // TODO: Implement transitions from IN_MENUS to other states
                 if (ticksInCurrentState > 20 && should_logout_after_menu) {
                     // despawn this entity and send a logout message to the chat
                     if (this.getWorld().getServer() != null) {
@@ -274,19 +300,19 @@ public class Blueice129Entity extends PathAwareEntity {
 
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
-        
+
         // Set custom name to display "Blueice129" like a player
         this.setCustomName(Text.literal("Blueice129"));
         this.setCustomNameVisible(true);
-        
+
         // Initialize the goal profile registry
         this.goalRegistry = new GoalProfileRegistry(this);
-        
+
         // Set initial state based on agro meter
         if (!world.isClient && world.getServer() != null) {
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
             int agroMeter = state.getIntValue("agroMeter", 0);
-            
+
             if (agroMeter > 5) {
                 this.currentState = EntityState.SURFACE_HIDING;
             } else {
@@ -295,6 +321,14 @@ public class Blueice129Entity extends PathAwareEntity {
         } else {
             // Default to PASSIVE on client or if server is unavailable
             this.currentState = EntityState.PASSIVE;
+        }
+
+        // Apply initial goal profile now that goalRegistry is initialized
+        // This must be done after goalRegistry is created because initGoals()
+        // is called by the parent constructor before this point (when goalRegistry was
+        // null)
+        if (goalRegistry != null) {
+            goalRegistry.applyCurrentProfile();
         }
     }
 
@@ -309,7 +343,7 @@ public class Blueice129Entity extends PathAwareEntity {
         if (world.isClient) {
             return true; // Client-side doesn't need to check
         }
-        
+
         // Check if any Blueice129Entity already exists in the world
         for (Entity entity : ((ServerWorld) world).iterateEntities()) {
             if (entity instanceof Blueice129Entity && entity.isAlive()) {

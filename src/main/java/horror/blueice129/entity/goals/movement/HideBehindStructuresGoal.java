@@ -5,7 +5,7 @@ import horror.blueice129.entity.goals.BaseBlueice129Goal;
 import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.LineOfSightUtils;
 import horror.blueice129.utils.PathVisibilityScorer;
-import horror.blueice129.utils.PathVisualizer;
+// import horror.blueice129.utils.PathVisualizer;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
@@ -33,7 +33,7 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
     private static final int SEARCH_RADIUS = 50;
     private static final int PLAYER_DETECTION_RANGE = 64;
     // private static final int MAX_CANDIDATES_TO_EVALUATE = 3;
-    private static final int MAX_STALK_DISTANCE = 20; // Maximum distance from player while stalking
+    private static final int MAX_STALK_DISTANCE = 30; // Maximum distance from player while stalking
     
     public HideBehindStructuresGoal(Blueice129Entity entity) {
         super(entity);
@@ -50,9 +50,9 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
         World world = entity.getWorld();
         
         // Cleanup expired glowstone blocks (debug visualization)
-        if (world instanceof ServerWorld serverWorld) {
-            PathVisualizer.cleanupExpiredBlocks(serverWorld, world.getTime());
-        }
+        // if (world instanceof ServerWorld serverWorld) {
+        //     PathVisualizer.cleanupExpiredBlocks(serverWorld, world.getTime());
+        // }
         
         // Refresh player and search for hiding spots periodically (every tick for responsive stalking)
         if (searchCooldown <= 0) {
@@ -69,19 +69,20 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
             if (currentHidingSpot == null || entity.getNavigation().isIdle() || beyondStalkDistance) {
                 BlockPos newSpot = findValidHidingSpot();
                 
-                // Visualize the new path if it changed
+                // Update hiding spot if a new one was found
                 if (newSpot != null && !newSpot.equals(lastVisualizedSpot)) {
                     currentHidingSpot = newSpot;
                     lastVisualizedSpot = newSpot;
                     
-                    if (world instanceof ServerWorld serverWorld) {
-                        PathVisualizer.visualizePath(
-                            serverWorld, 
-                            entity.getBlockPos(), 
-                            currentHidingSpot, 
-                            world.getTime()
-                        );
-                    }
+                    // Visualization disabled
+                    // if (world instanceof ServerWorld serverWorld) {
+                    //     PathVisualizer.visualizePath(
+                    //         serverWorld, 
+                    //         entity.getBlockPos(), 
+                    //         currentHidingSpot, 
+                    //         world.getTime()
+                    //     );
+                    // }
                 }
             }
 
@@ -121,7 +122,7 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
                     currentHidingSpot.getX(), 
                     currentHidingSpot.getY(), 
                     currentHidingSpot.getZ(), 
-                    0.5 // Slower speed for testing. default is 1.3
+                    1.2 // Slower speed for testing. default is 1.3
                 );
             }
         }
@@ -132,10 +133,10 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
         super.onStop();
         
         // Clear visualization when goal stops
-        World world = entity.getWorld();
-        if (world instanceof ServerWorld serverWorld) {
-            PathVisualizer.clearAll(serverWorld);
-        }
+        // World world = entity.getWorld();
+        // if (world instanceof ServerWorld serverWorld) {
+        //     PathVisualizer.clearAll(serverWorld);
+        // }
         
         lastVisualizedSpot = null;
     }
@@ -269,9 +270,9 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
         BlockState state1 = world.getBlockState(above1);
         BlockState state2 = world.getBlockState(above2);
         
-        boolean space1Clear = state1.isAir() || !state1.isSolidBlock(world, above1);
-        boolean space2Clear = state2.isAir() || !state2.isSolidBlock(world, above2);
-        
+        boolean space1Clear = state1.isAir() || !state1.isSolidBlock(world, above1) || state1.getCollisionShape(world, above1).isEmpty();
+        boolean space2Clear = state2.isAir() || !state2.isSolidBlock(world, above2) || state2.getCollisionShape(world, above2).isEmpty();
+
         if (!space1Clear || !space2Clear) {
             return false;
         }

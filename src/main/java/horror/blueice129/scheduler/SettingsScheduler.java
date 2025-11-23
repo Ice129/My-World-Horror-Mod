@@ -34,7 +34,6 @@ import net.minecraft.util.math.random.Random;
  */
 @Environment(EnvType.CLIENT)
 public class SettingsScheduler {
-    // TODO: use switch or other way to trigger these.
     private static final Random random = Random.create();
 
     private enum SettingType {
