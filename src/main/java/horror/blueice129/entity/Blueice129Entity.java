@@ -32,6 +32,7 @@ public class Blueice129Entity extends PathAwareEntity {
     private boolean should_logout_after_menu = false;
     private GoalProfileRegistry goalRegistry;
     private EntityState previousState = null;
+    private int ticksInUnloadedChunk = 0;
 
     public enum EntityState {
         PASSIVE, // Default state, does nothing really
@@ -85,6 +86,21 @@ public class Blueice129Entity extends PathAwareEntity {
         }
 
         ticksInCurrentState++;
+        
+        // Check if entity is in an unloaded chunk and despawn silently after 5 seconds
+        if (!this.getWorld().isClient) {
+            net.minecraft.util.math.ChunkPos chunkPos = new net.minecraft.util.math.ChunkPos(this.getBlockPos());
+            if (!this.getWorld().isChunkLoaded(chunkPos.x, chunkPos.z)) {
+                ticksInUnloadedChunk++;
+                if (ticksInUnloadedChunk > 100) { // 5 seconds
+                    HorrorMod129.LOGGER.info("Blueice129Entity: Despawning due to being in unloaded chunk for 5 seconds");
+                    this.remove(RemovalReason.DISCARDED);
+                    return;
+                }
+            } else {
+                ticksInUnloadedChunk = 0; // Reset counter when chunk is loaded
+            }
+        }
 
         boolean seesPlayer = checkEntitySeesPlayer();
         int agroMeter = 0;

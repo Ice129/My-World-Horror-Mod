@@ -20,6 +20,7 @@ import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.debug.LineOfSightChecker;
 import horror.blueice129.entity.Blueice129Entity;
+import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import net.minecraft.entity.Entity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
@@ -237,6 +238,16 @@ public class DebugCommands {
                                     .executes(context -> setEntityState(context.getSource(), "UPGRADING_HOUSE")))
                             .then(literal("get")
                                     .executes(context -> getEntityState(context.getSource()))))
+                    .then(literal("spawn")
+                            .then(literal("force")
+                                    .executes(context -> forceSpawnEntity(context.getSource())))
+                            .then(literal("timer")
+                                    .then(argument("ticks", IntegerArgumentType.integer(1))
+                                            .executes(context -> setSpawnTimer(
+                                                    context.getSource(),
+                                                    IntegerArgumentType.getInteger(context, "ticks")))))
+                            .then(literal("chance")
+                                    .executes(context -> getSpawnChance(context.getSource()))))
             );
         }
     }
@@ -1046,6 +1057,79 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Error getting entity state: " + e.getMessage()));
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    /**
+     * Forces an immediate spawn attempt of Blueice129 entity near the player
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int forceSpawnEntity(ServerCommandSource source) {
+        try {
+            ServerPlayerEntity player = source.getPlayer();
+            MinecraftServer server = source.getServer();
+            
+            boolean success = Blueice129SpawnScheduler.forceSpawn(server, player);
+            
+            if (success) {
+                source.sendFeedback(() -> Text.literal("Blueice129 entity spawned successfully!"), true);
+                return 1;
+            } else {
+                source.sendError(Text.literal("Failed to spawn Blueice129 entity. Check that: 1) No entity already exists, 2) You're near a forest biome"));
+                return 0;
+            }
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error forcing spawn: " + e.getMessage()));
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    /**
+     * Sets the spawn scheduler timer
+     * @param source Command source
+     * @param ticks Timer value in ticks
+     * @return Command success value
+     */
+    private static int setSpawnTimer(ServerCommandSource source, int ticks) {
+        try {
+            MinecraftServer server = source.getServer();
+            Blueice129SpawnScheduler.setTimer(server, ticks);
+            
+            final int finalTicks = ticks;
+            source.sendFeedback(() -> Text.literal(
+                String.format("Spawn timer set to %d ticks (%.1f seconds)", 
+                    finalTicks, finalTicks / 20.0)
+            ), true);
+            
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error setting spawn timer: " + e.getMessage()));
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    /**
+     * Gets the current spawn chance based on agro meter
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int getSpawnChance(ServerCommandSource source) {
+        try {
+            MinecraftServer server = source.getServer();
+            String chanceString = Blueice129SpawnScheduler.getSpawnChanceString(server);
+            
+            source.sendFeedback(() -> Text.literal(
+                "Current Blueice129 spawn chance: " + chanceString
+            ), false);
+            
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error getting spawn chance: " + e.getMessage()));
             e.printStackTrace();
             return 0;
         }
