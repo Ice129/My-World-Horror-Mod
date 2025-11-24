@@ -29,9 +29,14 @@ import static net.minecraft.server.command.CommandManager.argument;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.MutableText;
+// import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.server.world.ServerWorld;
+// import net.minecraft.server.world.ServerWorld;
 import net.minecraft.block.Blocks;
 import com.mojang.brigadier.Command;
 import horror.blueice129.utils.SurfaceFinder;
@@ -1071,11 +1076,38 @@ public class DebugCommands {
         try {
             ServerPlayerEntity player = source.getPlayer();
             MinecraftServer server = source.getServer();
+            // ServerWorld world = server.getOverworld();
             
-            boolean success = Blueice129SpawnScheduler.forceSpawn(server, player);
+            BlockPos spawnPos = Blueice129SpawnScheduler.forceSpawn(server, player);
             
-            if (success) {
-                source.sendFeedback(() -> Text.literal("Blueice129 entity spawned successfully!"), true);
+            if (spawnPos != null) {
+                // Create clickable chat message with coordinates
+                final int x = spawnPos.getX();
+                final int y = spawnPos.getY();
+                final int z = spawnPos.getZ();
+                
+                MutableText message = Text.literal("Blueice129 spawned at ")
+                    .styled(style -> style.withColor(0x55FF55)); // Green
+                
+                MutableText coordinates = Text.literal("[" + x + ", " + y + ", " + z + "]")
+                    .styled(style -> style
+                        .withColor(0xFFAA00) // Gold/Orange
+                        .withClickEvent(new ClickEvent(
+                            ClickEvent.Action.SUGGEST_COMMAND,
+                            "/tp @s " + x + " " + y + " " + z
+                        ))
+                        .withHoverEvent(new HoverEvent(
+                            HoverEvent.Action.SHOW_TEXT,
+                            Text.literal("Click to teleport")
+                        ))
+                        .withUnderline(true));
+                
+                MutableText suffix = Text.literal(" (click to teleport)")
+                    .styled(style -> style.withColor(0xAAAAAA)); // Gray
+                
+                message.append(coordinates).append(suffix);
+                
+                source.sendFeedback(() -> message, true);
                 return 1;
             } else {
                 source.sendError(Text.literal("Failed to spawn Blueice129 entity. Check that: 1) No entity already exists, 2) You're near a forest biome"));
