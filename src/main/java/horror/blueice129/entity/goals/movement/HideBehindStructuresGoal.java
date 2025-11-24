@@ -122,7 +122,7 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
                     currentHidingSpot.getX(), 
                     currentHidingSpot.getY(), 
                     currentHidingSpot.getZ(), 
-                    1.5 // Slower speed for testing. default is 1.3
+                    1.35 // Slower speed for testing. default is 1.3
                 );
             }
         }
