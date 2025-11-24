@@ -79,13 +79,17 @@ public class Blueice129Entity extends PathAwareEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.previousState != this.currentState) {
-            HorrorMod129.LOGGER.info("Blueice129Entity: State changed to " + this.currentState + " from "
-                    + this.previousState + " after " + this.ticksInCurrentState + " ticks.");
-            this.previousState = this.currentState;
+        
+        // Only increment tick counter on server side where state transitions happen
+        if (!this.getWorld().isClient) {
+            ticksInCurrentState++;
+            
+            if (this.previousState != this.currentState) {
+                HorrorMod129.LOGGER.info("Blueice129Entity: State changed to " + this.currentState + " from "
+                        + this.previousState);
+                this.previousState = this.currentState;
+            }
         }
-
-        ticksInCurrentState++;
         
         // Check if entity is in an unloaded chunk and despawn silently after 5 seconds
         if (!this.getWorld().isClient) {
@@ -102,9 +106,14 @@ public class Blueice129Entity extends PathAwareEntity {
             }
         }
 
+        // Only process state transitions on server side
+        if (this.getWorld().isClient) {
+            return; // Client just renders, doesn't make decisions
+        }
+        
         boolean seesPlayer = checkEntitySeesPlayer();
         int agroMeter = 0;
-        if (!this.getWorld().isClient && this.getWorld().getServer() != null) {
+        if (this.getWorld().getServer() != null) {
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(this.getWorld().getServer());
             agroMeter = state.getIntValue("agroMeter", 0);
         }
@@ -140,13 +149,13 @@ public class Blueice129Entity extends PathAwareEntity {
                     setState(EntityState.FLEEING);
                     should_logout_after_menu = true;
                     // done here so it doesn't log out when implementing higher aggro actions
+                    break;
                 }
 
                 if (ticksInCurrentState > 20 * 5 && agroMeter >= 5) {
-                    if (agroMeter >= 5) {
-                        setState(EntityState.SURFACE_HIDING);
-                        break;
-                    }
+                    setState(EntityState.SURFACE_HIDING);
+                    should_logout_after_menu = false; // Don't logout when hiding
+                    break;
                 }
 
                 break;
@@ -217,11 +226,21 @@ public class Blueice129Entity extends PathAwareEntity {
             case IN_MENUS:
                 if (ticksInCurrentState > 20 && should_logout_after_menu) {
                     // despawn this entity and send a logout message to the chat
-                    if (this.getWorld().getServer() != null) {
-                        this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text
-                                .literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
-                    }
+                    // This only runs server-side due to the check at the start of tick()
+                    this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text
+                            .literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
                     this.remove(RemovalReason.DISCARDED);
+                    return; // Stop processing after despawn
+                }
+                
+                // If not logging out, stay in menus briefly then transition based on aggro
+                if (!should_logout_after_menu && ticksInCurrentState > 20 * 3) {
+                    if (agroMeter >= 5) {
+                        setState(EntityState.SURFACE_HIDING);
+                    } else {
+                        setState(EntityState.PASSIVE);
+                    }
+                    break;
                 }
                 break;
             case INVESTIGATING:
