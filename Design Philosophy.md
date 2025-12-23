@@ -9,7 +9,7 @@ The entity should feel uncannily like a real human player, to the point where th
 This entity should be designed as if **it is** the real human, and the player is the entity invading **its** world. A scared human wouldn't kill the player on sight or run directly at them.
 
 ## Entity Lore
-The entity is a human engram who volunteered to be uploaded into Minecraft after their death as a form of digital preservation and immortality. They were promised a world to themselves—infinite land and time to do what they want. They died due to an illness that would have killed them soon anyway. They were young, which is why Minecraft was chosen.
+The entity is a human engram of the mods creator, who anaged to upload their concious to this mod as a form of digital preservation and immortality. They didnt upload the file publicly so never expected to see another player. They are scared and confused on what this might mean for them as a concious if another player has access to their "brain file".
 
 They existed in this world before the player joined. Seeing another human is terrifying to them—suddenly they are not alone, even though they were promised solitude. If that promise was broken, what else was a lie? They don't know if this player is real or another engram, and they find the idea of being trapped in a world with another human forever terrifying.
 
