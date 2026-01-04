@@ -152,13 +152,14 @@ public class Blueice129Entity extends PathAwareEntity {
                     break;
                 }
 
+                // after 5 seconds of panicking, if agro is high enough, go to surface hiding
                 if (ticksInCurrentState > 20 * 5 && agroMeter >= 5) {
                     setState(EntityState.SURFACE_HIDING);
                     should_logout_after_menu = false; // Don't logout when hiding
                     break;
                 }
-
                 break;
+
             case FLEEING:
                 // BUG: logs out instead of surface hiding. says its stuck while in fleeing
                 if (ticksInCurrentState > 20 * 5 && agroMeter < 5) {
@@ -201,7 +202,7 @@ public class Blueice129Entity extends PathAwareEntity {
                     break;
                 }
 
-                // If player gets within 3 blocks (reduced from 7), go to menus and logout
+                // If player gets within 7 blocks, go to menus and logout
                 if (hidingNearestPlayer != null && ticksInCurrentState > 20 * 2) {
                     double distanceSquared = this.squaredDistanceTo(hidingNearestPlayer);
                     double actualDistance = Math.sqrt(distanceSquared);
@@ -212,7 +213,7 @@ public class Blueice129Entity extends PathAwareEntity {
                                 "Blueice129Entity: SURFACE_HIDING state - player is " + String.format("%.1f", actualDistance) + " blocks away");
                     }
                     
-                    if (distanceSquared <= 9.0) { // 3 * 3 = 9 (reduced from 7 blocks)
+                    if (distanceSquared <= 7.0 * 7.0) { // 7 * 7 = 49 (reduced from 7 blocks)
                         setState(EntityState.IN_MENUS);
                         should_logout_after_menu = true;
                         HorrorMod129.LOGGER.info(

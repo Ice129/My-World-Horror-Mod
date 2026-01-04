@@ -81,7 +81,8 @@ public class GoalProfileRegistry {
             .addGoal(1, new SpeedBoostGoal(entity, 1.3, EntityState.PANICED))
             // .addGoal(2, new PanicedGoal(entity))
             .addGoal(2, new ErraticHeadMovementGoal(entity))
-            .addGoal(3, new RandomCrouchGoal(entity))
+            // .addGoal(3, new RandomCrouchGoal(entity))
+            .addGoal(3, new JumpOnceGoal(entity))
             .addGoal(4, new HotbarCycleGoal(entity));
     }
 
@@ -102,8 +103,7 @@ public class GoalProfileRegistry {
         return GoalProfile.create()
             .addGoal(0, new SwimGoal(entity))
             .addGoal(1, new HideBehindStructuresGoal(entity))
-            .addGoal(2, new AlwaysCrouchGoal(entity))
-            .addGoal(3, new CrouchSpeedGoal(entity));
+            .addGoal(2, new CrouchSpeedGoal(entity)); // Speed reduction when crouching (crouching is handled by HideBehindStructuresGoal)
     }
     
     /**
