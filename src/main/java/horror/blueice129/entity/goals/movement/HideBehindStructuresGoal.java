@@ -279,15 +279,15 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
         if (hidingSpot == null) {
             return;
         }
-        
+
         // Navigate to the hiding spot (which is now the feet position)
         entity.getNavigation().startMovingTo(
             hidingSpot.getX() + 0.5,
             hidingSpot.getY(),  // hidingSpot is already feet position
             hidingSpot.getZ() + 0.5,
-            1.0  // Normal walking speed
+            1.5  // Increased speed for running pace
         );
-        
+
         HorrorMod129.LOGGER.info(String.format(
             "[HideBehindStructures] Navigating to hiding spot: %s",
             hidingSpot.toShortString()
