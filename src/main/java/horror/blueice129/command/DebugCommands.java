@@ -219,6 +219,8 @@ public class DebugCommands {
                                 .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
                             .then(literal("rendered")
                                 .executes(context -> fillRenderedBlocksWithGlass(context.getSource())))
+                            .then(literal("notvisible")
+                                .executes(context -> fillNotVisibleBlocksWithConcrete(context.getSource())))
                             .then(literal("trees")
                                 .executes(context -> placeDiamondPillars(context.getSource())))))
             );
@@ -547,6 +549,29 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Error while filling rendered blocks: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    /**
+     * Fills all blocks NOT visible to the player with lime concrete (inverse of fillRenderedBlocksWithGlass)
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int fillNotVisibleBlocksWithConcrete(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+        
+        try {
+            source.sendFeedback(() -> Text.literal("Filling NOT visible blocks with lime concrete (64 block range, FOV cone)..."), false);
+            LineOfSightChecker.fillNotVisibleBlocksWithConcrete(player, 64.0);
+            source.sendFeedback(() -> Text.literal("Completed not-visible blocks visualization! Green = hidden from view"), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error while filling not-visible blocks: " + e.getMessage()));
             return 0;
         }
     }

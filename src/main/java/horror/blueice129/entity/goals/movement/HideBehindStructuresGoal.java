@@ -1,5 +1,6 @@
 package horror.blueice129.entity.goals.movement;
 
+import horror.blueice129.HorrorMod129;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.entity.goals.BaseBlueice129Goal;
 import horror.blueice129.utils.LineOfSightUtils;
@@ -70,20 +71,41 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
         boolean isHidden = isPositionHidden(entityPos);
         boolean isStationary = entity.getNavigation().isIdle();
         
+        HorrorMod129.LOGGER.info(String.format(
+            "[HideBehindStructures] EntityPos: %s | HidingSpot: %s | IsHidden: %b | IsStationary: %b | PlayerPos: %s",
+            entityPos.toShortString(), 
+            hidingSpot != null ? hidingSpot.toShortString() : "null",
+            isHidden, 
+            isStationary,
+            targetPlayer.getBlockPos().toShortString()
+        ));
+        
         // Handle behavior based on current state
         if (isHidden && isStationary) {
             // Already hidden and not moving - crouch and watch player
             entity.setSneaking(true);
             lookAtPlayer();
+            HorrorMod129.LOGGER.info("[HideBehindStructures] Action: Crouching and watching player");
         } else if (isHidden && !isStationary) {
             // Moving to hiding spot - stand up for natural movement
             entity.setSneaking(false);
+            HorrorMod129.LOGGER.info("[HideBehindStructures] Action: Moving to hiding spot (standing)");
         } else {
             // Not hidden - find a hiding spot and move there
             entity.setSneaking(false);
             
             if (hidingSpot == null || !isPositionHidden(hidingSpot)) {
+                HorrorMod129.LOGGER.info("[HideBehindStructures] Searching for new hiding spot...");
                 hidingSpot = findNearestHidingSpot();
+                if (hidingSpot != null) {
+                    HorrorMod129.LOGGER.info(String.format(
+                        "[HideBehindStructures] Found hiding spot at %s (distance from player: %.1f blocks)",
+                        hidingSpot.toShortString(),
+                        Math.sqrt(hidingSpot.getSquaredDistance(targetPlayer.getBlockPos()))
+                    ));
+                } else {
+                    HorrorMod129.LOGGER.info("[HideBehindStructures] No valid hiding spot found!");
+                }
             }
             
             if (hidingSpot != null) {
@@ -95,6 +117,7 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
         if (hidingSpot != null && targetPlayer != null) {
             double distanceToPlayer = hidingSpot.getSquaredDistance(targetPlayer.getBlockPos());
             if (distanceToPlayer > STALK_RADIUS * STALK_RADIUS) {
+                HorrorMod129.LOGGER.info("[HideBehindStructures] Hiding spot too far from player, clearing");
                 hidingSpot = null; // Too far from player, need new spot
             }
         }
@@ -103,22 +126,32 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
     /**
      * Check if a position would hide the entity from the player's view.
      * Checks both blocks the entity would occupy (feet and head level).
+     * 
+     * @param feetPos The position where the entity's feet are (same as entity.getBlockPos())
+     * @return true if both feet and head blocks are hidden from player view
      */
-    private boolean isPositionHidden(BlockPos groundPos) {
+    private boolean isPositionHidden(BlockPos feetPos) {
         if (targetPlayer == null) {
             return false;
         }
         
-        BlockPos feetPos = groundPos.up();  // Entity stands ON groundPos, feet at groundPos+1
-        BlockPos headPos = groundPos.up(2); // Head at groundPos+2
+        BlockPos headPos = feetPos.up(); // Head is one block above feet
         
         // Both positions must be hidden from player view
-        boolean feetVisible = LineOfSightUtils.isBlockRenderedOnScreen(
+        // Use hasLineOfSight which properly handles air blocks
+        boolean feetVisible = LineOfSightUtils.hasLineOfSight(
             targetPlayer, feetPos, STALK_RADIUS * 2);
-        boolean headVisible = LineOfSightUtils.isBlockRenderedOnScreen(
+        boolean headVisible = LineOfSightUtils.hasLineOfSight(
             targetPlayer, headPos, STALK_RADIUS * 2);
         
-        return !feetVisible && !headVisible;
+        boolean isHidden = !feetVisible && !headVisible;
+        
+        HorrorMod129.LOGGER.info(String.format(
+            "[HideBehindStructures] Visibility check at %s: FeetVisible=%b, HeadVisible=%b, IsHidden=%b",
+            feetPos.toShortString(), feetVisible, headVisible, isHidden
+        ));
+        
+        return isHidden;
     }
     
     /**
@@ -155,8 +188,11 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
                         continue;
                     }
                     
-                    // Check distance constraints
-                    double distFromPlayer = groundPos.getSquaredDistance(playerPos);
+                    // Convert ground position to feet position (one block above ground)
+                    BlockPos feetPos = groundPos.up();
+                    
+                    // Check distance constraints using feet position
+                    double distFromPlayer = feetPos.getSquaredDistance(playerPos);
                     if (distFromPlayer > STALK_RADIUS * STALK_RADIUS) {
                         continue; // Too far from player
                     }
@@ -164,19 +200,19 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
                         continue; // Too close to player
                     }
                     
-                    // Check if this is a valid hiding spot
+                    // Check if this is a valid hiding spot (still checks ground solidity)
                     if (!isValidStandingPosition(world, groundPos)) {
                         continue;
                     }
-                    if (!isPositionHidden(groundPos)) {
+                    if (!isPositionHidden(feetPos)) {
                         continue;
                     }
                     
-                    // Track the closest valid spot
-                    double distFromEntity = groundPos.getSquaredDistance(entityPos);
+                    // Track the closest valid spot (use feet position for distance)
+                    double distFromEntity = feetPos.getSquaredDistance(entityPos);
                     if (distFromEntity < bestDistance) {
                         bestDistance = distFromEntity;
-                        bestSpot = groundPos;
+                        bestSpot = feetPos; // Store feet position, not ground position
                     }
                 }
             }
@@ -244,13 +280,18 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
             return;
         }
         
-        // Navigate to the position above the ground (where entity stands)
+        // Navigate to the hiding spot (which is now the feet position)
         entity.getNavigation().startMovingTo(
             hidingSpot.getX() + 0.5,
-            hidingSpot.getY() + 1,  // Stand on top of ground block
+            hidingSpot.getY(),  // hidingSpot is already feet position
             hidingSpot.getZ() + 0.5,
             1.0  // Normal walking speed
         );
+        
+        HorrorMod129.LOGGER.info(String.format(
+            "[HideBehindStructures] Navigating to hiding spot: %s",
+            hidingSpot.toShortString()
+        ));
     }
     
     /**
