@@ -95,63 +95,21 @@ public class LineOfSightUtils {
 
     /**
      * Checks a single block if it's rendered on the player's screen.
-     * Optimized with early FOV filtering, backface culling, and face-based
-     * raycasting to check if any part of the full block is visible.
-     * Treats all blocks as full blocks for raycasting.
-     *
+     * Now delegates to hasLineOfSight() for consistent visibility checking.
+     * 
+     * This method now properly handles:
+     * - Transparent blocks (glass, ice) - see through them
+     * - Leaves - become opaque after 3 blocks
+     * - Non-collision blocks (grass, flowers) - automatically ignored
+     * 
      * @param player      The player to check from
      * @param blockPos    The position of the block to check
      * @param maxDistance The maximum distance to check
-     * @return true if the block is rendered on the player's screen, false otherwise
+     * @return true if the block has line of sight from the player
      */
     public static boolean isBlockRenderedOnScreen(PlayerEntity player, BlockPos blockPos, double maxDistance) {
-        World world = player.getWorld();
-        Vec3d eyePos = player.getEyePos();
-        Vec3d blockCenter = new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
-
-        double distance = eyePos.distanceTo(blockCenter);
-        if (distance > maxDistance) {
-            return false;
-        }
-
-        Vec3d direction = blockCenter.subtract(eyePos).normalize();
-        if (!isWithinFieldOfView(player, direction)) {
-            return false;
-        }
-
-        double epsilon = 0.001; // Small offset to avoid precision issues
-        Vec3d[] corners = {
-            // Bottom corners (with epsilon offset inward)
-            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + epsilon, blockPos.getZ() + epsilon),         // 0,0,0
-            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + epsilon, blockPos.getZ() + epsilon),     // 1,0,0
-            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + epsilon, blockPos.getZ() + 1 - epsilon),     // 0,0,1
-            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + epsilon, blockPos.getZ() + 1 - epsilon), // 1,0,1
-            // Top corners (with epsilon offset inward)
-            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + epsilon),         // 0,1,0
-            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + epsilon),     // 1,1,0
-            new Vec3d(blockPos.getX() + epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + 1 - epsilon),     // 0,1,1
-            new Vec3d(blockPos.getX() + 1 - epsilon, blockPos.getY() + 1 - epsilon, blockPos.getZ() + 1 - epsilon)  // 1,1,1
-        };
-
-        for (Vec3d corner : corners) {
-
-            Vec3d cornerDirection = corner.subtract(eyePos).normalize();
-            double cornerDistance = eyePos.distanceTo(corner);
-
-            BlockHitResult hitResult = world.raycast(new RaycastContext(
-                    eyePos,
-                    eyePos.add(cornerDirection.multiply(cornerDistance)),
-                    RaycastContext.ShapeType.OUTLINE,
-                    RaycastContext.FluidHandling.NONE,
-                    player));
-
-            if (hitResult.getType() == HitResult.Type.BLOCK &&
-                    hitResult.getBlockPos().equals(blockPos)) {
-                return true;
-            }
-        }
-
-        return false;
+        // Delegate to hasLineOfSight - they check the same thing!
+        return hasLineOfSight(player, blockPos, maxDistance);
     }
     
     /**
