@@ -1,43 +1,41 @@
 package horror.blueice129.entity.goals.movement;
 
+import horror.blueice129.HorrorMod129;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.entity.goals.BaseBlueice129Goal;
-import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.LineOfSightUtils;
-import horror.blueice129.utils.PathVisibilityScorer;
-// import horror.blueice129.utils.PathVisualizer;
-import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 
 /**
- * Goal that makes the entity hide behind structures on the surface.
- * Finds positions not visible to the player, preferring spots further away
- * with minimal visibility along the path. Uses glowstone trails for debug visualization.
+ * Goal that makes the entity hide from the player's sight while staying close enough to stalk.
+ * 
+ * Behavior:
+ * - Finds the nearest position where the entity's 2-block-tall body is hidden from player view
+ * - Stays within stalking distance of the player
+ * - Crouches when hidden and stationary
+ * - Looks at the player when hidden
  */
 public class HideBehindStructuresGoal extends BaseBlueice129Goal {
     
+    private static final int STALK_RADIUS = 30;
+    private static final int SEARCH_RADIUS = 25;
+    private static final int MIN_DISTANCE_FROM_PLAYER = 8;
+    private static final int CROUCH_UPDATE_INTERVAL = 6;
+    
     private PlayerEntity targetPlayer;
-    private BlockPos currentHidingSpot;
-    private BlockPos lastVisualizedSpot;
-    private int searchCooldown = 0;
-    private static final int SEARCH_RADIUS = 50;
-    private static final int PLAYER_DETECTION_RANGE = 64;
-    // private static final int MAX_CANDIDATES_TO_EVALUATE = 3;
-    private static final int MAX_STALK_DISTANCE = 30; // Maximum distance from player while stalking
+    private BlockPos hidingSpot;
+    private int tickCounter = 0;
     
     public HideBehindStructuresGoal(Blueice129Entity entity) {
         super(entity);
-        this.setControls(EnumSet.of(Goal.Control.MOVE));
+        this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
     }
     
     @Override
@@ -46,259 +44,324 @@ public class HideBehindStructuresGoal extends BaseBlueice129Goal {
     }
     
     @Override
-    public void tick() {
-        World world = entity.getWorld();
-        
-        // Cleanup expired glowstone blocks (debug visualization)
-        // if (world instanceof ServerWorld serverWorld) {
-        //     PathVisualizer.cleanupExpiredBlocks(serverWorld, world.getTime());
-        // }
-        
-        // Refresh player and search for hiding spots periodically (every tick for responsive stalking)
-        if (searchCooldown <= 0) {
-            targetPlayer = entity.getWorld().getClosestPlayer(entity, PLAYER_DETECTION_RANGE);
-            
-            // Check if entity has drifted beyond max stalk distance - force re-search
-            boolean beyondStalkDistance = false;
-            if (targetPlayer != null) {
-                double distanceToPlayer = entity.getBlockPos().getSquaredDistance(targetPlayer.getBlockPos());
-                beyondStalkDistance = distanceToPlayer > (MAX_STALK_DISTANCE * MAX_STALK_DISTANCE);
-            }
-            
-            // Search for new spot if: no spot, navigation idle, or beyond stalk distance
-            if (currentHidingSpot == null || entity.getNavigation().isIdle() || beyondStalkDistance) {
-                BlockPos newSpot = findValidHidingSpot();
-                
-                // Update hiding spot if a new one was found
-                if (newSpot != null && !newSpot.equals(lastVisualizedSpot)) {
-                    currentHidingSpot = newSpot;
-                    lastVisualizedSpot = newSpot;
-                    
-                    // Visualization disabled
-                    // if (world instanceof ServerWorld serverWorld) {
-                    //     PathVisualizer.visualizePath(
-                    //         serverWorld, 
-                    //         entity.getBlockPos(), 
-                    //         currentHidingSpot, 
-                    //         world.getTime()
-                    //     );
-                    // }
-                }
-            }
-
-            searchCooldown = 1; // Reset cooldown (1 tick at 20 TPS)
-        } else {
-            searchCooldown--;
-        }
-        
-        // Move to hiding spot if we have one
-        if (currentHidingSpot != null) {
-            // Check if entity is currently hidden from player view
-            BlockPos entityPos = entity.getBlockPos();
-            boolean isCurrentlyHidden = targetPlayer != null && 
-                !PathVisibilityScorer.isPositionVisible(
-                    targetPlayer, 
-                    world, 
-                    entityPos, 
-                    PLAYER_DETECTION_RANGE
-                );
-            
-            // Calculate distance to target hiding spot
-            double distanceToTarget = Math.sqrt(entityPos.getSquaredDistance(currentHidingSpot));
-            
-            // Only stop navigation if BOTH conditions are met:
-            // 1. Entity is currently hidden from player
-            // 2. Entity is reasonably close to target (within 5 blocks) OR very close (within 2 blocks)
-            boolean shouldStopMoving = isCurrentlyHidden && 
-                                      !entity.getNavigation().isIdle() && 
-                                      distanceToTarget <= 5.0;
-            
-            if (shouldStopMoving) {
-                entity.getNavigation().stop();
-                // Keep currentHidingSpot - entity is in a good hidden position
-            } else {
-                // Continue moving toward hiding spot
-                entity.getNavigation().startMovingTo(
-                    currentHidingSpot.getX(), 
-                    currentHidingSpot.getY(), 
-                    currentHidingSpot.getZ(), 
-                    1.35 // Slower speed for testing. default is 1.3
-                );
-            }
-        }
+    protected boolean shouldKeepRunning() {
+        return isInState(Blueice129Entity.EntityState.SURFACE_HIDING);
+    }
+    
+    @Override
+    protected void onStart() {
+        targetPlayer = null;
+        hidingSpot = null;
+        tickCounter = 0;
     }
     
     @Override
     protected void onStop() {
-        super.onStop();
-        
-        // Clear visualization when goal stops
-        // World world = entity.getWorld();
-        // if (world instanceof ServerWorld serverWorld) {
-        //     PathVisualizer.clearAll(serverWorld);
-        // }
-        
-        lastVisualizedSpot = null;
+        entity.setSneaking(false);
+        entity.getNavigation().stop();
+        targetPlayer = null;
+        hidingSpot = null;
     }
-
-    private BlockPos findValidHidingSpot() {
+    
+    @Override
+    public void tick() {
+        // Find nearest player
+        targetPlayer = entity.getWorld().getClosestPlayer(entity, STALK_RADIUS * 2);
+        if (targetPlayer == null) {
+            return;
+        }
+        
+        // Increment tick counter
+        tickCounter++;
+        
+        // If player is crouching, only update visibility every 15 ticks
+        boolean shouldUpdate = !targetPlayer.isSneaking() || (tickCounter % CROUCH_UPDATE_INTERVAL == 0);
+        
+        BlockPos entityPos = entity.getBlockPos();
+        boolean isStationary = entity.getNavigation().isIdle();
+        
+        // Always look at player when stationary (every tick)
+        if (isStationary) {
+            lookAtPlayer();
+        }
+        
+        // Only perform visibility checks and pathfinding updates when shouldUpdate is true
+        if (shouldUpdate) {
+            boolean isHidden = isPositionHidden(entityPos);
+            
+            // HorrorMod129.LOGGER.info(String.format(
+            //     "[HideBehindStructures] EntityPos: %s | HidingSpot: %s | IsHidden: %b | IsStationary: %b | PlayerPos: %s",
+            //     entityPos.toShortString(), 
+            //     hidingSpot != null ? hidingSpot.toShortString() : "null",
+            //     isHidden, 
+            //     isStationary,
+            //     targetPlayer.getBlockPos().toShortString()
+            // ));
+            
+            // Handle behavior based on current state
+            if (isHidden && isStationary) {
+                // Already hidden and not moving - crouch
+                entity.setSneaking(true);
+                HorrorMod129.LOGGER.info("[HideBehindStructures] Action: Crouching and watching player");
+            } else if (isHidden && !isStationary) {
+                // Moving to hiding spot - stand up for natural movement
+                entity.setSneaking(false);
+                HorrorMod129.LOGGER.info("[HideBehindStructures] Action: Moving to hiding spot (standing)");
+            } else {
+                // Not hidden - find a hiding spot and move there
+                entity.setSneaking(false);
+                
+                if (hidingSpot == null || !isPositionHidden(hidingSpot)) {
+                    HorrorMod129.LOGGER.info("[HideBehindStructures] Searching for new hiding spot...");
+                    hidingSpot = findNearestHidingSpot();
+                    if (hidingSpot != null) {
+                        HorrorMod129.LOGGER.info(String.format(
+                            "[HideBehindStructures] Found hiding spot at %s (distance from player: %.1f blocks)",
+                            hidingSpot.toShortString(),
+                            Math.sqrt(hidingSpot.getSquaredDistance(targetPlayer.getBlockPos()))
+                        ));
+                    } else {
+                        HorrorMod129.LOGGER.info("[HideBehindStructures] No valid hiding spot found!");
+                    }
+                }
+                
+                if (hidingSpot != null) {
+                    moveToHidingSpot();
+                }
+            }
+        }
+        
+        // Re-evaluate hiding spot if player moved significantly (only if we should update)
+        if (shouldUpdate && hidingSpot != null && targetPlayer != null) {
+            double distanceToPlayer = hidingSpot.getSquaredDistance(targetPlayer.getBlockPos());
+            if (distanceToPlayer > STALK_RADIUS * STALK_RADIUS) {
+                HorrorMod129.LOGGER.info("[HideBehindStructures] Hiding spot too far from player, clearing");
+                hidingSpot = null; // Too far from player, need new spot
+            }
+        }
+    }
+    
+    /**
+     * Check if a position would hide the entity from the player's view.
+     * Checks both blocks the entity would occupy (feet and head level).
+     * 
+     * @param feetPos The position where the entity's feet are (same as entity.getBlockPos())
+     * @return true if both feet and head blocks are hidden from player view
+     */
+    private boolean isPositionHidden(BlockPos feetPos) {
+        if (targetPlayer == null) {
+            return false;
+        }
+        
+        BlockPos headPos = feetPos.up(); // Head is one block above feet
+        
+        // Both positions must be hidden from player view
+        // Use hasLineOfSight which properly handles air blocks
+        boolean feetVisible = LineOfSightUtils.hasLineOfSight(
+            targetPlayer, feetPos, STALK_RADIUS * 2);
+        boolean headVisible = LineOfSightUtils.hasLineOfSight(
+            targetPlayer, headPos, STALK_RADIUS * 2);
+        
+        boolean isHidden = !feetVisible && !headVisible;
+        
+        // HorrorMod129.LOGGER.info(String.format(
+        //     "[HideBehindStructures] Visibility check at %s: FeetVisible=%b, HeadVisible=%b, IsHidden=%b",
+        //     feetPos.toShortString(), feetVisible, headVisible, isHidden
+        // ));
+        
+        return isHidden;
+    }
+    
+    /**
+     * Check if the player is looking towards the entity (within 120-degree cone).
+     * @return true if player's look direction is within 60 degrees of the direction to the entity
+     */
+    private boolean isPlayerLookingAtEntity() {
+        if (targetPlayer == null) {
+            return false;
+        }
+        
+        // Get player's look direction
+        Vec3d playerLook = targetPlayer.getRotationVec(1.0f).normalize();
+        
+        // Get direction from player to entity
+        Vec3d toEntity = entity.getPos().subtract(targetPlayer.getPos()).normalize();
+        
+        // Calculate dot product (cosine of angle between vectors)
+        double dotProduct = playerLook.dotProduct(toEntity);
+        
+        // cos(60°) = 0.5, so if dot product > 0.5, angle is less than 60° (within 120° cone)
+        return dotProduct > 0.5;
+    }
+    
+    /**
+     * Find the best valid hiding spot.
+     * Searches in expanding rings from entity position.
+     * Prefers closer spots normally, but further spots when player is looking at entity.
+     */
+    private BlockPos findNearestHidingSpot() {
         if (targetPlayer == null) {
             return null;
         }
         
-        List<BlockPos> candidates = new ArrayList<>();
+        World world = entity.getWorld();
         BlockPos entityPos = entity.getBlockPos();
         BlockPos playerPos = targetPlayer.getBlockPos();
-        World world = entity.getWorld();
         
-        if (!(world instanceof ServerWorld serverWorld)) {
-            return null;
-        }
+        boolean playerLooking = isPlayerLookingAtEntity();
         
-        // Calculate direction away from player
-        Vec3d toPlayer = new Vec3d(
-            playerPos.getX() - entityPos.getX(),
-            0,
-            playerPos.getZ() - entityPos.getZ()
-        ).normalize();
+        BlockPos bestSpot = null;
+        double bestDistance = playerLooking ? Double.MIN_VALUE : Double.MAX_VALUE;
         
-        // Use circular sampling pattern - check positions in expanding rings
-        for (int radius = 10; radius <= SEARCH_RADIUS; radius += 5) {
-            for (int angle = 0; angle < 360; angle += 30) {
-                double radian = Math.toRadians(angle);
-                int x = entityPos.getX() + (int)(Math.cos(radian) * radius);
-                int z = entityPos.getZ() + (int)(Math.sin(radian) * radius);
-                
-                BlockPos checkPos = new BlockPos(x, entityPos.getY(), z);
-                
-                // Load chunks first (required before accessing blocks)
-                if (!ChunkLoader.loadChunksInRadius(serverWorld, checkPos, 1)) {
-                    continue;
-                }
-                
-                // Find surface Y coordinate
-                int surfaceY = SurfaceFinder.findPointSurfaceY(
-                    serverWorld, x, z, false, true, false);
+        // Search in expanding squares (simpler than circles, equally effective)
+        for (int radius = 3; radius <= SEARCH_RADIUS; radius += 2) {
+            for (int dx = -radius; dx <= radius; dx += 2) {
+                for (int dz = -radius; dz <= radius; dz += 2) {
+                    // Only check perimeter of each ring for efficiency
+                    if (Math.abs(dx) != radius && Math.abs(dz) != radius) {
+                        continue;
+                    }
                     
-                if (surfaceY == -1) {
-                    continue; // No valid surface found
-                }
-                
-                BlockPos groundPos = new BlockPos(x, surfaceY, z);
-                
-                // Check distance from player - enforce max stalk distance
-                double distanceFromPlayer = groundPos.getSquaredDistance(playerPos);
-                if (distanceFromPlayer > (MAX_STALK_DISTANCE * MAX_STALK_DISTANCE)) {
-                    continue; // Too far from player for stalking behavior
-                }
-                
-                // Check if this is a valid hiding spot
-                if (isValidHidingSpot(groundPos)) {
-                    // Prefer positions away from player (dot product check)
-                    Vec3d toCandidate = new Vec3d(
-                        groundPos.getX() - entityPos.getX(),
-                        0,
-                        groundPos.getZ() - entityPos.getZ()
-                    ).normalize();
+                    int x = entityPos.getX() + dx;
+                    int z = entityPos.getZ() + dz;
                     
-                    double dotProduct = toCandidate.dotProduct(toPlayer);
+                    // Find ground level at this position
+                    BlockPos groundPos = findGround(world, x, entityPos.getY(), z);
+                    if (groundPos == null) {
+                        continue;
+                    }
                     
-                    // Only consider positions generally away from player (dot product < 0)
-                    // or at least not directly toward player (dot product < 0.3)
-                    if (dotProduct < 0.3) {
-                        candidates.add(groundPos);
+                    // Convert ground position to feet position (one block above ground)
+                    BlockPos feetPos = groundPos.up();
+                    
+                    // Check distance constraints using feet position
+                    double distFromPlayer = feetPos.getSquaredDistance(playerPos);
+                    if (distFromPlayer > STALK_RADIUS * STALK_RADIUS) {
+                        continue; // Too far from player
+                    }
+                    if (distFromPlayer < MIN_DISTANCE_FROM_PLAYER * MIN_DISTANCE_FROM_PLAYER) {
+                        continue; // Too close to player
+                    }
+                    
+                    // Check if this is a valid hiding spot (still checks ground solidity)
+                    if (!isValidStandingPosition(world, groundPos)) {
+                        continue;
+                    }
+                    if (!isPositionHidden(feetPos)) {
+                        continue;
+                    }
+                    
+                    // Track the best valid spot based on whether player is looking
+                    // If player is looking: prefer further spots from player
+                    // If player is not looking: prefer closer spots to entity (current position)
+                    distFromPlayer = feetPos.getSquaredDistance(playerPos);
+                    
+                    if (playerLooking) {
+                        // Prefer spots further from player when being watched
+                        if (distFromPlayer > bestDistance) {
+                            bestDistance = distFromPlayer;
+                            bestSpot = feetPos;
+                        }
+                    } else {
+                        // Prefer spots closer to entity when not being watched
+                        double distFromEntity = feetPos.getSquaredDistance(entityPos);
+                        if (distFromEntity < bestDistance) {
+                            bestDistance = distFromEntity;
+                            bestSpot = feetPos;
+                        }
                     }
                 }
             }
-        }
-        
-        if (candidates.isEmpty()) {
-            return null; // No valid hiding spot found
-        }
-        
-        // Sort candidates by visibility score first (lowest = best hiding), 
-        // then by distance from player (closer for stalking, but still hidden)
-        // Pre-score all candidates for better sorting
-        List<ScoredCandidate> scoredCandidates = new ArrayList<>();
-        for (BlockPos candidate : candidates) {
-            int visibilityScore = PathVisibilityScorer.scorePath(
-                targetPlayer,
-                world,
-                entityPos, 
-                candidate, 
-                SEARCH_RADIUS
-            );
-            if (visibilityScore >= 0) {
-                scoredCandidates.add(new ScoredCandidate(candidate, visibilityScore));
-            }
-        }
-        
-        if (scoredCandidates.isEmpty()) {
-            return null;
-        }
-        
-        // Sort by visibility score (lower = better), break ties with closer distance
-        scoredCandidates.sort((a, b) -> {
-            int scoreCompare = Integer.compare(a.score, b.score);
-            if (scoreCompare != 0) {
-                return scoreCompare;
-            }
-            // If scores equal, prefer closer to player (for stalking)
-            return Double.compare(
-                a.pos.getSquaredDistance(playerPos),
-                b.pos.getSquaredDistance(playerPos)
-            );
-        });
-        
-        // Return the best candidate (already sorted by score, then distance)
-        return scoredCandidates.get(0).pos;
-    }
-    
-    private boolean isValidHidingSpot(BlockPos pos) {
-        World world = entity.getWorld();
-        
-        // Check that the ground block is solid
-        if (!world.getBlockState(pos).isSolidBlock(world, pos)) {
-            return false;
-        }
-        
-        // Check that there are 2 air blocks (or passable blocks) above the ground position
-        BlockPos above1 = pos.up(1);
-        BlockPos above2 = pos.up(2);
-        
-        // Allow air or non-collision blocks (like grass, torches, snow) above ground
-        BlockState state1 = world.getBlockState(above1);
-        BlockState state2 = world.getBlockState(above2);
-        
-        boolean space1Clear = state1.isAir() || !state1.isSolidBlock(world, above1) || state1.getCollisionShape(world, above1).isEmpty();
-        boolean space2Clear = state2.isAir() || !state2.isSolidBlock(world, above2) || state2.getCollisionShape(world, above2).isEmpty();
-
-        if (!space1Clear || !space2Clear) {
-            return false;
-        }
-        
-        // Check if all three positions (ground + 2 air blocks) are not visible by the player
-        boolean groundVisible = LineOfSightUtils.isBlockRenderedOnScreen(
-            targetPlayer, pos, SEARCH_RADIUS);
-        boolean air1Visible = LineOfSightUtils.isBlockRenderedOnScreen(
-            targetPlayer, above1, SEARCH_RADIUS);
-        boolean air2Visible = LineOfSightUtils.isBlockRenderedOnScreen(
-            targetPlayer, above2, SEARCH_RADIUS);
             
-        // Valid if none of the positions are visible
-        return !groundVisible && !air1Visible && !air2Visible;
+            // Return early if we found a spot (prioritize nearest)
+            if (bestSpot != null) {
+                return bestSpot;
+            }
+        }
+        
+        return bestSpot;
     }
     
     /**
-     * Helper class to store a candidate position with its visibility score
+     * Find the ground level at a given X, Z starting from a Y hint.
+     * Returns the block position the entity would stand ON.
      */
-    private static class ScoredCandidate {
-        final BlockPos pos;
-        final int score;
-        
-        ScoredCandidate(BlockPos pos, int score) {
-            this.pos = pos;
-            this.score = score;
+    private BlockPos findGround(World world, int x, int startY, int z) {
+        // Search up and down from startY
+        for (int yOffset = 0; yOffset <= 10; yOffset++) {
+            // Check above
+            BlockPos upPos = new BlockPos(x, startY + yOffset, z);
+            if (isValidStandingPosition(world, upPos)) {
+                return upPos;
+            }
+            
+            // Check below
+            BlockPos downPos = new BlockPos(x, startY - yOffset, z);
+            if (isValidStandingPosition(world, downPos)) {
+                return downPos;
+            }
         }
+        return null;
+    }
+    
+    /**
+     * Check if an entity can stand at a position.
+     * Ground must be solid, with 2 passable blocks above.
+     */
+    private boolean isValidStandingPosition(World world, BlockPos groundPos) {
+        // Ground must be solid
+        BlockState ground = world.getBlockState(groundPos);
+        if (!ground.isSolidBlock(world, groundPos)) {
+            return false;
+        }
+        
+        // Two blocks above must be passable (air or non-solid)
+        BlockPos above1 = groundPos.up();
+        BlockPos above2 = groundPos.up(2);
+        
+        BlockState state1 = world.getBlockState(above1);
+        BlockState state2 = world.getBlockState(above2);
+        
+        boolean passable1 = state1.isAir() || state1.getCollisionShape(world, above1).isEmpty();
+        boolean passable2 = state2.isAir() || state2.getCollisionShape(world, above2).isEmpty();
+        
+        return passable1 && passable2;
+    }
+    
+    /**
+     * Move the entity towards the hiding spot.
+     */
+    private void moveToHidingSpot() {
+        if (hidingSpot == null) {
+            return;
+        }
+
+        // Navigate to the hiding spot (which is now the feet position)
+        entity.getNavigation().startMovingTo(
+            hidingSpot.getX() + 0.5,
+            hidingSpot.getY(),  // hidingSpot is already feet position
+            hidingSpot.getZ() + 0.5,
+            1.5  // Increased speed for running pace
+        );
+
+        HorrorMod129.LOGGER.info(String.format(
+            "[HideBehindStructures] Navigating to hiding spot: %s",
+            hidingSpot.toShortString()
+        ));
+    }
+    
+    /**
+     * Make the entity look at the player.
+     */
+    private void lookAtPlayer() {
+        if (targetPlayer == null) {
+            return;
+        }
+        
+        entity.getLookControl().lookAt(
+            targetPlayer.getX(),
+            targetPlayer.getEyeY(),
+            targetPlayer.getZ()
+        );
     }
 }
