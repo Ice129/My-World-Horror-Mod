@@ -40,7 +40,10 @@ public class BlockTypes {
                 || block == Blocks.TALL_GRASS
                 || (includeSnow && block == Blocks.SNOW)
                 || block == Blocks.VINE
-                || block == Blocks.DEAD_BUSH) {
+                || block == Blocks.DEAD_BUSH
+                || block == Blocks.FERN
+                || block == Blocks.LARGE_FERN
+                || block == Blocks.SUGAR_CANE) {
             return true;
         }
         // leaves

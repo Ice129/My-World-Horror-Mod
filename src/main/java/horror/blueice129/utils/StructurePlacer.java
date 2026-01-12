@@ -53,7 +53,8 @@ public class StructurePlacer {
                         int y = findPointSurfaceY(world, x, z, true, true, includeSnow);
                         if (y == -1)
                                 continue; // No suitable surface found
-                        BlockPos pos = new BlockPos(x, y, z);
+                        // Place blocks on top of the surface, not inside it
+                        BlockPos pos = new BlockPos(x, y + 1, z);
 
                         // Check if the position is not in line of sight of the player
                         if (isBlockRenderedOnScreen(player, pos, 50))
@@ -104,7 +105,8 @@ public class StructurePlacer {
                         if (y == -1)
                                 continue; // No suitable surface found
                         
-                        return new BlockPos(x, y, z);
+                        // Place blocks on top of the surface, not inside it
+                        return new BlockPos(x, y + 1, z);
                 }
                 return null;
         }

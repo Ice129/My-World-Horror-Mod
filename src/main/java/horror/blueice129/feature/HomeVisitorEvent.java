@@ -141,12 +141,10 @@ public class HomeVisitorEvent {
     private static int signPlacer(MinecraftServer server, ServerPlayerEntity player, BlockPos bedPos) {
         // list of possible sign texts
         var signMessages = java.util.Arrays.asList(
-                "why are you here",
-                "stop playing on my world",
-                "how are you in my world",
-                "i thought this was singleplayer",
-                "hello?",
-                "are you real?");
+                "you're not me, are you?",
+                "i dont recognise your username",
+                "no-one was meant to be here but me.",
+                "Blueice129 was here.");
         // place sign at end of bed, or closeest block possible
         var world = server.getOverworld();
 
@@ -307,7 +305,7 @@ public class HomeVisitorEvent {
                     var chestEntity = world.getBlockEntity(pos);
                     if (chestEntity instanceof ChestBlockEntity) {
                         var itemStack = new ItemStack(Items.PAPER);
-                        itemStack.setCustomName(Text.literal("this is singleplayer"));
+                        itemStack.setCustomName(Text.literal("how did you get access to me?"));
                         ((ChestBlockEntity) chestEntity).setStack(13, itemStack);
                     }
                     var tntBlock = Blocks.TNT.getDefaultState();
@@ -364,6 +362,7 @@ public class HomeVisitorEvent {
     private static boolean playerLeavesWorld(MinecraftServer server) {
         if (random.nextDouble() < 0.3) { // 30% chance the player leaves
             // send a chat message saying another player just left the world
+            // TODO: make this work with global logged in variable yet to be made
             server.getPlayerManager().broadcast(
                     Text.literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
             return true;
