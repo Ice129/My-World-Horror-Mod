@@ -107,6 +107,7 @@ public class Blueice129SpawnScheduler {
         }
 
         // Select a random player to spawn near
+        // INFO: works with multiplayer
         ServerPlayerEntity player = server.getPlayerManager().getPlayerList()
                 .get(RANDOM.nextInt(server.getPlayerManager().getPlayerList().size()));
 
@@ -172,7 +173,8 @@ public class Blueice129SpawnScheduler {
     private static boolean isForestBiome(String biomeKey) {
         return biomeKey.contains("forest") ||
                 biomeKey.contains("taiga") ||
-                biomeKey.contains("grove");
+                biomeKey.contains("grove") ||
+                biomeKey.contains("jungle");
     }
 
     /**
