@@ -129,8 +129,8 @@ public class SettingsScheduler {
                 HorrorMod129.LOGGER.info("FPS capped to 30");
                 break;
             case MOUSE_SENSITIVITY:
-                MouseSensitivityChanger.decreaseMouseSensitivity(0.20);
-                HorrorMod129.LOGGER.info("Mouse sensitivity decreased by 20%. New sensitivity: "
+                MouseSensitivityChanger.decreaseMouseSensitivity(0.10);
+                HorrorMod129.LOGGER.info("Mouse sensitivity decreased by 10%. New sensitivity: "
                         + MouseSensitivityChanger.getMouseSensitivity());
                 break;
             case SMOOTH_LIGHTING:
@@ -140,7 +140,7 @@ public class SettingsScheduler {
             default:
                 break;
         }
-        state.setTimer(TIMER_ID, getRandomDelayWithAgro(state, 20 * 60 * 30, 20 * 60 * 60));
+        state.setTimer(TIMER_ID, getRandomDelayWithAgro(state, 20 * 60 * 30, 20 * 60 * 60)); // 30-60 minutes
         // Reset main timer to 30-60 minutes - (agro*2 minutes)
     }
 
