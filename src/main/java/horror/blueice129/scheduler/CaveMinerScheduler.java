@@ -56,21 +56,18 @@ public class CaveMinerScheduler {
      */
     private static void onServerTick(MinecraftServer server) {
         // Skip if the server is empty
-        if (server.getCurrentPlayerCount() == 0) {
+        if (server.getPlayerManager().getPlayerList().isEmpty()) {
             return;
         }
 
-        // Get the first online player (if any)
-        if (!server.getPlayerManager().getPlayerList().isEmpty()) {
-            ServerPlayerEntity player = server.getPlayerManager().getPlayerList().get(0);
+        // Select a random player from the server
+        ServerPlayerEntity player = server.getPlayerManager().getPlayerList()
+                .get(random.nextInt(server.getPlayerManager().getPlayerList().size()));
             
             // Get our persistent state
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
             
-            // Get current timer value
-            int currentTimer = state.decrementTimer(TIMER_ID, 1);
-
-            // If the timer has reached zero
+        // Get current timer value and decrement (only happens if players are online)
             if (currentTimer <= 0) {
                 // Trigger the cave miner event
                 while (!CavePreMiner.preMineCave(player.getWorld(), player.getBlockPos(), player)) {
@@ -85,7 +82,6 @@ public class CaveMinerScheduler {
                 // Reset the timer with a new random delay
                 state.setTimer(TIMER_ID, getRandomDelay());
             }
-        }
     }
 
     /**

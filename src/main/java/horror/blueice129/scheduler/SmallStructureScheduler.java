@@ -55,6 +55,11 @@ public class SmallStructureScheduler {
     }
 
     private static void onServerTick(MinecraftServer server) {
+        // Skip if server is empty (pause timers)
+        if (server.getPlayerManager().getPlayerList().isEmpty()) {
+            return;
+        }
+        
         // Only run on the overworld
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         if (!state.hasTimer(TIMER_ID)) {

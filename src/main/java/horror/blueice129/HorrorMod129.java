@@ -2,12 +2,14 @@ package horror.blueice129;
 
 import horror.blueice129.command.DebugCommands;
 import horror.blueice129.entity.Blueice129Entity;
+import horror.blueice129.network.ModNetworking;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.HomeEventScheduler;
 import horror.blueice129.scheduler.PlayerDeathItemsScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
 import horror.blueice129.scheduler.LedgePusherScheduler;
+import horror.blueice129.scheduler.SettingsScheduler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -49,6 +51,9 @@ public class HorrorMod129 implements ModInitializer {
 
 		LOGGER.info("Initializing Horror Mod 129!");
 		
+		// Register networking packets
+		ModNetworking.registerPackets();
+		
 		// Register entity attributes
 		FabricDefaultAttributeRegistry.register(BLUEICE129_ENTITY, Blueice129Entity.createBlueice129Attributes());
 		
@@ -59,7 +64,7 @@ public class HorrorMod129 implements ModInitializer {
 		SmallStructureScheduler.register();
 		LedgePusherScheduler.register();
 		PlayerDeathItemsScheduler.register();
-		// Note: SettingsScheduler is registered in HorrorMod129Client as it runs on client side
+		SettingsScheduler.register(); // Now server-side
 		
 		// Register fleeing entity tick handler
 		ServerTickEvents.START_SERVER_TICK.register(horror.blueice129.feature.LedgePusher::onServerTick);

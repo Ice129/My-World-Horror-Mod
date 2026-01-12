@@ -57,6 +57,11 @@ public class Blueice129SpawnScheduler {
      * @param server The Minecraft server instance
      */
     private static void onServerTick(MinecraftServer server) {
+        // Skip if server is empty (pause timers)
+        if (server.getPlayerManager().getPlayerList().isEmpty()) {
+            return;
+        }
+        
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         if (!state.hasTimer(TIMER_ID)) {
             return; // Timer not initialized yet
