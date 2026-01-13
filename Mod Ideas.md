@@ -24,6 +24,12 @@ TODO:
 TODO:
 - enhanced ability to detect being looked at, especially out of corner of eye while zoomed in using a mod. will require learning how zoom mods work and how to detect if the player is zoomed in, and entity is within fov
 
+- add armour to entity
+
+- add held items to entity
+
+- add items to drop on death
+
 ## Sound Ideas
 - block placing and breaking sounds when underground
 
