@@ -18,8 +18,10 @@
 
 <!-- - punched off edge when shifting over a ledge - player looking over edge at you before running off -->
 
+TODO:
 - digging straight down, check if its 1 or 2 wide regardless, player looking down at you until you see it
 
+TODO:
 - enhanced ability to detect being looked at, especially out of corner of eye while zoomed in using a mod. will require learning how zoom mods work and how to detect if the player is zoomed in, and entity is within fov
 
 ## Sound Ideas
@@ -27,8 +29,10 @@
 
 - seen Blueice129 nametag while somewhere, then hear them mine 3 blocks down, place a block, and they dissapear
 
+TODO:
 - footsteps when player is in a menu for over a few seconds
 
+TEST:
 - increased cave noise percent (like 100% increase, but under same circumstances)
 
 ## Block Event Ideas
@@ -57,7 +61,8 @@
   - slime farm in swamp
   - mob farm in ocean
 
-- sand mined from desert
+TODO: 
+- sand mined from desert 
 
 ## Item Ideas
 - map ids already starting at like 5
@@ -69,8 +74,10 @@
    - traps
    - flowers (extra armour drain)
 
+TODO:
 - armour taking durability when near an "anomaly"
 
+TODO:
 - Compass starts to point in direction of entity base/nearest anomalous activity 
 
 ## Game Mechanic Ideas
