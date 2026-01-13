@@ -156,7 +156,7 @@ public class LineOfSightChecker {
         
         // Second pass: Fill all marked positions
         for (BlockPos pos : positionsToFill) {
-            world.setBlockState(pos, net.minecraft.block.Blocks.LIME_STAINED_GLASS.getDefaultState());
+            world.setBlockState(pos, net.minecraft.block.Blocks.AIR.getDefaultState());
         }
         
         horror.blueice129.HorrorMod129.LOGGER.info(String.format(

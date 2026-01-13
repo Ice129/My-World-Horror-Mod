@@ -7,8 +7,8 @@ import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
+// import net.minecraft.network.PacketByteBuf;
+// import net.minecraft.util.Identifier;
 
 /**
  * Handles client-side packet reception and processing.
