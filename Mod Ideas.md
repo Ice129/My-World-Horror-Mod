@@ -92,3 +92,11 @@ TODO:
 <!-- - setting to moody brightness -->
 
 - nights will sometimes be 20% - 100% longer occasionally
+
+TODO:
+## meta ideas
+- add reminder to follow mod for when updates come out - modrinth
+
+- take screenshots for the mod showcase/gallery
+
+- brainstorm new mod names (engram, imprint, backup-1)
