@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 
 // TODO: make a way to visualise how and when data is being saved and loaded and stored persistently
-// TEST: all methods in this class
 
 /**
  * Persistent state handler for the Horror Mod.
