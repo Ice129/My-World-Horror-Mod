@@ -66,8 +66,11 @@ public class CaveMinerScheduler {
             
             // Get our persistent state
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
-            
-        // Get current timer value and decrement (only happens if players are online)
+
+            // Get current timer value and decrement (only happens if players are online)
+            int currentTimer = state.decrementTimer(TIMER_ID, 1);
+
+            // If the timer has reached zero
             if (currentTimer <= 0) {
                 // Trigger the cave miner event
                 while (!CavePreMiner.preMineCave(player.getWorld(), player.getBlockPos(), player)) {

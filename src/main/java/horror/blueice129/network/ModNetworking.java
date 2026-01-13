@@ -1,35 +1,33 @@
 package horror.blueice129.network;
 
 import horror.blueice129.HorrorMod129;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.Identifier;
 
 /**
- * Handles packet registration for client-server communication.
+ * Handles packet sending for client-server communication.
  */
 public class ModNetworking {
-    
-    /**
-     * Registers all custom packets for the mod.
-     * Should be called during mod initialization.
-     */
+    public static final Identifier SETTINGS_TRIGGER_ID = new Identifier(HorrorMod129.MOD_ID, "settings_trigger");
+
     public static void registerPackets() {
-        // Register the settings trigger payload for client-bound packets
-        PayloadTypeRegistry.playS2C().register(SettingsTriggerPayload.ID, SettingsTriggerPayload.CODEC);
-        
-        HorrorMod129.LOGGER.info("Registered mod networking packets");
+        // No server-side registration required for simple S2C packets with Fabric.
+        HorrorMod129.LOGGER.info("ModNetworking initialized (no explicit packet registration required)");
     }
-    
+
     /**
      * Sends a settings trigger packet to a specific player.
-     * 
+     *
      * @param player The player to send the packet to
      * @param settingType The type of setting to modify
      */
-    public static void sendSettingsTrigger(net.minecraft.server.network.ServerPlayerEntity player, 
-                                          SettingsTriggerPayload.SettingType settingType) {
-        ServerPlayNetworking.send(player, new SettingsTriggerPayload(settingType));
-        HorrorMod129.LOGGER.info("Sent settings trigger packet to " + player.getName().getString() + 
-                                " for setting: " + settingType);
+    public static void sendSettingsTrigger(net.minecraft.server.network.ServerPlayerEntity player,
+                                           SettingsTriggerPayload.SettingType settingType) {
+        PacketByteBuf buf = SettingsTriggerPayload.write(settingType);
+        ServerPlayNetworking.send(player, SETTINGS_TRIGGER_ID, buf);
+        HorrorMod129.LOGGER.info("Sent settings trigger packet to " + player.getName().getString() +
+                " for setting: " + settingType);
     }
 }
