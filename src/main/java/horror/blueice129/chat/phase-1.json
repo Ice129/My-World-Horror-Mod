@@ -1,0 +1,47 @@
+{
+    "messages": [
+        {
+            "name": "first_greeting",
+            "catagory": "simple",
+            "min_agro": 2,
+            "max_agro": 5,
+            "chat_prerequisites": null,
+            "game_prerequisites": null,
+            "patterns": [
+                "hi",
+                "hello",
+                "hey",
+                "hiya"
+            ],
+            "responses": [
+                "who are you?",
+                "i dont recognise you",
+                "are you me?",
+                "hey?",
+                "hi?"
+            ]
+        },
+        {
+            "name": "repeated_message",
+            "catagory": "meta",
+            "patterns": [],
+            "responses": [
+                "You already said that.",
+                "i heard you the first time."
+            ]
+        },
+        {
+            "name": "help",
+            "patterns": [
+                "help",
+                "assist",
+                "support"
+            ],
+            "responses": [
+                "How can I help you?",
+                "What do you need assistance with?",
+                "I'm here to support you."
+            ]
+        }
+    ]
+}

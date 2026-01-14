@@ -30,6 +30,13 @@ TODO:
 
 - add items to drop on death
 
+- be able to chat to the entity 
+  - entity responds with preset messages
+  - entity can respond to certain keywords
+  - make sure its a compex system
+  - only responds when "online"
+  - stands still when "responding" to player
+
 ## Sound Ideas
 - block placing and breaking sounds when underground
 
