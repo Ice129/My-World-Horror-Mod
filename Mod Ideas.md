@@ -30,6 +30,10 @@ TODO:
 
 - add items to drop on death
 
+- resource gathering behavior (wood, stone, ores)
+
+
+
 ## Sound Ideas
 - block placing and breaking sounds when underground
 
@@ -70,6 +74,14 @@ TEST:
 TODO: 
 - sand mined from desert 
 
+- Looted Bonus Chest when loading into world
+
+- by water sources, small farms are made with half grown crops
+
+- failed speed portals on lava lakes
+
+- entity base can be changed what type of wood is used or stone, same shape but different materials depending on resource gathered
+
 ## Item Ideas
 - map ids already starting at like 5
 
@@ -89,6 +101,8 @@ TODO:
 ## Game Mechanic Ideas
 <!-- - setting the players render distance down slowly -->
 
+- fov decreases super slowly over 30 seconds
+
 - increasing the players graphics settings to try and lag the player out (able to disable this in config as i can see people not wanting this if recording or with bad pcs)
 
 <!-- - capping fps to 30 or lower when entity is nearby -->
@@ -98,6 +112,16 @@ TODO:
 <!-- - setting to moody brightness -->
 
 - nights will sometimes be 20% - 100% longer occasionally
+
+- pre leveled vilagers in villages
+
+- 1/2 players sleeping -> 2/2 players sleeping
+
+- ghast targeting another player other than you in nether
+
+- mobs swap sounds eg: chicken makes cow sound
+
+- world is set not to day 0 when spawning in, but whatever (3 (days in an hour)) * 24 * (days since 20th july 2024) * (random percent between 0.5 and 0.8(represents nights slept though))
 
 TODO:
 ## meta ideas
