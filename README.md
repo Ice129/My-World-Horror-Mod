@@ -4,7 +4,7 @@
 ## A Vanilla-Style Psychological Horror Experience for Minecraft
 #### *Version 0.3.0-beta - Early Access*
 
-Horror lives in the familiar; The breaking of dirt, torches leading the way home, a door left open. This isn't just your world anymore - it's something else.
+Horror lives in the familiar; The breaking of dirt, torches leading the way home, a door left open. You're not the first player this world has seen.
 
 My World.jar is a horror mod designed to seamlessly integrate into Minecraft's vanilla experience, blurring the line between what's part of the game and what's... watching you. It's meant to be installed and forgotten until it's too obvious to ignore.
 
@@ -32,10 +32,12 @@ Join the [Discord](https://discord.gg/hgCNtXbqkC) to report bugs, give feedback,
 *\* indicates features planned for future updates*
 </details>
 
+
+
 This mod is in active development. As this is my first mod, expect bugs and incomplete features. Please report any issues on the **[GitHub Issues page](https://github.com/Ice129/My-World-Horror-Mod/issues)**. 
 
 Feel free to contribute to the project! All my code is publicly available on **[GitHub](https://github.com/Ice129/My-World-Horror-Mod)**.
-
+No Forge port is planned for this mod, however if anyone is determined enough to do so themselves, open a PR on GitHub and I will gladly support it.
 <div align="center">
 
 *"I wasn't told about you"*
