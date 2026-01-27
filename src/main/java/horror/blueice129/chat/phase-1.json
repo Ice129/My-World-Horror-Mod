@@ -5,6 +5,7 @@
             "catagory": "simple",
             "min_agro": 2,
             "max_agro": 5,
+            "repeats": 1,
             "chat_prerequisites": null,
             "game_prerequisites": null,
             "patterns": [
@@ -26,21 +27,28 @@
             "catagory": "meta",
             "patterns": [],
             "responses": [
-                "You already said that.",
+                "You just said that.",
                 "i heard you the first time."
             ]
         },
         {
-            "name": "help",
+            "name": "identity",
+            "catagory": "simple",
+            "min_agro": 2,
+            "max_agro": 5,
+            "repeats": 1,
+            "chat_prerequisites": null,
+            "game_prerequisites": null,
             "patterns": [
-                "help",
-                "assist",
-                "support"
+                "who are you",
+                "what are you",
+                "tell me who you are",
+                "identify yourself"
+
             ],
             "responses": [
-                "How can I help you?",
-                "What do you need assistance with?",
-                "I'm here to support you."
+                "you dont know?",
+                "you should know this"
             ]
         }
     ]
