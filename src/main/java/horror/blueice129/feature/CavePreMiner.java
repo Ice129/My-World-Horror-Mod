@@ -333,14 +333,15 @@ public class CavePreMiner {
 
     /**
      * Chance to place crafting table, furnace, or cobblestone pillar, or nothing
+     * Can place up to 2 extra blocks
      * 
      * @param world         The world to place the block in
      * @param caveAirBlocks The list of cave air blocks to check against
      * @param player        The player to check line of sight against
-     * @return
+     * @return Number of extra blocks placed
      */
 
-    public static boolean placeExtraBlocks(World world, java.util.List<BlockPos> caveAirBlocks, PlayerEntity player) {
+    public static int placeExtraBlocks(World world, java.util.List<BlockPos> caveAirBlocks, PlayerEntity player) {
         // Chance distribution for extras: furnace 20%, crafting table 40%, pillar 30%,
         // nothing 10%
         java.util.List<BlockPos> suitablePositions = new java.util.ArrayList<>();
@@ -352,23 +353,34 @@ public class CavePreMiner {
         }
 
         if (suitablePositions.isEmpty())
-            return false;
+            return 0;
 
-        // Pick a random candidate position
+        // Shuffle positions for randomness
         java.util.Collections.shuffle(suitablePositions);
-        BlockPos target = suitablePositions.get(0);
 
-        int roll = random.nextInt(100);
-        if (roll < 20) {
-            return placeFurnaceAt(world, target);
-        } else if (roll < 60) {
-            return placeCraftingTableAt(world, target);
-        } else if (roll < 90) {
-            return placeCobblestonePillarAt(world, target);
+        int blocksPlaced = 0;
+        int maxBlocks = random.nextInt(3); // 0, 1, or 2 blocks
+
+        for (int i = 0; i < maxBlocks && i < suitablePositions.size(); i++) {
+            BlockPos target = suitablePositions.get(i);
+
+            int roll = random.nextInt(100);
+            boolean placed = false;
+            
+            if (roll < 20) {
+                placed = placeFurnaceAt(world, target);
+            } else if (roll < 60) {
+                placed = placeCraftingTableAt(world, target);
+            } else if (roll < 90) {
+                placed = placeCobblestonePillarAt(world, target);
+            }
+
+            if (placed) {
+                blocksPlaced++;
+            }
         }
 
-        // 10% chance to do nothing
-        return true;
+        return blocksPlaced;
     }
 
     // Helper: place a furnace at pos (on the pos itself). Returns true if placed.
@@ -736,10 +748,10 @@ public class CavePreMiner {
         }
         int oresMined = mineExposedOres(world, caveAirBlocks, player);
         int torchesPlaced = populateTorches(world, caveAirBlocks, player);
-        boolean extraBlockPlaced = placeExtraBlocks(world, caveAirBlocks, player);
+        int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
         int stairLength = mineStairs(world, starterPos);
         HorrorMod129.LOGGER.info("Cave Pre-Miner: Mined " + oresMined + " ores, placed " + torchesPlaced
-                + " torches, extra block placed: " + extraBlockPlaced + ", stair length: " + stairLength);
+                + " torches, extra blocks placed: " + extraBlocksPlaced + ", stair length: " + stairLength);
         return true;
     }
 
