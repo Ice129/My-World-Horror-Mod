@@ -68,7 +68,7 @@ public class CavePreMiner {
 
     /**
      * makes a list of all connected cave air blocks from startPos
-     * only checks 5 blocks up from ground of cave
+     * fills up to 4 blocks above ground, searches 8 blocks down to find ground
      * 
      * @param world    The world to check in
      * @param startPos The position to start from
@@ -81,6 +81,8 @@ public class CavePreMiner {
         
         // Cache for solid block checks to avoid repeated world access
         java.util.Map<BlockPos, Boolean> solidBelowCache = new java.util.HashMap<>();
+        // Cache for ground level (Y coordinate of solid block below)
+        java.util.Map<BlockPos, Integer> groundLevelCache = new java.util.HashMap<>();
         
         // Define directions once to avoid recreating the array in each iteration
         net.minecraft.util.math.Direction[] DIRECTIONS = net.minecraft.util.math.Direction.values();
@@ -95,9 +97,9 @@ public class CavePreMiner {
             BlockPos currentPos = queue.poll();
             caveAirBlocks.add(currentPos);
             
-            // Check and cache if current position has solid below
-            boolean currentHasSolidBelow = checkAndCacheSolidBelow(world, currentPos, solidBelowCache);
-            if (!currentHasSolidBelow) continue; // Skip neighbors if current has no solid below
+            // Check and cache if current position has solid below (searches down 8 blocks)
+            Integer groundLevel = findAndCacheGroundLevel(world, currentPos, solidBelowCache, groundLevelCache);
+            if (groundLevel == null) continue; // Skip neighbors if current has no solid below
 
             for (net.minecraft.util.math.Direction direction : DIRECTIONS) {
                 BlockPos neighborPos = currentPos.offset(direction);
@@ -114,7 +116,17 @@ public class CavePreMiner {
                 BlockState neighborState = world.getBlockState(neighborPos);
                 if (!neighborState.isOf(Blocks.CAVE_AIR) && !neighborState.isOf(Blocks.AIR)) continue;
                 
-                // We already know current position has solid below, so this neighbor is valid
+                // Check vertical distance from ground
+                // If moving up: limit to 4 blocks above ground
+                // If moving down: allow up to 8 blocks below current position's ground
+                if (direction == net.minecraft.util.math.Direction.UP) {
+                    // Limit upward expansion to 4 blocks above ground
+                    if (neighborPos.getY() - groundLevel > 4) continue;
+                } else if (direction == net.minecraft.util.math.Direction.DOWN) {
+                    // Allow downward expansion up to 8 blocks
+                    // The findAndCacheGroundLevel will validate this neighbor has solid within 8 blocks
+                }
+                
                 queue.add(neighborPos);
                 visited.add(neighborPos);
             }
@@ -123,38 +135,44 @@ public class CavePreMiner {
     }
     
     /**
-     * Helper method to check and cache if a position has solid blocks below
+     * Helper method to find and cache the ground level (Y coordinate) below a position
+     * Searches down 8 blocks to find solid ground
+     * 
+     * @return The Y coordinate of the ground, or null if no ground found within 8 blocks
      */
-    private static boolean checkAndCacheSolidBelow(World world, BlockPos pos, java.util.Map<BlockPos, Boolean> cache) {
-        // Check cache first to avoid world access
-        if (cache.containsKey(pos)) {
-            return cache.get(pos);
+    private static Integer findAndCacheGroundLevel(World world, BlockPos pos, 
+            java.util.Map<BlockPos, Boolean> solidCache, java.util.Map<BlockPos, Integer> groundCache) {
+        // Check cache first
+        if (groundCache.containsKey(pos)) {
+            return groundCache.get(pos);
         }
         
-        // Check for solid blocks below
-        boolean hasSolidBelow = false;
+        // Search down up to 8 blocks for solid ground
         for (int i = 1; i <= 8; i++) {
             BlockPos belowPos = pos.down(i);
             if (belowPos.getY() > 55) continue; // don't test surface blocks
             
             // Check if we already know this position is solid
-            if (cache.containsKey(belowPos) && cache.get(belowPos)) {
-                hasSolidBelow = true;
-                break;
+            boolean isSolid = false;
+            if (solidCache.containsKey(belowPos) && solidCache.get(belowPos)) {
+                isSolid = true;
+            } else {
+                BlockState state = world.getBlockState(belowPos);
+                if (state.isSolidBlock(world, belowPos)) {
+                    isSolid = true;
+                    solidCache.put(belowPos, true);
+                }
             }
             
-            BlockState state = world.getBlockState(belowPos);
-            if (state.isSolidBlock(world, belowPos)) {
-                hasSolidBelow = true;
-                // Cache this solid block to speed up future checks
-                cache.put(belowPos, true);
-                break;
+            if (isSolid) {
+                int groundY = belowPos.getY();
+                groundCache.put(pos, groundY);
+                return groundY;
             }
         }
         
-        // Cache the result
-        cache.put(pos, hasSolidBelow);
-        return hasSolidBelow;
+        // No ground found
+        return null;
     }
 
     /**
@@ -232,7 +250,7 @@ public class CavePreMiner {
      */
     public static int populateTorches(World world, java.util.List<BlockPos> caveAirBlocks, PlayerEntity player) {
         int torchesPlaced = 0;
-        int minTorchDistance = 8; // Minimum distance between torches
+        int minTorchDistance = 10;
         int gridSize = minTorchDistance; // Grid cell size matches minimum torch distance
 
         // Use a spatial grid for faster distance checks - O(1) lookup instead of O(n)
@@ -259,11 +277,11 @@ public class CavePreMiner {
                 firstPos = false;
                 continue; // Skip the first position to avoid placing where the stairs are
             }
-            // Hard cutoff: do not place torches above Y=55 (surface differentiation)
+            // Hard cutoff: do not place torches above Y=55 (surface)
             if (pos.getY() > 55)
                 continue;
             // Check if this position is still dark enough for a torch
-            if (world.getLightLevel(pos) > 4) {
+            if (world.getLightLevel(pos) > 2) {
                 continue; // Skip if the area is already lit by previously placed torches
             }
 
@@ -380,7 +398,7 @@ public class CavePreMiner {
             return false;
 
         boolean placedAny = false;
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             BlockPos p = base.up(i);
             if (p.getY() <= 55 && world.getBlockState(p).isAir()) {
                 world.setBlockState(p, Blocks.COBBLESTONE.getDefaultState(), 3);
