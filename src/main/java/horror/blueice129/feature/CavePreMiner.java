@@ -653,7 +653,6 @@ public class CavePreMiner {
         // Track placed positions to avoid placing torches too close together
         java.util.Set<BlockPos> placedPositions = new java.util.HashSet<>();
         
-        // Try to place the desired number of torches with a maximum number of attempts
         while (torchesPlaced < torchCount && attempts < 30) {
             attempts++;
             
@@ -672,7 +671,7 @@ public class CavePreMiner {
                 
                 if (!tooClose) {
                     // Place a torch at this position
-                    world.setBlockState(surfacePos.up(), Blocks.TORCH.getDefaultState(), 3);
+                    world.setBlockState(surfacePos, Blocks.TORCH.getDefaultState(), 3);
                     placedPositions.add(surfacePos);
                     torchesPlaced++;
                 }
