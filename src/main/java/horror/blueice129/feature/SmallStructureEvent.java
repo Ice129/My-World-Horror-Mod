@@ -241,8 +241,8 @@ public class SmallStructureEvent {
         BlockEntity blockEntity = server.getOverworld().getBlockEntity(pos);
         if (blockEntity instanceof FurnaceBlockEntity) {
             FurnaceBlockEntity furnace = (FurnaceBlockEntity) blockEntity;
-            furnace.setStack(0, new ItemStack(Items.COAL, coalAmount));
-            furnace.setStack(1, new ItemStack(Items.BEEF, itemAmount));
+            furnace.setStack(0, new ItemStack(Items.BEEF, itemAmount));
+            furnace.setStack(1, new ItemStack(Items.COAL, coalAmount));
         }
         return true;
     }
