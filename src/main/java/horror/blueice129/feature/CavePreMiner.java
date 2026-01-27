@@ -392,7 +392,7 @@ public class CavePreMiner {
     // Helper: place a crafting table above the supplied pos. Returns true if
     // placed.
     private static boolean placeCraftingTableAt(World world, BlockPos pos) {
-        BlockPos above = pos.up();
+        BlockPos above = pos;
         if (above.getY() > 55)
             return false;
         if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, above, 1))
