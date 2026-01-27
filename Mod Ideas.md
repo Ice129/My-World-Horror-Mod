@@ -123,6 +123,9 @@ TODO:
 
 - world is set not to day 0 when spawning in, but whatever (3 (days in an hour)) * 24 * (days since 20th july 2024) * (random percent between 0.5 and 0.8(represents nights slept though))
 
+- entity takes screenshot of player when stalking them and the screenshot shows up in the screenshots folder, names somthing spooky and lore revealing
+
+
 TODO:
 ## meta ideas
 - add reminder to follow mod for when updates come out - modrinth
