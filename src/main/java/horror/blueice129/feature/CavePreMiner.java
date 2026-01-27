@@ -370,10 +370,10 @@ public class CavePreMiner {
         return true;
     }
 
-    // Helper: place a 3-block tall cobblestone pillar starting at pos.up(). Returns
+    // Helper: place a 3-block tall cobblestone pillar starting at pos. Returns
     // true if at least one block placed.
     private static boolean placeCobblestonePillarAt(World world, BlockPos pos) {
-        BlockPos base = pos.up();
+        BlockPos base = pos;
         if (base.getY() > 55)
             return false;
         if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, base, 1))
