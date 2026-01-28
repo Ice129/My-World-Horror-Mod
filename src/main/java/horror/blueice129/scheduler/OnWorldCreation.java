@@ -47,9 +47,6 @@ public class OnWorldCreation {
     private static void onWorldCreated(MinecraftServer server) {
         HorrorMod129.LOGGER.info("OnWorldCreation: World created for the first time!");
 
-        // TODO: Add your world creation initialization code here
-        // This will only run once per world
-
         modifyWorldDate(server);
 
     }
@@ -66,10 +63,16 @@ public class OnWorldCreation {
         // get difference between 20th June and current date
         java.time.LocalDate targetDate = java.time.LocalDate.of(currentDate.getYear(), 6, 20);
         long daysDifference = java.time.temporal.ChronoUnit.DAYS.between(targetDate, currentDate);
+
         // Random between 0.55 and 0.9
         Random random = new Random();
         double sleepPercent = 0.55 + (0.35 * random.nextDouble());
-        long ticksToAdjust = (long) (daysDifference * (24000L * 3 * 24 * sleepPercent))  % 24000L;
+        long ticksToAdjust = (long) (daysDifference * (24000L * 3 * 24 * sleepPercent));
+        // make sure ticksToAdjust is the closest multiple of 24000
+        ticksToAdjust = (ticksToAdjust / 24000L) * 24000L;
+        ticksToAdjust = ticksToAdjust - 12000L; // adjust to midday
+
+        
         // adjust world time
         server.getOverworld().setTimeOfDay(server.getOverworld().getTimeOfDay() + ticksToAdjust);
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
