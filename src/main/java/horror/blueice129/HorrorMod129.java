@@ -2,12 +2,14 @@ package horror.blueice129;
 
 import horror.blueice129.command.DebugCommands;
 import horror.blueice129.entity.Blueice129Entity;
+import horror.blueice129.scheduler.AgroMeterScheduler;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.HomeEventScheduler;
 import horror.blueice129.scheduler.PlayerDeathItemsScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
 import horror.blueice129.scheduler.LedgePusherScheduler;
+import horror.blueice129.scheduler.OnWorldCreation;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -53,6 +55,8 @@ public class HorrorMod129 implements ModInitializer {
 		FabricDefaultAttributeRegistry.register(BLUEICE129_ENTITY, Blueice129Entity.createBlueice129Attributes());
 		
 		// Register schedulers
+		OnWorldCreation.register();
+		AgroMeterScheduler.register();
 		Blueice129SpawnScheduler.register();
 		CaveMinerScheduler.register();
 		HomeEventScheduler.register();
