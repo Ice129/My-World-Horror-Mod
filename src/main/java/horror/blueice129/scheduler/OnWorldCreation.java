@@ -76,7 +76,7 @@ public class OnWorldCreation {
         // adjust world time
         server.getOverworld().setTimeOfDay(server.getOverworld().getTimeOfDay() + ticksToAdjust);
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
-        state.setLongValue("worldTimeOffset", state.getLongValue("worldTimeOffset", 0L) + ticksToAdjust);
+        state.setLongValue("worldTimeOffset", ticksToAdjust);
         HorrorMod129.LOGGER.info("Modified world date by " + ticksToAdjust + " ticks to align with target date.");
     }
 }
