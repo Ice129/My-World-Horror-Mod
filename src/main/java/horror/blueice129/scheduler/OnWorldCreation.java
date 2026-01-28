@@ -60,8 +60,8 @@ public class OnWorldCreation {
         // get irl date
         java.time.LocalDate currentDate = java.time.LocalDate.now();
 
-        // get difference between 20th June and current date
-        java.time.LocalDate targetDate = java.time.LocalDate.of(currentDate.getYear(), 6, 20);
+        // get difference between 20th June 2022 and current date
+        java.time.LocalDate targetDate = java.time.LocalDate.of(2022, 6, 20);
         long daysDifference = java.time.temporal.ChronoUnit.DAYS.between(targetDate, currentDate);
 
         // Random between 0.55 and 0.9

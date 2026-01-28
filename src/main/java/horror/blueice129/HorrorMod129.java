@@ -55,6 +55,7 @@ public class HorrorMod129 implements ModInitializer {
 		FabricDefaultAttributeRegistry.register(BLUEICE129_ENTITY, Blueice129Entity.createBlueice129Attributes());
 		
 		// Register schedulers
+		OnWorldCreation.register();
 		AgroMeterScheduler.register();
 		Blueice129SpawnScheduler.register();
 		CaveMinerScheduler.register();
@@ -62,7 +63,6 @@ public class HorrorMod129 implements ModInitializer {
 		SmallStructureScheduler.register();
 		LedgePusherScheduler.register();
 		PlayerDeathItemsScheduler.register();
-		OnWorldCreation.register();
 		// Note: SettingsScheduler is registered in HorrorMod129Client as it runs on client side
 		
 		// Register fleeing entity tick handler
