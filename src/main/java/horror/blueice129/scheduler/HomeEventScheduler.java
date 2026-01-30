@@ -15,12 +15,13 @@ import net.minecraft.util.math.random.Random;
 
 public class HomeEventScheduler {
     private static final Random random = Random.create();
-    private static final int MIN_START_DAY = 10;
-    private static final int MAX_START_DAY = 20;
+    private static final int MIN_START_DAY = 2;
+    private static final int MAX_START_DAY = 3;
     private static final String TIMER_ID = "homeEventTimer";
     private static final String LOGOUT_TIME_ID = "playerLogoutTime";
     private static final String EVENT_READY_ID = "homeEventReady";
     private static final int MIN_ABSENCE_TIME = 600; // 10 minutes in seconds
+    private static final int CHECK_INTERVAL_TICKS = 20*30; // Check every 30 seconds
 
     /**
      * Registers the tick event to handle the home event scheduling.
@@ -50,7 +51,7 @@ public class HomeEventScheduler {
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
             long currentTime = System.currentTimeMillis() / 1000L;
             // Store as integer to track logout time (in seconds since epoch)
-            // This might lead to overflow in ~2038, but that's acceptable for now
+            // if mod is still being played in 2038, fix this
             state.setIntValue(LOGOUT_TIME_ID + player.getUuidAsString(), (int)currentTime);
             HorrorMod129.LOGGER.info("Player " + player.getName().getString() + " disconnected, time recorded: " + currentTime);
         });
@@ -140,11 +141,11 @@ public class HomeEventScheduler {
      */
     private static int getRandomDelay(boolean isInitial) {
         if (isInitial) {
-            // For initial setup, use a random delay between 10 and 20 days
+            // For initial setup, use a random delay between 2 and 3 days
             return (MIN_START_DAY + random.nextInt(MAX_START_DAY - MIN_START_DAY + 1)) * 24000; // 1 day = 24000 ticks
         } else {
-            // For subsequent events, use every 3-6 days
-            return (3 + random.nextInt(4)) * 24000; // 3 to 6 days in ticks
+            // For subsequent events, use every 1-2 days
+            return (1 + random.nextInt(2)) * 24000; // 1 to 2 days in ticks
         }
     }
 }
