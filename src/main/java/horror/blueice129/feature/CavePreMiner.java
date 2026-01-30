@@ -26,6 +26,71 @@ public class CavePreMiner {
     private static final Random random = Random.create();
 
     /**
+     * Checks if a position is roughly within the player's field of view cone (wider than actual FOV)
+     * Uses a generous angle of ~100 degrees to catch edge cases
+     * 
+     * @param player The player to check against
+     * @param pos The position to check
+     * @return True if the position is within the wider FOV cone
+     */
+    private static boolean isInWideFOVCone(PlayerEntity player, BlockPos pos) {
+        // Get player's look direction
+        net.minecraft.util.math.Vec3d lookVec = player.getRotationVector();
+        
+        // Vector from player to position
+        net.minecraft.util.math.Vec3d toPos = new net.minecraft.util.math.Vec3d(
+            pos.getX() - player.getX(),
+            pos.getY() - player.getEyeY(),
+            pos.getZ() - player.getZ()
+        ).normalize();
+        
+        // Dot product gives cosine of angle between vectors
+        // cos(100°) ≈ -0.17, so we use a wider cone than normal FOV
+        double dotProduct = lookVec.dotProduct(toPos);
+        return dotProduct > -0.2; // Very wide cone to catch edge cases
+    }
+
+    /**
+     * Enhanced visibility check that also checks nearby blocks
+     * Only used for torches within the FOV cone for performance
+     * 
+     * @param player The player to check against
+     * @param pos The torch position
+     * @return True if torch or nearby blocks are visible
+     */
+    private static boolean isEnhancedVisible(PlayerEntity player, BlockPos pos) {
+        // Check the torch position itself
+        if (LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10)) {
+            return true;
+        }
+        
+        // Check blocks 1-2 blocks up
+        for (int dy = 1; dy <= 2; dy++) {
+            BlockPos upPos = pos.up(dy);
+            if (LineOfSightUtils.isBlockRenderedOnScreen(player, upPos, 16 * 10)) {
+                return true;
+            }
+        }
+        
+        // Check within 4 block radius at ground level and 1 layer up
+        for (int dy = 0; dy <= 1; dy++) {
+            for (int dx = -4; dx <= 4; dx++) {
+                for (int dz = -4; dz <= 4; dz++) {
+                    if (dx == 0 && dz == 0 && dy == 0) continue; // Already checked
+                    if (dx * dx + dz * dz > 16) continue; // Keep within 4 block radius
+                    
+                    BlockPos nearPos = pos.add(dx, dy, dz);
+                    if (LineOfSightUtils.isBlockRenderedOnScreen(player, nearPos, 16 * 10)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * Checks if a block is suitable for placing a torch on.
      * A block is suitable if it is:
      * - Solid on the top face
@@ -61,7 +126,15 @@ public class CavePreMiner {
         int lightLevel = world.getLightLevel(pos);
         boolean isLowLight = lightLevel <= 4;
 
-        boolean isInLineOfSight = LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10); // 10 chunks
+        // Use enhanced visibility check for torches in FOV cone, simple check otherwise
+        boolean isInLineOfSight;
+        if (isInWideFOVCone(player, pos)) {
+            // Enhanced check for torches in FOV - also checks nearby blocks
+            isInLineOfSight = isEnhancedVisible(player, pos);
+        } else {
+            // Simple check for torches outside FOV
+            isInLineOfSight = LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10);
+        }
 
         return isSolidTop && isLowLight && !isInLineOfSight && isAirBlock;
     }
@@ -124,16 +197,16 @@ public class CavePreMiner {
             for (net.minecraft.util.math.Direction direction : DIRECTIONS) {
                 BlockPos neighborPos = currentPos.offset(direction);
 
-                // Check visited first before any expensive operations
-                if (visited.contains(neighborPos))
-                    continue;
-
-                // Skip anything above the hard cutoff (cheap check)
+                // Skip anything above the hard cutoff (cheap check - do first)
                 if (neighborPos.getY() > 55)
                     continue;
 
                 // Check if neighbor is within 50 blocks of start position using squared distance
                 if (neighborPos.getSquaredDistance(startPos) > maxDistanceSquared)
+                    continue;
+
+                // Check if already visited as cave air OR already processed as ore
+                if (visited.contains(neighborPos) || processedOres.contains(neighborPos))
                     continue;
 
                 // Get neighbor state once for efficiency (expensive operation - do last)
@@ -151,7 +224,7 @@ public class CavePreMiner {
                     visited.add(neighborPos);
                 }
                 // Check if neighbor is an exposed ore block
-                else if (BlockTypes.isOreBlock(neighborState) && !processedOres.contains(neighborPos)) {
+                else if (BlockTypes.isOreBlock(neighborState)) {
                     oresMined += mineOreVein(world, neighborPos, player, processedOres);
                 }
             }
@@ -186,8 +259,22 @@ public class CavePreMiner {
                 // Mine the ore block if not in view
                 if (!LineOfSightUtils.isBlockRenderedOnScreen(player, currentOre, 16 * 10)) {
                     world.breakBlock(currentOre, false);
-                    mined++;
-                }
+                    mined++;                    
+                    // 25% chance to break an adjacent non-ore block
+                    if (random.nextInt(100) < 25) {
+                        java.util.List<net.minecraft.util.math.Direction> shuffledDirs = java.util.Arrays.asList(DIRECTIONS);
+                        java.util.Collections.shuffle(shuffledDirs);
+                        for (net.minecraft.util.math.Direction dir : shuffledDirs) {
+                            BlockPos adjacentPos = currentOre.offset(dir);
+                            BlockState adjacentState = world.getBlockState(adjacentPos);
+                            if (!BlockTypes.isOreBlock(adjacentState) && 
+                                !adjacentState.isAir() && 
+                                !LineOfSightUtils.isBlockRenderedOnScreen(player, adjacentPos, 16 * 10)) {
+                                world.breakBlock(adjacentPos, false);
+                                break; // Only break one adjacent block
+                            }
+                        }
+                    }                }
 
                 // Check neighboring blocks for connected ores
                 for (net.minecraft.util.math.Direction direction : DIRECTIONS) {
@@ -319,15 +406,66 @@ public class CavePreMiner {
             }
 
             if (!tooClose && isSuitableForTorch(world, pos, player, caveAirSet)) {
-                // Place a torch
-                world.setBlockState(pos, Blocks.TORCH.getDefaultState(), 3);
+                // 20% chance to skip placing this torch
+                if (random.nextInt(100) < 20) {
+                    continue;
+                }
+                
+                // Randomize position within 3 block radius to break up grid patterns
+                // Randomize X and Z, then find appropriate Y level at that position
+                BlockPos torchPos = pos;
+                int attempts = 0;
+                while (attempts < 10) {
+                    int offsetX = random.nextInt(7) - 3; // -3 to 3
+                    int offsetZ = random.nextInt(7) - 3;
+                    BlockPos horizontalPos = new BlockPos(pos.getX() + offsetX, pos.getY(), pos.getZ() + offsetZ);
+                    
+                    // Search for solid ground both up and down from this horizontal position
+                    BlockPos groundPos = null;
+                    
+                    // First try searching down (up to 8 blocks)
+                    for (int dy = 0; dy <= 8; dy++) {
+                        BlockPos checkBelow = horizontalPos.down(dy);
+                        if (checkBelow.getY() < world.getBottomY() || checkBelow.getY() > 55) {
+                            continue;
+                        }
+                        if (world.getBlockState(checkBelow).isSideSolidFullSquare(world, checkBelow, net.minecraft.util.math.Direction.UP)) {
+                            groundPos = checkBelow.up(); // Place torch one block above solid ground
+                            break;
+                        }
+                    }
+                    
+                    // If not found below, try searching up (up to 4 blocks)
+                    if (groundPos == null) {
+                        for (int dy = 1; dy <= 4; dy++) {
+                            BlockPos checkAbove = horizontalPos.up(dy);
+                            if (checkAbove.getY() > 55) {
+                                break;
+                            }
+                            BlockPos belowCheckAbove = checkAbove.down();
+                            if (world.getBlockState(belowCheckAbove).isSideSolidFullSquare(world, belowCheckAbove, net.minecraft.util.math.Direction.UP)) {
+                                groundPos = checkAbove; // Place torch one block above solid ground
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (groundPos != null && groundPos.getY() <= 55 && isSuitableForTorch(world, groundPos, player, caveAirSet)) {
+                        torchPos = groundPos;
+                        break;
+                    }
+                    attempts++;
+                }
+                
+                // Place a torch at the (possibly randomized) position
+                world.setBlockState(torchPos, Blocks.TORCH.getDefaultState(), 3);
                 torchesPlaced++;
                 
                 long gridKey = (((long)gridX) << 40) | (((long)gridY & 0xFFFFL) << 20) | (gridZ & 0xFFFFL);
-                torchGrid.put(gridKey, pos);
+                torchGrid.put(gridKey, torchPos);
 
                 // Force block update to update lighting and update cache
-                world.updateNeighbors(pos, Blocks.TORCH);
+                world.updateNeighbors(torchPos, Blocks.TORCH);
                 // Update light level cache for nearby positions affected by the new torch
                 for (int dx = -15; dx <= 15; dx++) {
                     for (int dy = -15; dy <= 15; dy++) {
@@ -403,7 +541,7 @@ public class CavePreMiner {
             return false;
         if (!world.getBlockState(pos).isAir())
             return false;
-
+        
         world.setBlockState(pos, Blocks.FURNACE.getDefaultState(), 3);
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity instanceof FurnaceBlockEntity furnace) {
@@ -741,9 +879,23 @@ public class CavePreMiner {
                 }
 
                 if (!tooClose) {
-                    // Place a torch at this position
-                    world.setBlockState(surfacePos, Blocks.TORCH.getDefaultState(), 3);
-                    placedPositions.add(surfacePos);
+                    // Clear snow/replaceable blocks before placing torch
+                    BlockState currentState = world.getBlockState(surfacePos);
+                    BlockState belowState = world.getBlockState(surfacePos.down());
+                    
+                    // If the block is snow or replaceable, clear it first
+                    if (currentState.isOf(Blocks.SNOW) || currentState.isReplaceable()) {
+                        world.setBlockState(surfacePos, Blocks.AIR.getDefaultState(), 3);
+                    }
+                    // If the block below is snow, replace it and adjust position
+                    if (belowState.isOf(Blocks.SNOW)) {
+                        world.setBlockState(surfacePos.down(), Blocks.TORCH.getDefaultState(), 3);
+                        placedPositions.add(surfacePos.down());
+                    } else {
+                        // Place torch at surface position
+                        world.setBlockState(surfacePos, Blocks.TORCH.getDefaultState(), 3);
+                        placedPositions.add(surfacePos);
+                    }
                     torchesPlaced++;
                 }
             }
