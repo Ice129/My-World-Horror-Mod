@@ -1,7 +1,7 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
-import java.util.Random;
+import net.minecraft.util.math.random.Random;
 import horror.blueice129.data.HorrorModPersistentState;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.server.MinecraftServer;
@@ -65,7 +65,7 @@ public class OnWorldCreation {
         long daysDifference = java.time.temporal.ChronoUnit.DAYS.between(targetDate, currentDate);
 
         // Random between 0.55 and 0.9
-        Random random = new Random();
+        Random random = Random.create();
         double sleepPercent = 0.55 + (0.35 * random.nextDouble());
         long ticksToAdjust = (long) (daysDifference * (24000L * 3 * 24 * sleepPercent));
         // make sure ticksToAdjust is the closest multiple of 24000

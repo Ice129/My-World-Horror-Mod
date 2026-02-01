@@ -19,7 +19,11 @@ import horror.blueice129.utils.SurfaceFinder;
 import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.BlockTypes;
 import horror.blueice129.utils.StructurePlacer;
+import horror.blueice129.utils.TorchPlacer;
 import horror.blueice129.data.HorrorModPersistentState;
+
+//BUG: torch placement on non solid blocks like water and lilypads at entrance stairway
+//TODO: make torch placement util for better looking placement on blocks like walls/floors
 
 public class CavePreMiner {
 
@@ -413,30 +417,28 @@ public class CavePreMiner {
                 }
                 
                 // Randomize position within 3 block radius to break up grid patterns
-                // Randomize X and Z, then find appropriate Y level at that position
                 BlockPos torchPos = pos;
                 int attempts = 0;
-                while (attempts < 10) {
-                    int offsetX = random.nextInt(7) - 3; // -3 to 3
+                boolean placed = false;
+                
+                while (attempts < 10 && !placed) {
+                    int offsetX = random.nextInt(7) - 3;
                     int offsetZ = random.nextInt(7) - 3;
                     BlockPos horizontalPos = new BlockPos(pos.getX() + offsetX, pos.getY(), pos.getZ() + offsetZ);
                     
-                    // Search for solid ground both up and down from this horizontal position
                     BlockPos groundPos = null;
                     
-                    // First try searching down (up to 8 blocks)
                     for (int dy = 0; dy <= 8; dy++) {
                         BlockPos checkBelow = horizontalPos.down(dy);
                         if (checkBelow.getY() < world.getBottomY() || checkBelow.getY() > 55) {
                             continue;
                         }
                         if (world.getBlockState(checkBelow).isSideSolidFullSquare(world, checkBelow, net.minecraft.util.math.Direction.UP)) {
-                            groundPos = checkBelow.up(); // Place torch one block above solid ground
+                            groundPos = checkBelow.up();
                             break;
                         }
                     }
                     
-                    // If not found below, try searching up (up to 4 blocks)
                     if (groundPos == null) {
                         for (int dy = 1; dy <= 4; dy++) {
                             BlockPos checkAbove = horizontalPos.up(dy);
@@ -445,7 +447,7 @@ public class CavePreMiner {
                             }
                             BlockPos belowCheckAbove = checkAbove.down();
                             if (world.getBlockState(belowCheckAbove).isSideSolidFullSquare(world, belowCheckAbove, net.minecraft.util.math.Direction.UP)) {
-                                groundPos = checkAbove; // Place torch one block above solid ground
+                                groundPos = checkAbove;
                                 break;
                             }
                         }
@@ -453,17 +455,22 @@ public class CavePreMiner {
                     
                     if (groundPos != null && groundPos.getY() <= 55 && isSuitableForTorch(world, groundPos, player, caveAirSet)) {
                         torchPos = groundPos;
+                        placed = TorchPlacer.placeTorch(world, torchPos, random);
                         break;
                     }
                     attempts++;
                 }
                 
-                // Place a torch at the (possibly randomized) position
-                world.setBlockState(torchPos, Blocks.TORCH.getDefaultState(), 3);
-                torchesPlaced++;
+                if (!placed) {
+                    placed = TorchPlacer.placeTorch(world, pos, random);
+                    torchPos = pos;
+                }
                 
-                long gridKey = (((long)gridX) << 40) | (((long)gridY & 0xFFFFL) << 20) | (gridZ & 0xFFFFL);
-                torchGrid.put(gridKey, torchPos);
+                if (placed) {
+                    torchesPlaced++;
+                    long gridKey = (((long)gridX) << 40) | (((long)gridY & 0xFFFFL) << 20) | (gridZ & 0xFFFFL);
+                    torchGrid.put(gridKey, torchPos);
+                }
 
                 // Force block update to update lighting and update cache
                 world.updateNeighbors(torchPos, Blocks.TORCH);
@@ -949,7 +956,7 @@ public class CavePreMiner {
                 if (height == 1 && torchDistance == 8) {
                     BlockPos torchPos = stairPos.up(1);
                     if (torchPos.getY() < world.getTopY()) {
-                        world.setBlockState(torchPos, Blocks.TORCH.getDefaultState());
+                        TorchPlacer.placeTorch(world, torchPos, random);
                     }
                     torchDistance = 0;
                 } else {
@@ -1004,24 +1011,23 @@ public class CavePreMiner {
                 }
 
                 if (!tooClose) {
-                    // Clear snow/replaceable blocks before placing torch
                     BlockState currentState = world.getBlockState(surfacePos);
                     BlockState belowState = world.getBlockState(surfacePos.down());
                     
-                    // If the block is snow or replaceable, clear it first
                     if (currentState.isOf(Blocks.SNOW) || currentState.isReplaceable()) {
                         world.setBlockState(surfacePos, Blocks.AIR.getDefaultState(), 3);
                     }
-                    // If the block below is snow, replace it and adjust position
+                    
+                    BlockPos targetPos = surfacePos;
                     if (belowState.isOf(Blocks.SNOW)) {
-                        world.setBlockState(surfacePos.down(), Blocks.TORCH.getDefaultState(), 3);
-                        placedPositions.add(surfacePos.down());
-                    } else {
-                        // Place torch at surface position
-                        world.setBlockState(surfacePos, Blocks.TORCH.getDefaultState(), 3);
-                        placedPositions.add(surfacePos);
+                        world.setBlockState(surfacePos.down(), Blocks.AIR.getDefaultState(), 3);
+                        targetPos = surfacePos.down();
                     }
-                    torchesPlaced++;
+                    
+                    if (TorchPlacer.placeTorch(world, targetPos, random)) {
+                        placedPositions.add(targetPos);
+                        torchesPlaced++;
+                    }
                 }
             }
         }
