@@ -19,6 +19,7 @@ import horror.blueice129.utils.SurfaceFinder;
 import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.BlockTypes;
 import horror.blueice129.utils.StructurePlacer;
+import horror.blueice129.data.HorrorModPersistentState;
 
 public class CavePreMiner {
 
@@ -757,8 +758,71 @@ public class CavePreMiner {
     }
 
     /**
+     * Moves a BlockPos up 1 and forward 1 in the specified cardinal direction
+     * 
+     * @param pos       The current position
+     * @param direction The cardinal direction ("N", "E", "S", "W")
+     * @return The new position moved up 1 and forward 1 in the direction
+     */
+    private static BlockPos moveInDirection(BlockPos pos, String direction) {
+        switch(direction) {
+            case "N":
+                return pos.up().north();
+            case "E":
+                return pos.up().east();
+            case "S":
+                return pos.up().south();
+            case "W":
+                return pos.up().west();
+            default:
+                return pos.up().north();
+        }
+    }
+
+    /**
+     * Rotates a cardinal direction 90 degrees left or right
+     * 
+     * @param direction The current cardinal direction ("N", "E", "S", "W")
+     * @param left      True to rotate left (counterclockwise), false for right (clockwise)
+     * @return The new direction after rotation
+     */
+    private static String rotate90Degrees(String direction, boolean left) {
+        String[] cardinals = {"N", "E", "S", "W"};
+        int index = java.util.Arrays.asList(cardinals).indexOf(direction);
+        if (left) {
+            index = (index - 1 + 4) % 4;
+        } else {
+            index = (index + 1) % 4;
+        }
+        return cardinals[index];
+    }
+
+    /**
+     * Gets the offset BlockPos in a cardinal direction (without moving up)
+     * 
+     * @param pos       The current position
+     * @param direction The cardinal direction ("N", "E", "S", "W")
+     * @return The position offset by 1 in the direction
+     */
+    private static BlockPos getOffsetInDirection(BlockPos pos, String direction) {
+        switch(direction) {
+            case "N":
+                return pos.north();
+            case "E":
+                return pos.east();
+            case "S":
+                return pos.south();
+            case "W":
+                return pos.west();
+            default:
+                return pos.north();
+        }
+    }
+
+    /**
      * Mines stairs from the starter block up to the surface
-     * stairs go up 1 block and forward 1 block, with a height of 3 blocks
+     * Stairs go up 1 block and forward 1 block in a random cardinal direction
+     * Can make up to 5 random 90-degree turns with 10% chance per valid opportunity
      * 
      * @param world      The world to mine in
      * @param starterPos The starting position to mine from
@@ -767,19 +831,18 @@ public class CavePreMiner {
     public static int mineStairs(World world, BlockPos starterPos) {
         int stairLength = 0;
         BlockPos currentPos = starterPos;
-        // list of stair blocks, which we will then set the 3 blocks above to air
         java.util.List<BlockPos> stairBlocks = new java.util.ArrayList<>();
-        // fill in the stairblocks list
-        while (true) {
-            // if y value is getting too high, stop
-            if (currentPos.getY() >= 130) {
-                break;
-            }
-            stairBlocks.add(currentPos);
-            currentPos = currentPos.up().north(); // Move up 1 and forward 1
-            stairLength++;
-        }
-
+        
+        // Random initial direction
+        String[] cardinals = {"N", "E", "S", "W"};
+        String currentDirection = cardinals[random.nextInt(4)];
+        
+        // Turn tracking
+        int turnsMade = 0;
+        int maxTurns = 5;
+        int blocksSinceLastTurn = 0;
+        int minBlocksBetweenTurns = 6;
+        
         // Cache surface Y values to avoid repeated expensive calculations
         java.util.Map<Long, Integer> surfaceYCache = new java.util.HashMap<>();
         
@@ -790,6 +853,40 @@ public class CavePreMiner {
                 SurfaceFinder.findPointSurfaceY((ServerWorld) world, x, z, true, false, true)
             );
         };
+        
+        // fill in the stairblocks list, checking surface level as we go
+        while (true) {
+            // if y value is getting too high, stop
+            if (currentPos.getY() >= 130) {
+                break;
+            }
+            
+            // Check if we've reached the surface
+            int surfaceY = getSurfaceY.apply(currentPos.getX(), currentPos.getZ());
+            if (surfaceY != -1 && currentPos.getY() >= surfaceY) {
+                stairBlocks.add(currentPos);
+                stairLength++;
+                break;
+            }
+            
+            stairBlocks.add(currentPos);
+            
+            // Check if we should make a turn
+            if (blocksSinceLastTurn >= minBlocksBetweenTurns && 
+                turnsMade < maxTurns && 
+                random.nextInt(100) < 10) {
+                
+                boolean turnLeft = random.nextBoolean();
+                currentDirection = rotate90Degrees(currentDirection, turnLeft);
+                
+                turnsMade++;
+                blocksSinceLastTurn = 0;
+            }
+            
+            currentPos = moveInDirection(currentPos, currentDirection);
+            stairLength++;
+            blocksSinceLastTurn++;
+        }
 
         // Find surface entrance position (last position at or above surface)
         BlockPos entrancePos = null;
@@ -803,7 +900,34 @@ public class CavePreMiner {
 
         // Set the 3 blocks above each stair block to air
         int torchDistance = 0;
-        for (BlockPos stairPos : stairBlocks) {
+        String stairDirection = cardinals[random.nextInt(4)];
+        
+        for (int i = 0; i < stairBlocks.size(); i++) {
+            BlockPos stairPos = stairBlocks.get(i);
+            
+            // Detect direction changes for corner fill
+            if (i > 0) {
+                BlockPos prevPos = stairBlocks.get(i - 1);
+                int dx = stairPos.getX() - prevPos.getX();
+                int dz = stairPos.getZ() - prevPos.getZ();
+                
+                String detectedDirection;
+                if (dz < 0) detectedDirection = "N";
+                else if (dz > 0) detectedDirection = "S";
+                else if (dx > 0) detectedDirection = "E";
+                else detectedDirection = "W";
+                
+                if (!detectedDirection.equals(stairDirection)) {
+                    String oldDirection = stairDirection;
+                    stairDirection = detectedDirection;
+                    
+                    BlockPos cornerFill = getOffsetInDirection(stairPos, oldDirection);
+                    if (world.getBlockState(cornerFill).isAir() || world.getBlockState(cornerFill).isOf(Blocks.CAVE_AIR)) {
+                        world.setBlockState(cornerFill, Blocks.COBBLESTONE.getDefaultState());
+                    }
+                }
+            }
+            
             // Check if we're at or above surface (using cache)
             int surfaceY = getSurfaceY.apply(stairPos.getX(), stairPos.getZ());
             boolean isAtOrAboveSurface = (surfaceY != -1 && stairPos.getY() >= surfaceY);
@@ -812,7 +936,8 @@ public class CavePreMiner {
             if ((world.getBlockState(stairPos).isOf(Blocks.CAVE_AIR) || world.getBlockState(stairPos).isOf(Blocks.AIR))
                     && !isAtOrAboveSurface) {
                 world.setBlockState(stairPos, Blocks.COBBLESTONE.getDefaultState());
-                world.setBlockState(stairPos.north(), Blocks.COBBLESTONE.getDefaultState());
+                BlockPos adjacent = getOffsetInDirection(stairPos, stairDirection);
+                world.setBlockState(adjacent, Blocks.COBBLESTONE.getDefaultState());
             }
 
             // break if is above surface
@@ -820,15 +945,15 @@ public class CavePreMiner {
                 break;
             }
 
-            for (int i = 1; i <= 3; i++) {
-                if (i == 1 && torchDistance == 8) {
+            for (int height = 1; height <= 3; height++) {
+                if (height == 1 && torchDistance == 8) {
                     BlockPos torchPos = stairPos.up(1);
                     if (torchPos.getY() < world.getTopY()) {
                         world.setBlockState(torchPos, Blocks.TORCH.getDefaultState());
                     }
                     torchDistance = 0;
                 } else {
-                    BlockPos abovePos = stairPos.up(i);
+                    BlockPos abovePos = stairPos.up(height);
                     if (abovePos.getY() < world.getTopY()) {
                         world.setBlockState(abovePos, Blocks.AIR.getDefaultState());
                     }
@@ -915,6 +1040,19 @@ public class CavePreMiner {
         if (starterPos == null) {
             return false;
         }
+        
+        // Check if too close to existing pre-mined caves
+        ServerWorld serverWorld = (ServerWorld) world;
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(serverWorld.getServer());
+        java.util.List<BlockPos> existingCaves = state.getPositionList("preminedCaveLocations");
+        
+        final int MIN_CAVE_DISTANCE_SQUARED = 60 * 60;
+        for (BlockPos existingCave : existingCaves) {
+            if (starterPos.getSquaredDistance(existingCave) < MIN_CAVE_DISTANCE_SQUARED) {
+                return false;
+            }
+        }
+        
         horror.blueice129.HorrorMod129.LOGGER.info("Cave Pre-Miner: Found starter block at " + starterPos);
         
         // Combined cave exploration and ore mining in a single pass
@@ -929,6 +1067,10 @@ public class CavePreMiner {
         int torchesPlaced = populateTorches(world, caveAirBlocks, player);
         int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
         int stairLength = mineStairs(world, starterPos);
+        
+        // Store this cave location to prevent future caves from being too close
+        state.addPositionToList("preminedCaveLocations", starterPos);
+        
         HorrorMod129.LOGGER.info("Cave Pre-Miner: Mined " + oresMined + " ores, placed " + torchesPlaced
                 + " torches, extra blocks placed: " + extraBlocksPlaced + ", stair length: " + stairLength);
         return true;
