@@ -110,9 +110,14 @@ public class HomeEventScheduler {
             if (currentTimer == 0) {
                 // Mark that the event is ready to trigger on next login after absence
                 state.setIntValue(EVENT_READY_ID, 1);
-                HorrorMod129.LOGGER.info("HomeEventScheduler timer reached zero, event is now ready for next extended log off.");
+                HorrorMod129.LOGGER.info("HomeEventScheduler timer reached zero, event is now ready for next extended log off or away period.");
             }
         }
+
+        if (server.getTicks() % CHECK_INTERVAL_TICKS == 0) {
+            // store if the home chunk is loaded in persistent state for 
+        }
+
     }
     
     /**
