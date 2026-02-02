@@ -35,6 +35,11 @@ public class PlayerDeathItemsScheduler {
      * @param server The Minecraft server instance
      */
     private static void onServerTick(MinecraftServer server) {
+        // Skip if server is empty (pause timers)
+        if (server.getPlayerManager().getPlayerList().isEmpty()) {
+            return;
+        }
+        
         // Only run in the overworld
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         if (!state.hasTimer(TIMER_ID)) {
