@@ -72,10 +72,18 @@ public class Blueice129SpawnScheduler {
             state.setTimer(TIMER_ID, timer - 1);
         } else {
             // Timer reached zero, attempt to spawn
-            attemptSpawn(server);
+            boolean retry = attemptSpawn(server);
 
-            // Reset timer regardless of spawn success
-            state.setTimer(TIMER_ID, getRandomDelay());
+            if (retry) {
+                state.setTimer(TIMER_ID, 20 * 60 * 1); // Retry in 1 minute if spawn failed
+                HorrorMod129.LOGGER.info("Blueice129 spawn attempt failed, retrying in 1 minute");
+                
+            } else {
+                HorrorMod129.LOGGER.info("Blueice129 spawn attempt completed");
+                state.setTimer(TIMER_ID, getRandomDelay());
+            }
+            
+            
         }
     }
 
@@ -84,11 +92,11 @@ public class Blueice129SpawnScheduler {
      * 
      * @param server The Minecraft server instance
      */
-    private static void attemptSpawn(MinecraftServer server) {
+    private static boolean attemptSpawn(MinecraftServer server) {
         // Check if there are any players online
         if (server.getPlayerManager().getPlayerList().isEmpty()) {
             HorrorMod129.LOGGER.info("Blueice129 spawn attempt: No players online");
-            return;
+            return false;
         }
 
         ServerWorld world = server.getOverworld();
@@ -96,7 +104,7 @@ public class Blueice129SpawnScheduler {
         // Check if an entity can spawn (only one at a time)
         if (!Blueice129Entity.canSpawn(world)) {
             HorrorMod129.LOGGER.info("Blueice129 spawn attempt: Entity already exists in world");
-            return;
+            return false;
         }
 
         // Get agro meter and calculate spawn chance
@@ -108,7 +116,7 @@ public class Blueice129SpawnScheduler {
         if (RANDOM.nextDouble() > spawnChance) {
             HorrorMod129.LOGGER.info("Blueice129 spawn attempt: Failed spawn chance roll ({}% chance, agro: {})",
                     (int) (spawnChance * 100), agroMeter);
-            return;
+            return false;
         }
 
         // Select a random player to spawn near
@@ -122,11 +130,12 @@ public class Blueice129SpawnScheduler {
         if (spawnPos == null) {
             HorrorMod129.LOGGER.info("Blueice129 spawn attempt: No suitable forest biome found near player {}",
                     player.getName().getString());
-            return;
+            return true;
         }
 
         // Spawn the entity
         spawnEntity(world, spawnPos, server);
+        return false;
     }
 
     /**

@@ -34,6 +34,9 @@ public class HorrorModPersistentState extends PersistentState {
     // Map to store integer values with string keys
     private Map<String, Integer> intValues;
     
+    // Map to store long values with string keys
+    private Map<String, Long> longValues;
+    
     // Map to store lists of block positions with string keys
     private Map<String, List<BlockPos>> positionLists;
     
@@ -45,6 +48,7 @@ public class HorrorModPersistentState extends PersistentState {
         this.timers = new HashMap<>();
         this.positions = new HashMap<>();
         this.intValues = new HashMap<>();
+        this.longValues = new HashMap<>();
         this.positionLists = new HashMap<>();
         this.int2DArrays = new HashMap<>();
     }
@@ -54,17 +58,20 @@ public class HorrorModPersistentState extends PersistentState {
      * @param timers The saved timers map
      * @param positions The saved positions map
      * @param intValues The saved integer values map
+     * @param longValues The saved long values map
      * @param positionLists The saved position lists map
      */
     public HorrorModPersistentState(
             Map<String, Integer> timers, 
             Map<String, BlockPos> positions, 
             Map<String, Integer> intValues,
+            Map<String, Long> longValues,
             Map<String, List<BlockPos>> positionLists,
             Map<String, int[][]> int2DArrays) {
         this.timers = timers;
         this.positions = positions;
         this.intValues = intValues;
+        this.longValues = longValues;
         this.positionLists = positionLists;
         this.int2DArrays = int2DArrays;
     }
@@ -121,6 +128,13 @@ public class HorrorModPersistentState extends PersistentState {
         }
         nbt.put("intValues", intValuesNbt);
         
+        // Save long values
+        NbtCompound longValuesNbt = new NbtCompound();
+        for (Map.Entry<String, Long> entry : longValues.entrySet()) {
+            longValuesNbt.putLong(entry.getKey(), entry.getValue());
+        }
+        nbt.put("longValues", longValuesNbt);
+        
         // Save position lists
         NbtCompound posListsNbt = new NbtCompound();
         for (Map.Entry<String, List<BlockPos>> entry : positionLists.entrySet()) {
@@ -163,6 +177,7 @@ public class HorrorModPersistentState extends PersistentState {
         Map<String, Integer> loadedTimers = new HashMap<>();
         Map<String, BlockPos> loadedPositions = new HashMap<>();
         Map<String, Integer> loadedIntValues = new HashMap<>();
+        Map<String, Long> loadedLongValues = new HashMap<>();
         Map<String, List<BlockPos>> loadedPositionLists = new HashMap<>();
         Map<String, int[][]> loadedInt2DArrays = new HashMap<>();
         
@@ -191,6 +206,14 @@ public class HorrorModPersistentState extends PersistentState {
             NbtCompound intValuesNbt = nbt.getCompound("intValues");
             for (String key : intValuesNbt.getKeys()) {
                 loadedIntValues.put(key, intValuesNbt.getInt(key));
+            }
+        }
+        
+        // Read long values
+        if (nbt.contains("longValues")) {
+            NbtCompound longValuesNbt = nbt.getCompound("longValues");
+            for (String key : longValuesNbt.getKeys()) {
+                loadedLongValues.put(key, longValuesNbt.getLong(key));
             }
         }
         
@@ -231,7 +254,7 @@ public class HorrorModPersistentState extends PersistentState {
             }
         }
         
-        return new HorrorModPersistentState(loadedTimers, loadedPositions, loadedIntValues, loadedPositionLists, loadedInt2DArrays);
+        return new HorrorModPersistentState(loadedTimers, loadedPositions, loadedIntValues, loadedLongValues, loadedPositionLists, loadedInt2DArrays);
     }
     
     /**
@@ -402,6 +425,56 @@ public class HorrorModPersistentState extends PersistentState {
      */
     public Set<String> getIntValueIds() {
         return intValues.keySet();
+    }
+    
+    // === LONG VALUE METHODS ===
+    
+    /**
+     * Gets a long value by its ID
+     * @param id The ID of the value to retrieve
+     * @param defaultValue The default value to return if not found
+     * @return The long value, or the default value if not found
+     */
+    public long getLongValue(String id, long defaultValue) {
+        return longValues.getOrDefault(id, defaultValue);
+    }
+    
+    /**
+     * Sets a long value by its ID
+     * @param id The ID of the value to set
+     * @param value The long value
+     */
+    public void setLongValue(String id, long value) {
+        longValues.put(id, value);
+        this.markDirty();
+    }
+    
+    /**
+     * Removes a long value
+     * @param id The ID of the value to remove
+     */
+    public void removeLongValue(String id) {
+        if (longValues.containsKey(id)) {
+            longValues.remove(id);
+            this.markDirty();
+        }
+    }
+    
+    /**
+     * Checks if a long value exists
+     * @param id The ID to check
+     * @return True if the long value exists
+     */
+    public boolean hasLongValue(String id) {
+        return longValues.containsKey(id);
+    }
+    
+    /**
+     * Gets all long value IDs
+     * @return Set of all long value IDs
+     */
+    public Set<String> getLongValueIds() {
+        return longValues.keySet();
     }
     
     // === POSITION LIST METHODS ===
