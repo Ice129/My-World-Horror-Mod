@@ -3,6 +3,7 @@ package horror.blueice129.scheduler;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.feature.HomeVisitorEvent;
+import horror.blueice129.utils.ChunkLoadedUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -20,7 +21,12 @@ public class HomeEventScheduler {
     private static final String TIMER_ID = "homeEventTimer";
     private static final String LOGOUT_TIME_ID = "playerLogoutTime";
     private static final String EVENT_READY_ID = "homeEventReady";
+    private static final String HOME_CHUNK_UNLOAD_TIME = "homeChunkUnloadTime_";
+    private static final String HOME_CHUNK_WAS_LOADED = "homeChunkWasLoaded_";
+    private static final String HOME_TRIGGER_COUNTDOWN = "homeTriggerCountdown_";
     private static final int MIN_ABSENCE_TIME = 600; // 10 minutes in seconds
+    private static final int MIN_HOME_UNLOAD_TIME = 600; // 10 minutes in seconds
+    private static final int TRIGGER_DELAY_TICKS = 20 * 3; // 3 seconds in ticks
     private static final int CHECK_INTERVAL_TICKS = 20*30; // Check every 30 seconds
 
     /**
@@ -114,10 +120,89 @@ public class HomeEventScheduler {
             }
         }
 
-        if (server.getTicks() % CHECK_INTERVAL_TICKS == 0) {
-            // store if the home chunk is loaded in persistent state for 
+        // Handle countdown timers for all players with pending home events
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            String playerUuid = player.getUuidAsString();
+            String countdownKey = HOME_TRIGGER_COUNTDOWN + playerUuid;
+            
+            if (state.hasTimer(countdownKey)) {
+                int countdown = state.decrementTimer(countdownKey, 1);
+                
+                if (countdown <= 0) {
+                    // Trigger the home event
+                    BlockPos bedPos = player.getSpawnPointPosition();
+                    if (bedPos != null) {
+                        HorrorMod129.LOGGER.info("Triggering home event for player " + player.getName().getString() + 
+                            " after 3 second delay");
+                        triggerHomeEvent(server, player, bedPos);
+                        
+                        // Clean up per-player tracking state
+                        state.removeTimer(countdownKey);
+                        state.removeLongValue(HOME_CHUNK_UNLOAD_TIME + playerUuid);
+                        state.removeIntValue(HOME_CHUNK_WAS_LOADED + playerUuid);
+                        state.setIntValue(EVENT_READY_ID, 0); // Reset ready flag
+                    } else {
+                        // No spawn point, just clean up
+                        state.removeTimer(countdownKey);
+                        state.removeLongValue(HOME_CHUNK_UNLOAD_TIME + playerUuid);
+                        state.removeIntValue(HOME_CHUNK_WAS_LOADED + playerUuid);
+                    }
+                }
+            }
         }
 
+        // Periodic check for home chunk load/unload state
+        if (server.getTicks() % CHECK_INTERVAL_TICKS == 0) {
+            boolean eventReady = state.getIntValue(EVENT_READY_ID, 0) == 1;
+            
+            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                if (player.getSpawnPointPosition() != null) {
+                    BlockPos bedPos = player.getSpawnPointPosition();
+                    String playerUuid = player.getUuidAsString();
+                    String unloadTimeKey = HOME_CHUNK_UNLOAD_TIME + playerUuid;
+                    String wasLoadedKey = HOME_CHUNK_WAS_LOADED + playerUuid;
+                    String countdownKey = HOME_TRIGGER_COUNTDOWN + playerUuid;
+                    
+                    boolean isChunkLoaded = ChunkLoadedUtils.isChunkLoadedAt(server.getWorld(World.OVERWORLD), bedPos);
+                    boolean wasLoaded = state.getIntValue(wasLoadedKey, 1) == 1; // Default to loaded
+                    
+                    if (!isChunkLoaded && wasLoaded) {
+                        // Chunk just became unloaded, record timestamp
+                        long currentTime = System.currentTimeMillis() / 1000L;
+                        state.setLongValue(unloadTimeKey, currentTime);
+                        state.setIntValue(wasLoadedKey, 0);
+                        HorrorMod129.LOGGER.info("Player " + player.getName().getString() + "'s home chunk unloaded at " + currentTime);
+                    } else if (isChunkLoaded && !wasLoaded) {
+                        // Chunk just became loaded again
+                        long unloadTime = state.getLongValue(unloadTimeKey, 0L);
+                        
+                        if (unloadTime > 0) {
+                            long currentTime = System.currentTimeMillis() / 1000L;
+                            long unloadDuration = currentTime - unloadTime;
+                            
+                            // Check if chunk was unloaded long enough AND event is ready
+                            if (unloadDuration >= MIN_HOME_UNLOAD_TIME && eventReady) {
+                                // Start the 3-second countdown
+                                if (!state.hasTimer(countdownKey)) {
+                                    state.setTimer(countdownKey, TRIGGER_DELAY_TICKS);
+                                    HorrorMod129.LOGGER.info("Player " + player.getName().getString() + 
+                                        "'s home chunk reloaded after " + unloadDuration + " seconds. Starting 3 second countdown.");
+                                }
+                            } else {
+                                HorrorMod129.LOGGER.info("Player " + player.getName().getString() + 
+                                    "'s home chunk reloaded, but conditions not met (duration: " + unloadDuration + 
+                                    "s, eventReady: " + eventReady + ")");
+                            }
+                            
+                            // Reset the unload time regardless
+                            state.removeLongValue(unloadTimeKey);
+                        }
+                        
+                        state.setIntValue(wasLoadedKey, 1);
+                    }
+                }
+            }
+        }
     }
     
     /**
