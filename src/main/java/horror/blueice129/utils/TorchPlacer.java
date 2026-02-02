@@ -16,7 +16,8 @@ public class TorchPlacer {
 
         for (Direction dir : directions) {
             BlockPos adjacentPos = pos.offset(dir);
-            if (world.getBlockState(adjacentPos).isSolidBlock(world, adjacentPos)) {
+            Direction attachmentFace = dir.getOpposite();
+            if (world.getBlockState(adjacentPos).isSideSolidFullSquare(world, adjacentPos, attachmentFace)) {
                 validDirections[validCount++] = dir;
             }
         }
