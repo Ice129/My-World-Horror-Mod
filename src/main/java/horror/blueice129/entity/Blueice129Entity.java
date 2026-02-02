@@ -120,12 +120,6 @@ public class Blueice129Entity extends PathAwareEntity {
 
         switch (currentState) {
             case PASSIVE:
-                // If the entity sees the player, transition to PANICED
-                // //TESTING!!!!!!!!!!!!!!!!!!!!!!!!!
-                // if (seesPlayer) {
-                // setState(EntityState.SURFACE_HIDING);
-                // break;
-                // }
 
                 if (ticksInCurrentState < 20 * 3) {
                     break; // wait at least 3 seconds before checking for transitions
@@ -161,7 +155,7 @@ public class Blueice129Entity extends PathAwareEntity {
                 break;
 
             case FLEEING:
-                // BUG: logs out instead of surface hiding. says its stuck while in fleeing
+
                 if (ticksInCurrentState > 20 * 5 && agroMeter < 5) {
                     setState(EntityState.IN_MENUS);
                     break;

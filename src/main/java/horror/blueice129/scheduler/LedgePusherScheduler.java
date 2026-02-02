@@ -48,14 +48,17 @@ public class LedgePusherScheduler {
     }
     
     private static void onServerTick(MinecraftServer server) {
-        // get the first player in the server
+        // Skip processing if server is empty
         if (server.getPlayerManager().getPlayerList().isEmpty()) {
             return;
         }
-        PlayerEntity player = server.getPlayerManager().getPlayerList().get(0);
-        if (ledgePusher == null) {
-            ledgePusher = new LedgePusher(player, 10);
-        }
+        
+        // Select a random player from the server
+        PlayerEntity player = server.getPlayerManager().getPlayerList()
+                .get(random.nextInt(server.getPlayerManager().getPlayerList().size()));
+        
+        // Create a new LedgePusher instance for this tick's player
+        ledgePusher = new LedgePusher(player, 10);
 
         ticksSinceLastPush++;
         
@@ -68,6 +71,7 @@ public class LedgePusherScheduler {
 
         int cooldown = state.getTimer(cooldownTimerKey);
         if (cooldown > 0) {
+            // Only decrement timer if players are online (already checked above)
             state.setTimer(cooldownTimerKey, cooldown - 1);
             // HorrorMod129.LOGGER.info("LedgePusherScheduler, cooldown is: " + state.getTimer(cooldownTimerKey));
             return;

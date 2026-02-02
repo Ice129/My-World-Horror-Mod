@@ -21,6 +21,7 @@ public class HomeEventScheduler {
     private static final String TIMER_ID = "homeEventTimer";
     private static final String LOGOUT_TIME_ID = "playerLogoutTime";
     private static final String EVENT_READY_ID = "homeEventReady";
+    private static final String SERVER_WAS_EMPTY_ID = "serverWasEmpty";
     private static final String HOME_CHUNK_UNLOAD_TIME = "homeChunkUnloadTime_";
     private static final String HOME_CHUNK_WAS_LOADED = "homeChunkWasLoaded_";
     private static final String HOME_TRIGGER_COUNTDOWN = "homeTriggerCountdown_";
@@ -60,6 +61,12 @@ public class HomeEventScheduler {
             // if mod is still being played in 2038, fix this
             state.setIntValue(LOGOUT_TIME_ID + player.getUuidAsString(), (int)currentTime);
             HorrorMod129.LOGGER.info("Player " + player.getName().getString() + " disconnected, time recorded: " + currentTime);
+            
+            // Check if this was the last player - if so, mark server as empty
+            if (server.getPlayerManager().getPlayerList().size() <= 1) { // Will be 0 after this disconnect completes
+                state.setIntValue(SERVER_WAS_EMPTY_ID, 1);
+                HorrorMod129.LOGGER.info("Server is now empty - home event can trigger on next login");
+            }
         });
         
         // Check time difference when player logs in
@@ -72,31 +79,39 @@ public class HomeEventScheduler {
             // Check if timer has reached zero (event is ready)
             boolean eventReady = state.getIntValue(EVENT_READY_ID, 0) == 1;
             
+            // Check if server was actually empty since last logout
+            boolean serverWasEmpty = state.getIntValue(SERVER_WAS_EMPTY_ID, 0) == 1;
+            
             // Get the logout time as int (safe until ~2038)
             int logoutTime = state.getIntValue(playerKey, 0);
             if (logoutTime > 0) {
                 long timeDifference = currentTime - logoutTime;
                 
-                // Only trigger if event is ready AND player has been gone long enough
-                if (eventReady && timeDifference > MIN_ABSENCE_TIME) {
+                // Only trigger if event is ready AND server was empty AND player has been gone long enough
+                if (eventReady && serverWasEmpty && timeDifference > MIN_ABSENCE_TIME) {
                     HorrorMod129.LOGGER.info("Player " + player.getName().getString() + 
-                        " reconnected after " + timeDifference + " seconds, triggering home event");
+                        " reconnected after " + timeDifference + " seconds to empty server, triggering home event");
                     
                     // get respawn point
                     if (player.getSpawnPointPosition() != null) {
                         BlockPos bedPos = player.getSpawnPointPosition();
                         triggerHomeEvent(server, player, bedPos);
                         state.setIntValue(EVENT_READY_ID, 0); // Reset ready flag
+                        state.setIntValue(SERVER_WAS_EMPTY_ID, 0); // Reset empty flag
                     } else {
                         HorrorMod129.LOGGER.warn("Player " + player.getName().getString() + 
                             " has no spawn point set, cannot trigger home event");
                         // Reset timer anyway if no spawn point
                         state.setTimer(TIMER_ID, getRandomDelay(false));
                     }
+                } else {
+                    // Clear empty flag when player joins (server no longer empty)
+                    state.setIntValue(SERVER_WAS_EMPTY_ID, 0);
                 }
             } else {
                 // First time player connection, record current time
                 state.setIntValue(playerKey, (int)currentTime);
+                state.setIntValue(SERVER_WAS_EMPTY_ID, 0); // Server not empty anymore
                 HorrorMod129.LOGGER.info("First login recorded for player: " + player.getName().getString());
             }
         });
@@ -105,6 +120,11 @@ public class HomeEventScheduler {
     }
 
     private static void onServerTick(MinecraftServer server) {
+        // Skip if server is empty (pause timers)
+        if (server.getPlayerManager().getPlayerList().isEmpty()) {
+            return;
+        }
+        
         // Get the persistent state
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         int currentTimer = state.getTimer(TIMER_ID);
