@@ -19,6 +19,8 @@ They can join one other world, allowing them to have a survival world (this one)
 
 Because they are literally within this world, they have some extra control over it, like limited access to the player's computer and Minecraft settings. However, they're not very skilled at it—they're still fresh to this whole digital existence thing, especially with another player around.
 
+They reset every 10(?) days, the world resets so the engram does not go mad from importality. it needs to not be paused though as that could "kill" it as it is still a soul
+
 ## Progression
 *I use the term phase here, but transitions between each phase is "fuzzy", where most interactions are RNG based but impacted by the aggro meter*
 **Phase 1: Elusive Presence**  
