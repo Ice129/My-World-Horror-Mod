@@ -37,9 +37,9 @@ Join the [Discord](https://discord.gg/hgCNtXbqkC) to report bugs, give feedback,
 ## Development Status
 
 
-This mod is in active development. As this is my first mod, expect bugs and incomplete features. Please report any issues on the **[GitHub Issues page](https://github.com/Ice129/My-World-Horror-Mod/issues)**. 
+This mod is in active development. As this is my first mod, expect bugs and incomplete features. Please report any issues on the **[GitHub Issues page](https://github.com/Ice129/ENGRAM-Horror-Mod/issues)**. 
 
-Feel free to contribute to the project! All my code is publicly available on **[GitHub](https://github.com/Ice129/My-World-Horror-Mod)**.
+Feel free to contribute to the project! All my code is publicly available on **[GitHub](https://github.com/Ice129/ENGRAM-Horror-Mod)**.
 
 **No Forge port is planned** for this mod, however if anyone is determined enough to do so themselves, open a PR on GitHub and I will gladly support it.
 
