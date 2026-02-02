@@ -62,7 +62,7 @@ public class SurfaceFinder {
                         }
                     }
                     // Snow is a valid surface when includeSnow is true
-                    return y;
+                    return y - 1; // to account for the snow
                 }
                 
                 // If ignoring foliage, check if the block is foliage (excluding snow when includeSnow is true)

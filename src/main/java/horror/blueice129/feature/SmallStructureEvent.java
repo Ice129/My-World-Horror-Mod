@@ -13,6 +13,7 @@ import net.minecraft.block.entity.FurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import horror.blueice129.utils.SurfaceFinder;
 import horror.blueice129.utils.ChunkLoader;
+import horror.blueice129.utils.TorchPlacer;
 
 import net.minecraft.util.math.random.Random;
 
@@ -24,8 +25,8 @@ public class SmallStructureEvent {
             { "crafting_table", "10" },
             { "furnace", "5" },
             { "cobblestone_pillar", "7" },
-            { "single_torch", "10" },
-            { "torched_area", "15" },
+            { "single_torch", "15" },
+            { "torched_area", "8" },
             { "tree_mined", "14" },
             // { "deforestation", "6" },
             { "flower_patch", "3" },
@@ -265,7 +266,7 @@ public class SmallStructureEvent {
             BlockPos pillarPos = pos.up(i);
             server.getOverworld().setBlockState(pillarPos, Blocks.COBBLESTONE.getDefaultState());
         }
-        server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
+        TorchPlacer.placeTorch(server.getOverworld(), pos.up(height), random);
         return true;
     }
 
@@ -279,8 +280,7 @@ public class SmallStructureEvent {
         if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), pos, 1)) {
             return false;
         }
-        // place torch
-        server.getOverworld().setBlockState(pos, Blocks.TORCH.getDefaultState());
+        TorchPlacer.placeTorch(server.getOverworld(), pos, random);
         return true;
     }
 
@@ -302,7 +302,7 @@ public class SmallStructureEvent {
             if (torchPos != null) {
                 // Make sure the chunk for each torch is loaded
                 if (ChunkLoader.loadChunksInRadius(server.getOverworld(), torchPos, 1)) {
-                    server.getOverworld().setBlockState(torchPos, Blocks.TORCH.getDefaultState());
+                    TorchPlacer.placeTorch(server.getOverworld(), torchPos, random);
                 }
             }
         }
