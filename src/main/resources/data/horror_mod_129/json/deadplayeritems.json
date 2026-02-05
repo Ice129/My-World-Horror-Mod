@@ -136,19 +136,29 @@
             ],
             "nameChance": 0.3
         },
-        "lowClass": {
-            "minecraft:leather": 3,
-            "minecraft:golden": 2,
-            "minecraft:chainmail": 1
+                "starterGear": {
+            "minecraft:wooden": 3,
+            "minecraft:stone": 2
         },
-        "midClass": {
+        "gettingGear": {
+            "minecraft:wooden": 1,
+            "minecraft:stone": 3,
+            "minecraft:iron": 2,
+            "minecraft:golden": 1
+        },
+        "goodGear": {
             "minecraft:iron": 5,
-            "minecraft:diamond": 2
+            "minecraft:golden": 2,
+            "minecraft:diamond": 3
         },
-        "highClass": {
-            "minecraft:netherite": 1,
-            "minecraft:diamond": 4,
+        "greatGear": {
+            "minecraft:diamond": 5,
             "minecraft:iron": 1
+        },
+        "endGameGear": {
+            "minecraft:diamond": 5,
+            "minecraft:netherite": 2,
+            "minecraft:iron": 2
         }
     },
     "Essentials": {
@@ -279,20 +289,29 @@
             ],
             "nameChance": 0.3
         },
-        "lowClass": {
-            "minecraft:wooden": 1,
-            "minecraft:stone": 2,
-            "minecraft:golden": 3,
-            "minecraft:iron": 3
+        "starterGear": {
+            "minecraft:wooden": 3,
+            "minecraft:stone": 2
         },
-        "midClass": {
+        "gettingGear": {
+            "minecraft:wooden": 1,
+            "minecraft:stone": 3,
+            "minecraft:iron": 2,
+            "minecraft:golden": 1
+        },
+        "goodGear": {
             "minecraft:iron": 5,
+            "minecraft:golden": 2,
             "minecraft:diamond": 3
         },
-        "highClass": {
+        "greatGear": {
+            "minecraft:diamond": 5,
+            "minecraft:iron": 1
+        },
+        "endGameGear": {
             "minecraft:diamond": 5,
             "minecraft:netherite": 2,
-            "minecraft:iron": 1
+            "minecraft:iron": 2
         }
     },
     "consumables": {
