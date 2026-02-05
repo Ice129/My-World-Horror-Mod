@@ -75,6 +75,11 @@ public class BlockTypes {
             return true;
         }
 
+        // waterlogged blocks
+        if (block == Blocks.KELP_PLANT || block == Blocks.KELP || block == Blocks.SEAGRASS
+                || block == Blocks.TALL_SEAGRASS || block == Blocks.SEA_PICKLE) {
+            return true;
+        }
         return false;
     }
 

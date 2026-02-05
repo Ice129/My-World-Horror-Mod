@@ -7,6 +7,10 @@ import net.minecraft.block.LeavesBlock;
 import net.minecraft.util.math.BlockPos;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Queue;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Utility class for finding the surface level in a Minecraft world.
@@ -154,50 +158,81 @@ public class SurfaceFinder {
 
     public static BlockPos[] getTreeLogPositions(ServerWorld world, BlockPos pos) {
         List<BlockPos> logPositions = new ArrayList<>();
+        Set<BlockPos> visited = new HashSet<>();
+        Queue<BlockPos> toCheck = new LinkedList<>();
+        
         int x = pos.getX();
         int z = pos.getZ();
 
         // Make sure chunks are loaded before accessing blocks
         BlockPos chunkPos = new BlockPos(x, world.getBottomY() + (world.getTopY() - world.getBottomY()) / 2, z);
         if (!ChunkLoader.loadChunksInRadius(world, chunkPos, 1)) {
-            return new BlockPos[0]; // Return empty array if chunk couldn't be loaded
+            return new BlockPos[0];
         }
 
         // Include snow when finding the surface to work properly in snowy biomes
         int topBlockY = findPointSurfaceY(world, x, z, false, true, true);
         if (topBlockY == -1) {
-            return new BlockPos[0]; // No suitable surface found
+            return new BlockPos[0];
         }
         
         // First check if top block is snow, and if so, look below it
         if (world.getBlockState(new BlockPos(x, topBlockY, z)).getBlock() == Blocks.SNOW) {
-            topBlockY--; // Move below the snow layer
+            topBlockY--;
         }
         
-        // Search downward for logs
+        // Find the first log block by searching downward
+        BlockPos firstLog = null;
         for (int y = 0; y <= 30; y++) {
             BlockPos checkPos = new BlockPos(x, topBlockY - y, z);
             BlockState blockState = world.getBlockState(checkPos);
             if (BlockTypes.isLogBlock(blockState.getBlock())) {
-                logPositions.add(checkPos);
+                firstLog = checkPos;
+                break;
+            } else if (blockState.getBlock() == Blocks.SNOW) {
+                continue;
+            } else if (!(blockState.getBlock() instanceof LeavesBlock) && !blockState.isAir()) {
+                break;
+            }
+        }
+        
+        if (firstLog == null) {
+            return new BlockPos[0];
+        }
+        
+        // Use BFS to find all connected log blocks
+        toCheck.add(firstLog);
+        visited.add(firstLog);
+        
+        while (!toCheck.isEmpty()) {
+            BlockPos current = toCheck.poll();
+            BlockState currentState = world.getBlockState(current);
+            
+            if (BlockTypes.isLogBlock(currentState.getBlock())) {
+                logPositions.add(current);
                 
-                // Also check adjacent blocks for a more complete tree structure
+                // Check all 26 adjacent blocks (3x3x3 cube minus center)
                 for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dz == 0) continue; // Skip the center block we already added
-                        BlockPos adjacentPos = new BlockPos(x + dx, topBlockY - y, z + dz);
-                        BlockState adjacentState = world.getBlockState(adjacentPos);
-                        if (BlockTypes.isLogBlock(adjacentState.getBlock())) {
-                            logPositions.add(adjacentPos);
+                    for (int dy = -1; dy <= 1; dy++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            if (dx == 0 && dy == 0 && dz == 0) continue;
+                            
+                            BlockPos adjacentPos = current.add(dx, dy, dz);
+                            
+                            if (!visited.contains(adjacentPos)) {
+                                visited.add(adjacentPos);
+                                BlockState adjacentState = world.getBlockState(adjacentPos);
+                                
+                                if (BlockTypes.isLogBlock(adjacentState.getBlock())) {
+                                    toCheck.add(adjacentPos);
+                                }
+                            }
                         }
                     }
                 }
-            } else if (blockState.getBlock() == Blocks.SNOW) {
-                continue; // Skip snow layers and keep looking
-            } else if (!(blockState.getBlock() instanceof LeavesBlock) && !blockState.isAir()) {
-                break; // Stop if we hit a non-log, non-leaf, non-air, non-snow block
             }
         }
+        
         return logPositions.toArray(new BlockPos[0]);
     }
 }

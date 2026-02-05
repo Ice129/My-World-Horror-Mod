@@ -6,10 +6,14 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.Direction;
+import net.minecraft.entity.player.PlayerEntity;
 
 public class TorchPlacer {
 
-    public static boolean placeTorch(World world, BlockPos pos, Random random){
+    public static boolean placeTorch(World world, BlockPos pos, Random random, PlayerEntity player){
+        if (player != null && LineOfSightUtils.hasLineOfSight(player, pos, 200)) {
+            return false;
+        }
         Direction[] directions = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN};
         Direction[] validDirections = new Direction[5];
         int validCount = 0;
