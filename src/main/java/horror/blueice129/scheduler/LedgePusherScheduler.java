@@ -23,7 +23,6 @@ public class LedgePusherScheduler {
                                                     // you can be expected to be pushed once
 
     public static void register() {
-
         ServerTickEvents.END_SERVER_TICK.register(LedgePusherScheduler::onServerTick);
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.isClient())

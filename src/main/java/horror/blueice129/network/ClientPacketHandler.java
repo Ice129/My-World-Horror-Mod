@@ -1,6 +1,7 @@
 package horror.blueice129.network;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.config.ConfigManager;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
@@ -38,28 +39,42 @@ public class ClientPacketHandler {
      * @param settingType The type of setting to modify
      */
     private static void handleSettingsTrigger(SettingsTriggerPayload.SettingType settingType) {
+        if (!ConfigManager.getConfig().enableSettingsModifications) {
+            return;
+        }
+        
         switch (settingType) {
             case RENDER_DISTANCE:
-                RenderDistanceChanger.decreaseRenderDistance(4);
-                HorrorMod129.LOGGER.info("Render distance decreased by 4. New render distance: "
-                        + RenderDistanceChanger.getRenderDistance());
+                if (ConfigManager.getConfig().enableRenderDistanceChange) {
+                    RenderDistanceChanger.decreaseRenderDistance(4);
+                    HorrorMod129.LOGGER.info("Render distance decreased by 4. New render distance: "
+                            + RenderDistanceChanger.getRenderDistance());
+                }
                 break;
             case BRIGHTNESS:
-                BrightnessChanger.setToMoodyBrightness();
-                HorrorMod129.LOGGER.info("Brightness set to moody");
+                if (ConfigManager.getConfig().enableBrightnessChange) {
+                    BrightnessChanger.setToMoodyBrightness();
+                    HorrorMod129.LOGGER.info("Brightness set to moody");
+                }
                 break;
             case FPS:
-                FpsLimiter.capFpsTo30();
-                HorrorMod129.LOGGER.info("FPS capped to 30");
+                if (ConfigManager.getConfig().enableFpsChange) {
+                    FpsLimiter.capFpsTo30();
+                    HorrorMod129.LOGGER.info("FPS capped to 30");
+                }
                 break;
             case MOUSE_SENSITIVITY:
-                MouseSensitivityChanger.decreaseMouseSensitivity(0.10);
-                HorrorMod129.LOGGER.info("Mouse sensitivity decreased by 10%. New sensitivity: "
-                        + MouseSensitivityChanger.getMouseSensitivity());
+                if (ConfigManager.getConfig().enableMouseSensitivityChange) {
+                    MouseSensitivityChanger.decreaseMouseSensitivity(0.10);
+                    HorrorMod129.LOGGER.info("Mouse sensitivity decreased by 10%. New sensitivity: "
+                            + MouseSensitivityChanger.getMouseSensitivity());
+                }
                 break;
             case SMOOTH_LIGHTING:
-                SmoothLightingChanger.disableSmoothLighting();
-                HorrorMod129.LOGGER.info("Smooth lighting disabled");
+                if (ConfigManager.getConfig().enableSmoothLightingChange) {
+                    SmoothLightingChanger.disableSmoothLighting();
+                    HorrorMod129.LOGGER.info("Smooth lighting disabled");
+                }
                 break;
             default:
                 HorrorMod129.LOGGER.warn("Unknown settings trigger type: " + settingType);

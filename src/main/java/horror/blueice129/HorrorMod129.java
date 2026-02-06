@@ -1,6 +1,7 @@
 package horror.blueice129;
 
 import horror.blueice129.command.DebugCommands;
+import horror.blueice129.config.ConfigManager;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.network.ModNetworking;
 import horror.blueice129.scheduler.AgroMeterScheduler;
@@ -46,12 +47,10 @@ public class HorrorMod129 implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
-
-
 		LOGGER.info("Initializing Horror Mod 129!");
+		
+		// Load config first before any feature registration
+		ConfigManager.loadConfig();
 		
 		// Register networking packets
 		ModNetworking.registerPackets();
