@@ -5,7 +5,7 @@
         "helmet": {
             "enchants": {
                 "minecraft:protection": {
-                    "minLevel": 2,
+                    "minLevel": 1,
                     "maxLevel": 4,
                     "chance": 0.4
                 },
@@ -33,14 +33,15 @@
             "names": [
                 "Hat",
                 "Helmet",
-                "Hard Hat"
+                "Hard Hat",
+                "Dome Defender"
             ],
             "nameChance": 0.3
         },
         "chestplate": {
             "enchants": {
                 "minecraft:protection": {
-                    "minLevel": 2,
+                    "minLevel": 1,
                     "maxLevel": 4,
                     "chance": 0.4
                 },
@@ -62,14 +63,15 @@
             },
             "names": [
                 "Chestplate",
-                "Shirt"
+                "Shirt",
+                "Rebuilt"
             ],
             "nameChance": 0.3
         },
         "leggings": {
             "enchants": {
                 "minecraft:protection": {
-                    "minLevel": 2,
+                    "minLevel": 1,
                     "maxLevel": 4,
                     "chance": 0.4
                 },
@@ -92,14 +94,15 @@
             "names": [
                 "Leggings",
                 "Jeans",
-                "Blueice129's Pants"
+                "Blueice129's Pants",
+                "the old trousers"
             ],
             "nameChance": 0.3
         },
         "boots": {
             "enchants": {
                 "minecraft:protection": {
-                    "minLevel": 2,
+                    "minLevel": 1,
                     "maxLevel": 4,
                     "chance": 0.4   
                 },
@@ -132,11 +135,13 @@
             "names": [
                 "Boots",
                 "Shoes",
-                "Runners"
+                "Runners",
+                "Kicks",
+                "#My Sneaky Sneakers"
             ],
             "nameChance": 0.3
         },
-                "starterGear": {
+        "starterGear": {
             "minecraft:wooden": 3,
             "minecraft:stone": 2
         },
@@ -195,7 +200,8 @@
             "names": [
                 "Sword",
                 "Mind Blade",
-                "Kill-Blade"
+                "Kill-Blade",
+                "get out of my world"
             ],
             "nameChance": 0.3
         },
@@ -225,7 +231,8 @@
             "names": [
                 "Pickaxe",
                 "Mr Picky",
-                "Simulation Breaker"
+                "Simulation Breaker",
+                "Bitcoin Miner 3000"
             ],
             "nameChance": 0.3
         },
@@ -255,7 +262,8 @@
             "names": [
                 "Axe",
                 "Deaths Divider",
-                "Harbringer of Logs"
+                "Harbringer of Logs",
+                "bring back the my original self"
             ],
             "nameChance": 0.3
         },
@@ -285,7 +293,8 @@
             "names": [
                 "Shovel",
                 "Diamond Sword",
-                "Ground Breaker"
+                "Ground Breaker",
+                "keep digging"
             ],
             "nameChance": 0.3
         },
@@ -324,8 +333,8 @@
                 "minecraft:bread",
                 "minecraft:cooked_potato"
             ],
-            "minAmount": 15,
-            "maxAmount": 100
+            "minAmount": 5,
+            "maxAmount": 50
         }
     },
     "randomItems": {
