@@ -22,9 +22,6 @@ import horror.blueice129.utils.StructurePlacer;
 import horror.blueice129.utils.TorchPlacer;
 import horror.blueice129.data.HorrorModPersistentState;
 
-//BUG: torch placement on non solid blocks like water and lilypads at entrance stairway
-//TODO: make torch placement util for better looking placement on blocks like walls/floors
-
 public class CavePreMiner {
 
     // Create a Random object for generating random values
@@ -628,107 +625,77 @@ public class CavePreMiner {
     }
 
     /**
-     * Finds the starter block position
-     * Should be within 16 chunks of player and be bellow y=48
-     * Should be on ground of cave
+     * Finds the starter block position by searching from far to near
+     * Finds the furthest suitable cave within loaded chunks
+     * Should be below y=48 and on ground of cave
      * 
      * @param world     The world to search in
      * @param playerPos The player's position
      * @return A suitable BlockPos, or null if none found
      */
-
     public static BlockPos findStarterBlock(World world, BlockPos playerPos) {
-        // Define our distance ranges (in blocks)
-        // 1 chunk = 16 blocks
-        int maxDistance = 16 * 5; // 5 chunks
+        int chunkRadius = 20;
+        int maxDistance = chunkRadius * 16;
         int minY = world.getBottomY();
-        int maxY = Math.min(48, world.getTopY() - 1); // Ensure we don't exceed world height
-
-        // Start with player's Y level and then try in expanding rings
+        int maxY = Math.min(48, world.getTopY() - 1);
         int playerY = playerPos.getY();
-        int idealY = Math.max(minY + 5, Math.min(maxY - 5, playerY - 10)); // Prefer caves below player
-
-        // Use a more structured search pattern
-        // Try a spiral pattern for x,z coordinates starting close to player
-        int[] searchDistances = { 16, 32, 48, 64, 80 }; // 1, 2, 3, 4, 5 chunks
-        int[] yOffsets = { 0, -5, -10, -15, 5, 10, 15 }; // Try different Y levels
-
-        // Create a cache of already checked positions to avoid redundant checks
+        int idealY = Math.max(minY + 5, Math.min(maxY - 5, playerY - 10));
+        
+        int stepSize = 16;
+        int angularSteps = 8;
+        int ySearchRange = 30;
+        int yStepSize = 5;
+        
+        int[] yOffsets = new int[ySearchRange / yStepSize * 2 + 1];
+        for (int i = 0; i < yOffsets.length; i++) {
+            yOffsets[i] = (i - yOffsets.length / 2) * yStepSize;
+        }
+        
         java.util.Set<BlockPos> checkedPositions = new java.util.HashSet<>();
-
-        for (int distance : searchDistances) {
-            // Try 8 points around the circle at this distance
-            for (int i = 0; i < 8; i++) {
-                double angle = i * Math.PI / 4.0; // 0, 45, 90, 135, 180, 225, 270, 315 degrees
-                int xOffset = (int) (Math.cos(angle) * distance);
-                int zOffset = (int) (Math.sin(angle) * distance);
-
-                // Try different Y levels at this x,z coordinate
+        
+        for (int distance = maxDistance; distance >= stepSize; distance -= stepSize) {
+            for (int i = 0; i < angularSteps; i++) {
+                double angle = (2 * Math.PI * i) / angularSteps;
+                int xOffset = (int) (distance * Math.cos(angle));
+                int zOffset = (int) (distance * Math.sin(angle));
+                
                 for (int yOffset : yOffsets) {
                     int x = playerPos.getX() + xOffset;
                     int z = playerPos.getZ() + zOffset;
                     int y = idealY + yOffset;
-
+                    
                     if (y < minY || y > maxY)
                         continue;
-
+                    
                     BlockPos checkPos = new BlockPos(x, y, z);
                     if (checkedPositions.contains(checkPos))
                         continue;
                     checkedPositions.add(checkPos);
-
-                    // Make sure the chunk is loaded before accessing blocks
+                    
                     if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, checkPos, 1)) {
                         continue;
                     }
-
-                    // Check if this is a suitable air block with solid below
+                    
                     BlockState state = world.getBlockState(checkPos);
                     if ((state.isOf(Blocks.CAVE_AIR) || state.isOf(Blocks.AIR))) {
-                        // Find solid ground below
                         BlockPos solidPos = findSolidBlockBelow(world, checkPos, minY, maxY);
                         if (solidPos != null) {
-                            return solidPos.up(); // Return the air block above the solid block
+                            return solidPos.up();
                         }
                     } else {
-                        // Try looking down from here for air
                         BlockPos airPos = findAirBlockBelow(world, checkPos, minY, maxY);
                         if (airPos != null) {
                             BlockPos solidPos = findSolidBlockBelow(world, airPos, minY, maxY);
                             if (solidPos != null) {
-                                return solidPos.up(); // Return air above solid
+                                return solidPos.up();
                             }
                         }
                     }
                 }
             }
         }
-
-        // Fallback to a few random attempts if structured search fails
-        for (int attempt = 0; attempt < 20; attempt++) {
-            int xOffset = random.nextInt(2 * maxDistance + 1) - maxDistance;
-            int zOffset = random.nextInt(2 * maxDistance + 1) - maxDistance;
-            int yOffset = random.nextInt(30) - 15;
-
-            int x = playerPos.getX() + xOffset;
-            int z = playerPos.getZ() + zOffset;
-            int y = playerPos.getY() + yOffset;
-
-            BlockPos targetPos = new BlockPos(x, y, z);
-            if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, targetPos, 1))
-                continue;
-
-            // Find air and solid ground
-            BlockPos airPos = findAirBlockBelow(world, targetPos, minY, maxY);
-            if (airPos != null) {
-                BlockPos solidPos = findSolidBlockBelow(world, airPos, minY, maxY);
-                if (solidPos != null) {
-                    return solidPos.up();
-                }
-            }
-        }
-
-        return null; // If we couldn't find a suitable position
+        
+        return null;
     }
 
     /**
