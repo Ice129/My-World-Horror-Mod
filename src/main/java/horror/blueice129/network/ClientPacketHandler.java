@@ -46,21 +46,17 @@ public class ClientPacketHandler {
         if (!ConfigManager.getConfig().enableSettingsModifications) {
             return;
         }
-        
+
         switch (settingType) {
             case RENDER_DISTANCE:
-<<<<<<< config-maker
                 if (ConfigManager.getConfig().enableRenderDistanceChange) {
-                    RenderDistanceChanger.decreaseRenderDistance(4);
-                    HorrorMod129.LOGGER.info("Render distance decreased by 4. New render distance: "
-                            + RenderDistanceChanger.getRenderDistance());
+
+                    int renderDistanceChange = RANDOM.nextInt(5) + 1; // Random decrease between 1 and 5
+                    RenderDistanceChanger.decreaseRenderDistance(renderDistanceChange);
+                    HorrorMod129.LOGGER
+                            .info("Render distance decreased by " + renderDistanceChange + ". New render distance: "
+                                    + RenderDistanceChanger.getRenderDistance());
                 }
-=======
-                int renderDistanceChange = RANDOM.nextInt(5) + 1; // Random decrease between 1 and 5
-                RenderDistanceChanger.decreaseRenderDistance(renderDistanceChange);
-                HorrorMod129.LOGGER.info("Render distance decreased by " + renderDistanceChange + ". New render distance: "
-                        + RenderDistanceChanger.getRenderDistance());
->>>>>>> main
                 break;
             case BRIGHTNESS:
                 if (ConfigManager.getConfig().enableBrightnessChange) {
@@ -75,31 +71,24 @@ public class ClientPacketHandler {
                 }
                 break;
             case MOUSE_SENSITIVITY:
-<<<<<<< config-maker
                 if (ConfigManager.getConfig().enableMouseSensitivityChange) {
-                    MouseSensitivityChanger.decreaseMouseSensitivity(0.10);
-                    HorrorMod129.LOGGER.info("Mouse sensitivity decreased by 10%. New sensitivity: "
+                    // random change between +/- 0.10
+                    float sensitivityChange = RANDOM.nextFloat() * 0.20f - 0.10f; // -0.10 to +0.10
+                    MouseSensitivityChanger.decreaseMouseSensitivity(sensitivityChange);
+                    HorrorMod129.LOGGER.info("Mouse sensitivity changed by " + sensitivityChange + ". New sensitivity: "
                             + MouseSensitivityChanger.getMouseSensitivity());
                 }
                 break;
             case SMOOTH_LIGHTING:
                 if (ConfigManager.getConfig().enableSmoothLightingChange) {
-=======
-                // random change between +/- 0.10
-                float sensitivityChange = RANDOM.nextFloat() * 0.20f - 0.10f; // -0.10 to +0.10
-                MouseSensitivityChanger.decreaseMouseSensitivity(sensitivityChange);
-                HorrorMod129.LOGGER.info("Mouse sensitivity changed by " + sensitivityChange + ". New sensitivity: "
-                        + MouseSensitivityChanger.getMouseSensitivity());
-                break;
-            case SMOOTH_LIGHTING:
-                int toggleChance = RANDOM.nextInt(3); 
-                if (toggleChance == 0) {
-                    SmoothLightingChanger.enableSmoothLighting();
-                    HorrorMod129.LOGGER.info("Smooth lighting enabled");
-                } else {
->>>>>>> main
-                    SmoothLightingChanger.disableSmoothLighting();
-                    HorrorMod129.LOGGER.info("Smooth lighting disabled");
+                    int toggleChance = RANDOM.nextInt(3);
+                    if (toggleChance == 0) {
+                        SmoothLightingChanger.enableSmoothLighting();
+                        HorrorMod129.LOGGER.info("Smooth lighting enabled");
+                    } else {
+                        SmoothLightingChanger.disableSmoothLighting();
+                        HorrorMod129.LOGGER.info("Smooth lighting disabled");
+                    }
                 }
                 break;
             default:
