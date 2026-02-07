@@ -368,7 +368,7 @@ public class SmallStructureEvent {
         // find 5-15 random positions within 15 block radius and place torches
         int torchCount = 5 + RANDOM.nextInt(11);
         for (int i = 0; i < torchCount; i++) {
-            BlockPos torchPos = StructurePlacer.findSurfaceLocation(server.getOverworld(), pos, player, 15, 15);
+            BlockPos torchPos = StructurePlacer.findSurfaceLocation(server.getOverworld(), pos, player, 1, 15);
             if (torchPos != null) {
                 // Make sure the chunk for each torch is loaded
                 if (ChunkLoader.loadChunksInRadius(server.getOverworld(), torchPos, 1)) {
