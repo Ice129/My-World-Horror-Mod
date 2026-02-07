@@ -18,7 +18,7 @@ public class ConfigScreen {
         
         ConfigCategory settingsCategory = builder.getOrCreateCategory(Text.literal("Settings Modifications"));
         
-        settingsCategory.addEntry(entryBuilder.startBooleanToggle(Text.literal("Enable All Settings Modifications"), config.enableSettingsModifications)
+        settingsCategory.addEntry(entryBuilder.startBooleanToggle(Text.literal("Enable All"), config.enableSettingsModifications)
                 .setDefaultValue(true)
                 .setTooltip(Text.literal("Master toggle for all client setting modifications below"))
                 .setSaveConsumer(newValue -> config.enableSettingsModifications = newValue)
