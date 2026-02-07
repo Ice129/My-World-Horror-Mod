@@ -267,11 +267,11 @@ public class SmallStructureEvent {
         // server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
         // use torchutil instead
         BlockPos torchPos = pos.up(height).down();
-        TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM);
-        TorchPlacer.placeTorch(server.getOverworld(), torchPos.north(), RANDOM);
-        TorchPlacer.placeTorch(server.getOverworld(), torchPos.east(), RANDOM);
-        TorchPlacer.placeTorch(server.getOverworld(), torchPos.south(), RANDOM);
-        TorchPlacer.placeTorch(server.getOverworld(), torchPos.west(), RANDOM);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.north(), RANDOM, player);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.east(), RANDOM, player);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.south(), RANDOM, player);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.west(), RANDOM, player);
 
 
         
@@ -339,20 +339,13 @@ public class SmallStructureEvent {
             return false;
         }
         // place torch
-        TorchPlacer.placeTorch(server.getOverworld(), pos, RANDOM);
+        TorchPlacer.placeTorch(server.getOverworld(), pos, RANDOM, player);
         return true;
     }
 
     private static boolean torchedAreaEvent(MinecraftServer server, ServerPlayerEntity player) {
         BlockPos pos = findAndLoadSurfaceLocation(server, player, 30, 50);
         if (pos == null) {
-            return false;
-        }
-        int torchCount = 5 + random.nextInt(11);
-            return false; // No suitable location found
-        }
-        // Make sure the chunk is loaded before modifying blocks
-        if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), pos, 1)) {
             return false;
         }
 
@@ -362,7 +355,7 @@ public class SmallStructureEvent {
             BlockPos torchPos = StructurePlacer.findSurfaceLocation(server.getOverworld(), pos, player, 1, 15);
             if (torchPos != null) {
                 if (ChunkLoader.loadChunksInRadius(server.getOverworld(), torchPos, 1)) {
-                    TorchPlacer.placeTorch(server.getOverworld(), torchPos, RANDOM);
+                    TorchPlacer.placeTorch(server.getOverworld(), torchPos, RANDOM, player);
                 }
             }
         }
@@ -404,7 +397,7 @@ public class SmallStructureEvent {
         for (BlockPos logPos : treeLogs) {
             if (ChunkLoader.loadChunksInRadius(server.getOverworld(), logPos, 1)) {
                 if (!LineOfSightUtils.hasLineOfSight(player, logPos, 200)) {
-                    int chance = random.nextInt(10);
+                    int chance = RANDOM.nextInt(10);
 
                     if (chance == 0) {
                         server.getOverworld().breakBlock(logPos, true, null);
@@ -447,7 +440,7 @@ public class SmallStructureEvent {
         }
         boolean removedAnyTrees = false;
         for (BlockPos treePos : treePositions) {
-            if (random.nextInt(100) < 90) {
+            if (RANDOM.nextInt(100) < 90) {
                 if (ChunkLoader.loadChunksInRadius(server.getOverworld(), treePos, 1)) {
                     mineTree(server, player, treePos);
                     removedAnyTrees = true;
@@ -618,9 +611,9 @@ public class SmallStructureEvent {
                     }
                 }
 
-                int fireAroundLogCount = 3 + random.nextInt(4);
+                int fireAroundLogCount = 3 + RANDOM.nextInt(4);
                 for (int i = 0; i < fireAroundLogCount; i++) {
-                    BlockPos firePos = logPos.add(random.nextInt(3) - 1, random.nextInt(2), random.nextInt(3) - 1);
+                    BlockPos firePos = logPos.add(RANDOM.nextInt(3) - 1, RANDOM.nextInt(2), RANDOM.nextInt(3) - 1);
                     clearSnowIfPresent(server, player, firePos);
                     if (server.getOverworld().getBlockState(firePos).isAir()) {
                         if (!LineOfSightUtils.hasLineOfSight(player, firePos, 200)) {
