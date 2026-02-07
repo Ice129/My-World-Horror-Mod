@@ -176,33 +176,17 @@ public class PlayerDeathItems {
         agroMeter = Math.max(0, Math.min(10, agroMeter));
         
         // Calculate probabilities based on agro meter
-        int lowClassProb, midClassProb;
-        
-        if (agroMeter <= 3) {
-            // Low agro: mostly low class, some mid class, rare high class
-            lowClassProb = 70 - agroMeter * 10;  // 70-40%
-            midClassProb = 25 + agroMeter * 5;   // 25-40%
-        } else if (agroMeter <= 7) {
-            // Mid agro: mostly mid class, some low class, increasing high class
-            lowClassProb = 40 - (agroMeter - 3) * 10;  // 40-0%
-            midClassProb = 40;                         // 40% constant
-        } else {
-            // High agro: decreasing mid class, increasing high class
-            lowClassProb = 0;                          // 0% constant
-            midClassProb = 40 - (agroMeter - 7) * 10;  // 40-10%
+        String[] tiers = {"starterGear", "gettingGear", "goodGear", "greatGear", "endGameGear"};
+        int teirIndex = agroMeter / 2; // 0-1: starterGear, 2-3: gettingGear, 4-5: goodGear, 6-7: greatGear, 8-10: endGameGear
+        teirIndex = Math.min(teirIndex, tiers.length - 1); // Ensure index is within bounds
+        // Random random = Random.create();
+        int fuzzyRange = RANDOM.nextInt(10); 
+        if (fuzzyRange < 1) { // 10% chance to drop down a tier
+            teirIndex = Math.max(0, teirIndex - 1);
+        } else if (fuzzyRange > 8) { // 10% chance to jump up a tier
+            teirIndex = Math.min(tiers.length - 1, teirIndex + 1);
         }
-        // high class probability is calculated implicitly, as it is just the remainder to 100%, so no need to store it
-        
-        // Roll based on calculated probabilities
-        int roll = RANDOM.nextInt(100);
-        
-        if (roll < lowClassProb) {
-            return "lowClass";
-        } else if (roll < lowClassProb + midClassProb) {
-            return "midClass";
-        } else {
-            return "highClass";
-        }
+        return tiers[teirIndex];
     }
     
     /**
@@ -414,11 +398,9 @@ public class PlayerDeathItems {
             String enchantId = entry.getKey();
             JsonObject enchantConfig = entry.getValue().getAsJsonObject();
             
-            // Check if this enchantment should be applied based on chance
-            // Higher agro meter slightly increases chance of getting enchantments
             double chance = enchantConfig.get("chance").getAsDouble();
-            double agroBonus = agroMeter * 0.03; // +3% chance per agro level
-            if (RANDOM.nextDouble() > (chance + agroBonus)) {
+            double agroMultiplier = agroMeter / 8.0;
+            if (RANDOM.nextDouble() > (chance * agroMultiplier)) {
                 continue;
             }
             
