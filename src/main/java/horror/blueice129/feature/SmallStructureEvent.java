@@ -308,7 +308,7 @@ public class SmallStructureEvent {
 
                             BlockPos checkPos = pos.add(x, y, z);
                             Block blockAtPos = server.getOverworld().getBlockState(checkPos).getBlock();
-                            if (checkPos.getY() <= 40) {
+                            if (checkPos.getY() <= 45) {
                                 HorrorMod129.LOGGER.info("returned cave pos: " + checkPos);
                                 return pos; // Found a deep hole/cave, return this position
                             }
