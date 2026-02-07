@@ -15,12 +15,13 @@ import net.minecraft.block.entity.FurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import horror.blueice129.utils.SurfaceFinder;
 import horror.blueice129.utils.ChunkLoader;
+import horror.blueice129.utils.TorchPlacer;
 
 import net.minecraft.util.math.random.Random;
 
 public class SmallStructureEvent {
     public static final String SMALL_STRUCTURE_TIMER_KEY = "smallStructureEventTimer";
-    private static final Random random = Random.create();
+    private static final Random RANDOM = Random.create();
     // 2d list of a structure id and its weight
     public static String[][] STRUCTURE_LIST = { // not final, agro meter will change weights
             { "crafting_table", "10" },
@@ -47,7 +48,7 @@ public class SmallStructureEvent {
             totalWeight += Integer.parseInt(structure[1]);
         }
         // Get a random value between 0 and totalWeight - 1
-        int randomWeight = random.nextInt(totalWeight);
+        int randomWeight = RANDOM.nextInt(totalWeight);
         for (String[] structure : STRUCTURE_LIST) {
             randomWeight -= Integer.parseInt(structure[1]);
             if (randomWeight < 0) {
@@ -69,7 +70,7 @@ public class SmallStructureEvent {
         if (playerList.isEmpty()) {
             return false; // No players online
         }
-        ServerPlayerEntity player = playerList.get(random.nextInt(playerList.size()));
+        ServerPlayerEntity player = playerList.get(RANDOM.nextInt(playerList.size()));
         if (player == null) {
             return false; // No player found
         }
@@ -237,8 +238,8 @@ public class SmallStructureEvent {
         // place furnace
         server.getOverworld().setBlockState(pos, Blocks.FURNACE.getDefaultState());
 
-        int coalAmount = 1 + random.nextInt(60);
-        int itemAmount = 1 + random.nextInt(20);
+        int coalAmount = 1 + RANDOM.nextInt(60);
+        int itemAmount = 1 + RANDOM.nextInt(20);
 
         BlockEntity blockEntity = server.getOverworld().getBlockEntity(pos);
         if (blockEntity instanceof FurnaceBlockEntity) {
@@ -261,31 +262,41 @@ public class SmallStructureEvent {
             return false; // Chunk couldn't be loaded
         }
         // place 3 block tall cobblestone pillar
-        int height = 3 + random.nextInt(30);
-        if (pos.getY() < 40) {
+        int height = 20 + RANDOM.nextInt(40);
+        if (pos.getY() < 46) {
             height += 30; // If the pillar is in a cave, make it taller to reach the surface
         }
         for (int i = 0; i < height; i++) {
             BlockPos pillarPos = pos.up(i);
             server.getOverworld().setBlockState(pillarPos, Blocks.COBBLESTONE.getDefaultState());
         }
-        server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
+        // server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
+        // use torchutil instead
+        BlockPos torchPos = pos.up(height).down();
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.north(), RANDOM);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.east(), RANDOM);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.south(), RANDOM);
+        TorchPlacer.placeTorch(server.getOverworld(), torchPos.west(), RANDOM);
+
+
+        
         return true;
     }
 
     private static BlockPos intrestingAreaFinder(MinecraftServer server, ServerPlayerEntity player) {
-        int tries = 100;
+        int tries = 200;
         // list of block types that are considered intresting
         Block[] intrestingBlocks = { Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.TORCH,
                 Blocks.LANTERN, Blocks.HOPPER, Blocks.OBSIDIAN, Blocks.GOLD_BLOCK, Blocks.IRON_BLOCK,
                 Blocks.DIAMOND_BLOCK, Blocks.EMERALD_BLOCK, Blocks.NETHERITE_BLOCK, Blocks.LILY_OF_THE_VALLEY,
-                Blocks.HAY_BLOCK, Blocks.MOSS_BLOCK, Blocks.LAVA, Blocks.FIRE };
+                Blocks.HAY_BLOCK, Blocks.MOSS_BLOCK, Blocks.LAVA, Blocks.FIRE, Blocks.EMERALD_ORE, Blocks.DIAMOND_ORE, Blocks.SPAWNER
+            };
 
-        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "_ore", "plank" };
-
+        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "plank", "glass", "rail", "path"};
         for (int i = 0; i < tries; i++) {
-            BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 40,
-                    70);
+            BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 80,
+                    200);
 
             if (pos != null) {
 
@@ -314,6 +325,7 @@ public class SmallStructureEvent {
                                     for (String partialName : intrestingPartialBlockNames) {
                                         if (blockName.contains(partialName)) {
                                             HorrorMod129.LOGGER.info("returned intresting partial block pos: " + checkPos);
+                                            HorrorMod129.LOGGER.info("block name: " + blockName);
                                             return pos; // Found a block with an intresting structure attached
                                         }
                                     }
@@ -354,7 +366,7 @@ public class SmallStructureEvent {
         }
 
         // find 5-15 random positions within 15 block radius and place torches
-        int torchCount = 5 + random.nextInt(11);
+        int torchCount = 5 + RANDOM.nextInt(11);
         for (int i = 0; i < torchCount; i++) {
             BlockPos torchPos = StructurePlacer.findSurfaceLocation(server.getOverworld(), pos, player, 15, 15);
             if (torchPos != null) {
@@ -406,7 +418,7 @@ public class SmallStructureEvent {
             return false; // Chunk couldn't be loaded
         }
 
-        int flowerCount = 5 + random.nextInt(20);
+        int flowerCount = 5 + RANDOM.nextInt(20);
         for (int i = 0; i < flowerCount; i++) {
             BlockPos flowerPos = StructurePlacer.findSurfaceLocation(server.getOverworld(), pos, player, 1, 10);
             if (flowerPos != null) {
@@ -530,7 +542,7 @@ public class SmallStructureEvent {
 
         int numberOfTreesToBurn = Math.max(1, Math.min(3, treePositions.length)); // Limit to max 3 trees
         for (int x = 0; x < numberOfTreesToBurn; x++) {
-            BlockPos treePos = treePositions[random.nextInt(treePositions.length)];
+            BlockPos treePos = treePositions[RANDOM.nextInt(treePositions.length)];
 
             // Get the actual log positions of this tree for more targeted fire placement
             BlockPos[] treeLogPositions = SurfaceFinder.getTreeLogPositions(server.getOverworld(), treePos);
@@ -542,7 +554,7 @@ public class SmallStructureEvent {
             for (BlockPos logPos : treeLogPositions) {
                 // Try to place fire directly on the log sometimes (logs themselves are
                 // flammable)
-                if (random.nextInt(100) < 40) { // 40% chance to place fire on log
+                if (RANDOM.nextInt(100) < 40) { // 40% chance to place fire on log
                     // Clear snow if present and place fire
                     BlockPos fireOnLogPos = logPos.add(0, 1, 0);
                     if (server.getOverworld().getBlockState(fireOnLogPos).getBlock() == Blocks.SNOW) {
@@ -554,9 +566,9 @@ public class SmallStructureEvent {
                 }
 
                 // Place fire around logs, clearing snow if needed
-                int fireAroundLogCount = 3 + random.nextInt(4); // 3-6 fires around each log
+                int fireAroundLogCount = 3 + RANDOM.nextInt(4); // 3-6 fires around each log
                 for (int i = 0; i < fireAroundLogCount; i++) {
-                    BlockPos firePos = logPos.add(random.nextInt(3) - 1, random.nextInt(2), random.nextInt(3) - 1);
+                    BlockPos firePos = logPos.add(RANDOM.nextInt(3) - 1, RANDOM.nextInt(2), RANDOM.nextInt(3) - 1);
 
                     // Clear snow if present
                     if (server.getOverworld().getBlockState(firePos).getBlock() == Blocks.SNOW) {
