@@ -1,6 +1,7 @@
 package horror.blueice129.network;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.config.ConfigManager;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
@@ -42,36 +43,52 @@ public class ClientPacketHandler {
      * @param settingType The type of setting to modify
      */
     private static void handleSettingsTrigger(SettingsTriggerPayload.SettingType settingType) {
+        if (!ConfigManager.getConfig().enableSettingsModifications) {
+            return;
+        }
+
         switch (settingType) {
             case RENDER_DISTANCE:
-                int renderDistanceChange = RANDOM.nextInt(5) + 1; // Random decrease between 1 and 5
-                RenderDistanceChanger.decreaseRenderDistance(renderDistanceChange);
-                HorrorMod129.LOGGER.info("Render distance decreased by " + renderDistanceChange + ". New render distance: "
-                        + RenderDistanceChanger.getRenderDistance());
+                if (ConfigManager.getConfig().enableRenderDistanceChange) {
+
+                    int renderDistanceChange = RANDOM.nextInt(5) + 1; // Random decrease between 1 and 5
+                    RenderDistanceChanger.decreaseRenderDistance(renderDistanceChange);
+                    HorrorMod129.LOGGER
+                            .info("Render distance decreased by " + renderDistanceChange + ". New render distance: "
+                                    + RenderDistanceChanger.getRenderDistance());
+                }
                 break;
             case BRIGHTNESS:
-                BrightnessChanger.setToMoodyBrightness();
-                HorrorMod129.LOGGER.info("Brightness set to moody");
+                if (ConfigManager.getConfig().enableBrightnessChange) {
+                    BrightnessChanger.setToMoodyBrightness();
+                    HorrorMod129.LOGGER.info("Brightness set to moody");
+                }
                 break;
             case FPS:
-                FpsLimiter.capFpsTo30();
-                HorrorMod129.LOGGER.info("FPS capped to 30");
+                if (ConfigManager.getConfig().enableFpsChange) {
+                    FpsLimiter.capFpsTo30();
+                    HorrorMod129.LOGGER.info("FPS capped to 30");
+                }
                 break;
             case MOUSE_SENSITIVITY:
-                // random change between +/- 0.10
-                float sensitivityChange = RANDOM.nextFloat() * 0.20f - 0.10f; // -0.10 to +0.10
-                MouseSensitivityChanger.decreaseMouseSensitivity(sensitivityChange);
-                HorrorMod129.LOGGER.info("Mouse sensitivity changed by " + sensitivityChange + ". New sensitivity: "
-                        + MouseSensitivityChanger.getMouseSensitivity());
+                if (ConfigManager.getConfig().enableMouseSensitivityChange) {
+                    // random change between +/- 0.10
+                    float sensitivityChange = RANDOM.nextFloat() * 0.20f - 0.10f; // -0.10 to +0.10
+                    MouseSensitivityChanger.decreaseMouseSensitivity(sensitivityChange);
+                    HorrorMod129.LOGGER.info("Mouse sensitivity changed by " + sensitivityChange + ". New sensitivity: "
+                            + MouseSensitivityChanger.getMouseSensitivity());
+                }
                 break;
             case SMOOTH_LIGHTING:
-                int toggleChance = RANDOM.nextInt(3); 
-                if (toggleChance == 0) {
-                    SmoothLightingChanger.enableSmoothLighting();
-                    HorrorMod129.LOGGER.info("Smooth lighting enabled");
-                } else {
-                    SmoothLightingChanger.disableSmoothLighting();
-                    HorrorMod129.LOGGER.info("Smooth lighting disabled");
+                if (ConfigManager.getConfig().enableSmoothLightingChange) {
+                    int toggleChance = RANDOM.nextInt(3);
+                    if (toggleChance == 0) {
+                        SmoothLightingChanger.enableSmoothLighting();
+                        HorrorMod129.LOGGER.info("Smooth lighting enabled");
+                    } else {
+                        SmoothLightingChanger.disableSmoothLighting();
+                        HorrorMod129.LOGGER.info("Smooth lighting disabled");
+                    }
                 }
                 break;
             default:

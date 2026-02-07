@@ -1,6 +1,7 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.config.ConfigManager;
 import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.network.ModNetworking;
 import horror.blueice129.network.SettingsTriggerPayload;
@@ -34,6 +35,8 @@ public class SettingsScheduler {
      * This runs on the server side and sends packets to clients.
      */
     public static void register() {
+        if (!ConfigManager.getConfig().enableSettingsModifications) return;
+        
         ServerTickEvents.END_SERVER_TICK.register(SettingsScheduler::onServerTick);
 
         // Register server world loading event to initialize timer if needed
@@ -93,9 +96,32 @@ public class SettingsScheduler {
             state.setTimer(ENTITY_COOLDOWN_ID, 20 * 60 * 6); // 6 minute cooldown
         }
 
-        // Choose a random setting to trigger
-        SettingsTriggerPayload.SettingType[] settings = SettingsTriggerPayload.SettingType.values();
-        SettingsTriggerPayload.SettingType settingToTrigger = settings[random.nextInt(settings.length)];
+        // Build list of enabled settings based on config
+        java.util.List<SettingsTriggerPayload.SettingType> enabledSettings = new java.util.ArrayList<>();
+        if (ConfigManager.getConfig().enableRenderDistanceChange) {
+            enabledSettings.add(SettingsTriggerPayload.SettingType.RENDER_DISTANCE);
+        }
+        if (ConfigManager.getConfig().enableBrightnessChange) {
+            enabledSettings.add(SettingsTriggerPayload.SettingType.BRIGHTNESS);
+        }
+        if (ConfigManager.getConfig().enableFpsChange) {
+            enabledSettings.add(SettingsTriggerPayload.SettingType.FPS);
+        }
+        if (ConfigManager.getConfig().enableMouseSensitivityChange) {
+            enabledSettings.add(SettingsTriggerPayload.SettingType.MOUSE_SENSITIVITY);
+        }
+        if (ConfigManager.getConfig().enableSmoothLightingChange) {
+            enabledSettings.add(SettingsTriggerPayload.SettingType.SMOOTH_LIGHTING);
+        }
+        
+        // Skip if no settings are enabled
+        if (enabledSettings.isEmpty()) {
+            state.setTimer(TIMER_ID, getRandomDelayWithAgro(state, 20 * 60 * 30, 20 * 60 * 60));
+            return;
+        }
+        
+        // Choose a random setting to trigger from enabled settings
+        SettingsTriggerPayload.SettingType settingToTrigger = enabledSettings.get(random.nextInt(enabledSettings.size()));
         
         // Send packet to the target player
         ModNetworking.sendSettingsTrigger(targetPlayer, settingToTrigger);
