@@ -350,7 +350,7 @@ public class SmallStructureEvent {
             return false;
         }
         // place torch
-        server.getOverworld().setBlockState(pos, Blocks.TORCH.getDefaultState());
+        TorchPlacer.placeTorch(server.getOverworld(), pos, RANDOM);
         return true;
     }
 
@@ -372,7 +372,7 @@ public class SmallStructureEvent {
             if (torchPos != null) {
                 // Make sure the chunk for each torch is loaded
                 if (ChunkLoader.loadChunksInRadius(server.getOverworld(), torchPos, 1)) {
-                    server.getOverworld().setBlockState(torchPos, Blocks.TORCH.getDefaultState());
+                    TorchPlacer.placeTorch(server.getOverworld(), torchPos, RANDOM);
                 }
             }
         }
