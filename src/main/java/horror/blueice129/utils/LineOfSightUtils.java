@@ -108,7 +108,7 @@ public class LineOfSightUtils {
      * @return true if the block has line of sight from the player
      */
     public static boolean isBlockRenderedOnScreen(PlayerEntity player, BlockPos blockPos, double maxDistance) {
-        // Delegate to hasLineOfSight - they check the same thing!
+        // done for backwards compatibility with existing calls, but now properly checks line of sight with transparent block handling
         return hasLineOfSight(player, blockPos, maxDistance);
     }
     

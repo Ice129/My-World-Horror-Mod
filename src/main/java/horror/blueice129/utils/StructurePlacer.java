@@ -27,12 +27,14 @@ public class StructurePlacer {
          * @param player      The player to search around.
          * @param minDistance The minimum distance from the center to consider.
          * @param maxDistance The maximum distance from the center to consider.
+         * @param treatSnowAsSurface If true, snow blocks are treated as valid surface blocks.
+         *                           If false, snow is skipped like other foliage.
          * @return A BlockPos representing a suitable surface location, or null if none
          *         found.
          */
         public static BlockPos findSurfaceLocation(ServerWorld world, BlockPos center, PlayerEntity player,
                         int minDistance,
-                        int maxDistance, boolean includeSnow) {
+                        int maxDistance, boolean treatSnowAsSurface) {
                 int attempts = 100;
                 for (int i = 0; i < attempts; i++) {
                         // Choose a random radius between minDistance and maxDistance (inclusive of min)
@@ -50,10 +52,10 @@ public class StructurePlacer {
                                 continue; // Skip if chunk couldn't be loaded
                         }
 
-                        int y = findPointSurfaceY(world, x, z, true, true, includeSnow);
-                        if (y == -1)
+                        int y = findPointSurfaceY(world, x, z, true, true, treatSnowAsSurface);
+                        if (y == -1) {
                                 continue; // No suitable surface found
-                        // Place blocks on top of the surface, not inside it
+                        }
                         BlockPos pos = new BlockPos(x, y + 1, z);
 
                         // Check if the position is not in line of sight of the player
@@ -65,8 +67,7 @@ public class StructurePlacer {
         }
 
         public static BlockPos findSurfaceLocation(ServerWorld world, BlockPos center, PlayerEntity player,
-                        int minDistance,
-                        int maxDistance) {
+                        int minDistance, int maxDistance) {
                 return findSurfaceLocation(world, center, player, minDistance, maxDistance, true);
         }
 
@@ -78,12 +79,13 @@ public class StructurePlacer {
          * @param center      The center position to search around.
          * @param minDistance The minimum distance from the center to consider.
          * @param maxDistance The maximum distance from the center to consider.
-         * @param includeSnow Whether to include snow in surface detection.
+         * @param treatSnowAsSurface If true, snow blocks are treated as valid surface blocks.
+         *                           If false, snow is skipped like other foliage.
          * @return A BlockPos representing a suitable surface location, or null if none
          *         found.
          */
         public static BlockPos findSurfaceLocation(ServerWorld world, BlockPos center,
-                        int minDistance, int maxDistance, boolean includeSnow) {
+                        int minDistance, int maxDistance, boolean treatSnowAsSurface) {
                 int attempts = 100;
                 for (int i = 0; i < attempts; i++) {
                         // Choose a random radius between minDistance and maxDistance (inclusive of min)
@@ -101,21 +103,18 @@ public class StructurePlacer {
                                 continue; // Skip if chunk couldn't be loaded
                         }
 
-                        int y = findPointSurfaceY(world, x, z, true, true, includeSnow);
+                        int y = findPointSurfaceY(world, x, z, true, true, treatSnowAsSurface);
                         if (y == -1)
                                 continue; // No suitable surface found
-                        
-                        // Place blocks on top of the surface, not inside it
+
                         return new BlockPos(x, y + 1, z);
                 }
                 return null;
         }
 
-        /**
-         * Overloaded method that calls the more specific version with default parameters.
-         */
         public static BlockPos findSurfaceLocation(ServerWorld world, BlockPos center,
                         int minDistance, int maxDistance) {
                 return findSurfaceLocation(world, center, minDistance, maxDistance, true);
         }
+
 }
