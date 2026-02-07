@@ -452,14 +452,14 @@ public class CavePreMiner {
                     
                     if (groundPos != null && groundPos.getY() <= 55 && isSuitableForTorch(world, groundPos, player, caveAirSet)) {
                         torchPos = groundPos;
-                        placed = TorchPlacer.placeTorch(world, torchPos, random);
+                        placed = TorchPlacer.placeTorch(world, torchPos, random, player);
                         break;
                     }
                     attempts++;
                 }
                 
                 if (!placed) {
-                    placed = TorchPlacer.placeTorch(world, pos, random);
+                    placed = TorchPlacer.placeTorch(world, pos, random, player);
                     torchPos = pos;
                 }
                 
@@ -800,9 +800,10 @@ public class CavePreMiner {
      * 
      * @param world      The world to mine in
      * @param starterPos The starting position to mine from
+     * @param player     The player to check line of sight against
      * @return The length of the stairs mined
      */
-    public static int mineStairs(World world, BlockPos starterPos) {
+    public static int mineStairs(World world, BlockPos starterPos, PlayerEntity player) {
         int stairLength = 0;
         BlockPos currentPos = starterPos;
         java.util.List<BlockPos> stairBlocks = new java.util.ArrayList<>();
@@ -923,7 +924,7 @@ public class CavePreMiner {
                 if (height == 1 && torchDistance == 8) {
                     BlockPos torchPos = stairPos.up(1);
                     if (torchPos.getY() < world.getTopY()) {
-                        TorchPlacer.placeTorch(world, torchPos, random);
+                        TorchPlacer.placeTorch(world, torchPos, random, player);
                     }
                     torchDistance = 0;
                 } else {
@@ -938,7 +939,7 @@ public class CavePreMiner {
 
         // Add torches around entrance if we found one
         if (entrancePos != null) {
-            placeEntranceTorches(world, entrancePos);
+            placeEntranceTorches(world, entrancePos, player);
         }
 
         return stairLength;
@@ -949,8 +950,9 @@ public class CavePreMiner {
      * 
      * @param world       The world to place torches in
      * @param entrancePos The position of the entrance
+     * @param player      The player to check line of sight against
      */
-    private static void placeEntranceTorches(World world, BlockPos entrancePos) {
+    private static void placeEntranceTorches(World world, BlockPos entrancePos, PlayerEntity player) {
         ServerWorld serverWorld = (ServerWorld) world;
 
         // number of torches (5-8)
@@ -991,7 +993,7 @@ public class CavePreMiner {
                         targetPos = surfacePos.down();
                     }
                     
-                    if (TorchPlacer.placeTorch(world, targetPos, random)) {
+                    if (TorchPlacer.placeTorch(world, targetPos, random, player)) {
                         placedPositions.add(targetPos);
                         torchesPlaced++;
                     }
@@ -1039,7 +1041,7 @@ public class CavePreMiner {
         
         int torchesPlaced = populateTorches(world, caveAirBlocks, player);
         int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
-        int stairLength = mineStairs(world, starterPos);
+        int stairLength = mineStairs(world, starterPos, player);
         
         // Store this cave location to prevent future caves from being too close
         state.addPositionToList("preminedCaveLocations", starterPos);
