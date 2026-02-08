@@ -1,11 +1,11 @@
 # ENGRAM
 ##### (Previously My World.jar)
-## A Vanilla-Style Psychological Horror Mod for Minecraft
-#### *Version 0.4.0-beta - Early Access*
+## A Vanilla-Style Slow-Burn Psychological Horror Mod
+#### *Version 0.4.1-beta*
 
-Horror lives in the familiar; The breaking of dirt, torches leading the way home, a door left open. You're not the first player this world has seen.
+Horror lives in the familiar, and there is no game more familiar than Minecraft. Playing off the your own paranoia, ENGRAM is designed to make you question even the most inocous aspects of your world. 
 
-ENGRAM is a horror mod designed to seamlessly integrate into Minecraft's vanilla experience, blurring the line between what's part of the game and what's... watching you. It's meant to be installed and forgotten until it's too obvious to ignore.
+This mod takes its time to play with you, letting you stew in your own fears all while somthing hides just out of sight, just as afraid as you are. There is a reason to all events, all building with one cohesive background narrative.
 
 With multiplayer support recently added, this mod will leave you unable to tell where it ends, and your game begins. There are no flashy effects, no overt modded textures. Just subtle, escalating disturbances that make you question whether you did that, or someone else did.
 
@@ -25,10 +25,13 @@ Join the [Discord](https://discord.gg/hgCNtXbqkC) to report bugs, give feedback,
 <p>- <strong>*Footsteps behind you</strong> — Heard in caves, forests, even your base</p>
 <p>- <strong>A fresh start</strong> — Is your world really as new as you think?</p>
 <p>- <strong>Stolen items</strong> — Missing tools, rearranged chests, doors left ajar</p>
-<p>- <strong>*Escalating aggression</strong> — The longer you survive, the bolder it becomes</p>
+<p>- <strong>Escalating aggression</strong> — The longer you survive, the bolder it becomes</p>
 <p>- <strong>Forgotten deaths</strong> — You don't remember dying here… so who did?</p>
 <p>- <strong>*Another player?</strong> — It feels like someone else has been building, mining, surviving…</p>
 <p>- <strong>Is it your world?</strong> — What if you're the one who doesn't belong here?</p>
+<p>- <strong>Multiplayer support</strong> — Experience the horror with friends</p>
+<p>- <strong>Settings Changed</strong> — Are you sure you turned that off? It's back on now.</p>
+<p>- <strong>Pillars</strong> — Something marked this place, it might come back.</p>
 
 <p><em>* indicates features planned for future updates</em></p>
 
@@ -48,4 +51,4 @@ Mod Icon made by **[potatomaninyourtrashcan on Discord](https://discord.com/user
 
 ---
 
-*"I wasn't told about you"*
+*"Is it finally my time to host?"*
