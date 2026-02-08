@@ -27,7 +27,7 @@ Join the [Discord](https://discord.gg/hgCNtXbqkC) to report bugs, give feedback,
 <p>- <strong>Stolen items</strong> — Missing tools, rearranged chests, doors left ajar</p>
 <p>- <strong>Escalating aggression</strong> — The longer you survive, the bolder it becomes</p>
 <p>- <strong>Forgotten deaths</strong> — You don't remember dying here… so who did?</p>
-<p>- <strong>*Another player?</strong> — It feels like someone else has been building, mining, surviving…</p>
+<p>- <strong>Another player?</strong> — It feels like someone else has been building, mining, surviving…</p>
 <p>- <strong>Is it your world?</strong> — What if you're the one who doesn't belong here?</p>
 <p>- <strong>Multiplayer support</strong> — Experience the horror with friends</p>
 <p>- <strong>Settings Changed</strong> — Are you sure you turned that off? It's back on now.</p>
