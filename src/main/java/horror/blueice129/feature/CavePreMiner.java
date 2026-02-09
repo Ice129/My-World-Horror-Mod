@@ -844,6 +844,10 @@ public class CavePreMiner {
                 break;
             }
             
+            if (surfaceY == -1 && currentPos.getY() >= 60) {
+                return stairLength;
+            }
+            
             stairBlocks.add(currentPos);
             
             // Check if we should make a turn
