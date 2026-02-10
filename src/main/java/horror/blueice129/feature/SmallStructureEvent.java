@@ -28,17 +28,14 @@ public class SmallStructureEvent {
     public static String[][] STRUCTURE_LIST = { // not final, agro meter will change weights
             { "crafting_table", "10" },
             { "furnace", "5" },
-            { "cobblestone_pillar", "3" },
+            { "cobblestone_pillar", "5" },
             { "single_torch", "10" },
-            { "torched_area", "15" },
-            { "tree_mined", "17" },
+            { "torched_area", "7" },
+            { "tree_mined", "20" },
             { "deforestation", "5" },
-            { "flower_patch", "3" },
-            // { "watchtower", "0" },
-            // { "starter_base", "1" },
-            // { "pitfall_trap", "0" },
+            { "flower_patch", "13" },
             { "chunk_deletion", "0" },
-            { "burning_forest", "0" }
+            { "burning_forest", "2" }
     };
 
     /**
@@ -258,10 +255,13 @@ public class SmallStructureEvent {
         if (pos.getY() < 46) {
             height += 30; // If the pillar is in a cave, make it taller to reach the surface
         }
+
+        Block[] pillarBlocks = { Blocks.COBBLESTONE, Blocks.DIRT, Blocks.OAK_PLANKS, Blocks.BIRCH_PLANKS};
+        Block pillarBlock = pillarBlocks[RANDOM.nextInt(pillarBlocks.length)];
         for (int i = 0; i < height; i++) {
             BlockPos pillarPos = pos.up(i);
             if (!LineOfSightUtils.hasLineOfSight(player, pillarPos, 200)) {
-                server.getOverworld().setBlockState(pillarPos, Blocks.COBBLESTONE.getDefaultState());
+                server.getOverworld().setBlockState(pillarPos, pillarBlock.getDefaultState());
             }
         }
         // server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
