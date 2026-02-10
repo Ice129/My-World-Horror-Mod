@@ -455,9 +455,9 @@ public class SmallStructureEvent {
         if (pos == null) {
             return false;
         }
-        if (!LineOfSightUtils.hasLineOfSight(player, pos.up(10), 200)) {
-            server.getOverworld().setBlockState(pos.up(10), Blocks.DIAMOND_BLOCK.getDefaultState());
-        }
+        // if (!LineOfSightUtils.hasLineOfSight(player, pos.up(10), 200)) {
+        //     server.getOverworld().setBlockState(pos.up(10), Blocks.DIAMOND_BLOCK.getDefaultState());
+        // }
 
         int flowerCount = 5 + RANDOM.nextInt(20);
         for (int i = 0; i < flowerCount; i++) {
@@ -475,9 +475,9 @@ public class SmallStructureEvent {
                     if (!LineOfSightUtils.hasLineOfSight(player, flowerPos, 200)) {
                         server.getOverworld().setBlockState(flowerPos, Blocks.LILY_OF_THE_VALLEY.getDefaultState());
                     }
-                    if (!LineOfSightUtils.hasLineOfSight(player, flowerPos.up(10), 200)) {
-                        server.getOverworld().setBlockState(flowerPos.up(10), Blocks.GOLD_BLOCK.getDefaultState());
-                    }
+                    // if (!LineOfSightUtils.hasLineOfSight(player, flowerPos.up(10), 200)) {
+                    //     server.getOverworld().setBlockState(flowerPos.up(10), Blocks.GOLD_BLOCK.getDefaultState());
+                    // }
                 }
             }
         }
