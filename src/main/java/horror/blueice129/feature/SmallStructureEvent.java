@@ -558,7 +558,13 @@ public class SmallStructureEvent {
                         block instanceof net.minecraft.block.StairsBlock ||
                         block instanceof net.minecraft.block.DoorBlock ||
                         block instanceof net.minecraft.block.GlassBlock ||
-                        block instanceof net.minecraft.block.FenceBlock) {
+                        block instanceof net.minecraft.block.FenceBlock ||
+                        block instanceof net.minecraft.block.PaneBlock ||
+                        block instanceof net.minecraft.block.AnvilBlock ||
+                        block instanceof net.minecraft.block.FurnaceBlock ||
+                        block instanceof net.minecraft.block.LadderBlock ||
+                        block instanceof net.minecraft.block.HopperBlock ||
+                        block instanceof net.minecraft.block.CraftingTableBlock) {
                         return true;
                     }
                 }
