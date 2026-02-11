@@ -844,6 +844,10 @@ public class CavePreMiner {
                 break;
             }
             
+            if (surfaceY == -1 && currentPos.getY() >= 60) {
+                return stairLength;
+            }
+            
             stairBlocks.add(currentPos);
             
             // Check if we should make a turn
@@ -1021,7 +1025,7 @@ public class CavePreMiner {
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(serverWorld.getServer());
         java.util.List<BlockPos> existingCaves = state.getPositionList("preminedCaveLocations");
         
-        final int MIN_CAVE_DISTANCE_SQUARED = 60 * 60;
+        final int MIN_CAVE_DISTANCE_SQUARED = 100 * 100;
         for (BlockPos existingCave : existingCaves) {
             if (starterPos.getSquaredDistance(existingCave) < MIN_CAVE_DISTANCE_SQUARED) {
                 return false;
