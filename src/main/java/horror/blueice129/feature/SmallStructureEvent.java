@@ -6,7 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Block;
-import net.minecraft.block.BedBlock;
+// import net.minecraft.block.BedBlock;
 import net.minecraft.item.Items;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.util.math.BlockPos;
@@ -28,17 +28,14 @@ public class SmallStructureEvent {
     public static String[][] STRUCTURE_LIST = { // not final, agro meter will change weights
             { "crafting_table", "10" },
             { "furnace", "5" },
-            { "cobblestone_pillar", "3" },
+            { "cobblestone_pillar", "5" },
             { "single_torch", "10" },
-            { "torched_area", "15" },
-            { "tree_mined", "17" },
+            { "torched_area", "7" },
+            { "tree_mined", "20" },
             { "deforestation", "5" },
-            { "flower_patch", "3" },
-            // { "watchtower", "0" },
-            // { "starter_base", "1" },
-            // { "pitfall_trap", "0" },
+            { "flower_patch", "13" },
             { "chunk_deletion", "0" },
-            { "burning_forest", "0" }
+            { "burning_forest", "2" }
     };
 
     /**
@@ -258,10 +255,13 @@ public class SmallStructureEvent {
         if (pos.getY() < 46) {
             height += 30; // If the pillar is in a cave, make it taller to reach the surface
         }
+
+        Block[] pillarBlocks = { Blocks.COBBLESTONE, Blocks.DIRT, Blocks.OAK_PLANKS, Blocks.BIRCH_PLANKS};
+        Block pillarBlock = pillarBlocks[RANDOM.nextInt(pillarBlocks.length)];
         for (int i = 0; i < height; i++) {
             BlockPos pillarPos = pos.up(i);
             if (!LineOfSightUtils.hasLineOfSight(player, pillarPos, 200)) {
-                server.getOverworld().setBlockState(pillarPos, Blocks.COBBLESTONE.getDefaultState());
+                server.getOverworld().setBlockState(pillarPos, pillarBlock.getDefaultState());
             }
         }
         // server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
@@ -455,9 +455,9 @@ public class SmallStructureEvent {
         if (pos == null) {
             return false;
         }
-        if (!LineOfSightUtils.hasLineOfSight(player, pos.up(10), 200)) {
-            server.getOverworld().setBlockState(pos.up(10), Blocks.DIAMOND_BLOCK.getDefaultState());
-        }
+        // if (!LineOfSightUtils.hasLineOfSight(player, pos.up(10), 200)) {
+        //     server.getOverworld().setBlockState(pos.up(10), Blocks.DIAMOND_BLOCK.getDefaultState());
+        // }
 
         int flowerCount = 5 + RANDOM.nextInt(20);
         for (int i = 0; i < flowerCount; i++) {
@@ -475,9 +475,9 @@ public class SmallStructureEvent {
                     if (!LineOfSightUtils.hasLineOfSight(player, flowerPos, 200)) {
                         server.getOverworld().setBlockState(flowerPos, Blocks.LILY_OF_THE_VALLEY.getDefaultState());
                     }
-                    if (!LineOfSightUtils.hasLineOfSight(player, flowerPos.up(10), 200)) {
-                        server.getOverworld().setBlockState(flowerPos.up(10), Blocks.GOLD_BLOCK.getDefaultState());
-                    }
+                    // if (!LineOfSightUtils.hasLineOfSight(player, flowerPos.up(10), 200)) {
+                    //     server.getOverworld().setBlockState(flowerPos.up(10), Blocks.GOLD_BLOCK.getDefaultState());
+                    // }
                 }
             }
         }
@@ -493,87 +493,100 @@ public class SmallStructureEvent {
     }
 
     private static boolean chunkDeletionEvent(MinecraftServer server, ServerPlayerEntity player) {
-        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100,
-                200);
-        if (pos == null) {
+        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100, 200);
+        if (pos == null || LineOfSightUtils.hasLineOfSight(player, pos, 200)) {
             return false;
         }
-        if (LineOfSightUtils.hasLineOfSight(player, pos, 200)) {
-            return false;
-        }
-        // get chunk bounds
+
         int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;
+        
+        if (isChunkNearSpawn(player, chunkX, chunkZ, 3)) {
+            return false;
+        }
+
         int startX = chunkX << 4;
         int startZ = chunkZ << 4;
-        int endX = startX + 15;
-        int endZ = startZ + 15;
         int worldBottomY = server.getOverworld().getBottomY();
         int worldTopY = server.getOverworld().getHeight();
 
-        // Make sure the chunk is loaded before deleting blocks
-        BlockPos chunkPos = new BlockPos(startX, worldBottomY + (worldTopY - worldBottomY) / 2, startZ);
-        if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), chunkPos, 1)) {
-            return false; // Chunk couldn't be loaded
+        BlockPos chunkCenter = new BlockPos(startX, worldBottomY + (worldTopY - worldBottomY) / 2, startZ);
+        if (!ChunkLoader.loadChunksInRadius(server.getOverworld(), chunkCenter, 1)) {
+            return false;
         }
 
-        boolean hasStorageOrSpawnPoint = false;
-        // Check for chests, beds, or spawn points in the chunk
-        for (int x = startX; x <= endX; x++) {
-            for (int z = startZ; z <= endZ; z++) {
-                for (int y = worldBottomY; y < worldTopY; y++) {
-                    BlockPos blockPos = new BlockPos(x, y, z);
-                    // Check for beds or storage blocks
-                    if (server.getOverworld().getBlockState(blockPos)
-                            .getBlock() instanceof net.minecraft.block.ChestBlock
-                            || server.getOverworld().getBlockState(blockPos)
-                                    .getBlock() instanceof net.minecraft.block.TrappedChestBlock
-                            || server.getOverworld().getBlockState(blockPos)
-                                    .getBlock() instanceof net.minecraft.block.BarrelBlock
-                            || server.getOverworld().getBlockState(blockPos).getBlock() instanceof BedBlock) {
-                        hasStorageOrSpawnPoint = true;
-                        break;
-                    }
-                    // Check if this is the player's spawn point
-                    if (blockPos.equals(player.getSpawnPointPosition())) {
-                        hasStorageOrSpawnPoint = true;
-                        break;
-                    }
-                }
-                if (hasStorageOrSpawnPoint) {
-                    break;
-                }
-            }
-            if (hasStorageOrSpawnPoint) {
-                break;
-            }
+        if (hasProtectedBlocks(server, player, startX, startZ, worldBottomY, worldTopY)) {
+            return false;
         }
 
-        if (hasStorageOrSpawnPoint) {
-            return false; // Abort deletion if any storage blocks or spawn points are found
-        }
-
-        // return false if chunk is within 3 chunks of players spawn point
-        BlockPos spawnPos = player.getSpawnPointPosition();
-        if (spawnPos != null) {
-            int spawnChunkX = spawnPos.getX() >> 4;
-            int spawnChunkZ = spawnPos.getZ() >> 4;
-            if (chunkX >= spawnChunkX - 3 && chunkX <= spawnChunkX + 3 &&
-                    chunkZ >= spawnChunkZ - 3 && chunkZ <= spawnChunkZ + 3) {
-                return false;
-            }
-        }
-
-        // delete all blocks in chunk
-        for (int x = startX; x <= endX; x++) {
-            for (int z = startZ; z <= endZ; z++) {
-                for (int y = worldBottomY; y < worldTopY; y++) {
-                    BlockPos blockPos = new BlockPos(x, y, z);
-                    server.getOverworld().setBlockState(blockPos, Blocks.AIR.getDefaultState());
-                }
-            }
-        }
+        deleteChunkBlocks(server, startX, startZ, worldBottomY, worldTopY);
         return true;
+    }
+
+    private static boolean isChunkNearSpawn(ServerPlayerEntity player, int chunkX, int chunkZ, int chunkRadius) {
+        BlockPos spawnPos = player.getSpawnPointPosition();
+        if (spawnPos == null) {
+            return false;
+        }
+        int spawnChunkX = spawnPos.getX() >> 4;
+        int spawnChunkZ = spawnPos.getZ() >> 4;
+        return Math.abs(chunkX - spawnChunkX) <= chunkRadius && Math.abs(chunkZ - spawnChunkZ) <= chunkRadius;
+    }
+
+    private static boolean hasProtectedBlocks(MinecraftServer server, ServerPlayerEntity player, 
+                                              int startX, int startZ, int worldBottomY, int worldTopY) {
+        int endX = startX + 15;
+        int endZ = startZ + 15;
+        BlockPos spawnPos = player.getSpawnPointPosition();
+        var world = server.getOverworld();
+
+        for (int x = startX; x <= endX; x++) {
+            for (int z = startZ; z <= endZ; z++) {
+                for (int y = worldBottomY; y < worldTopY; y++) {
+                    BlockPos blockPos = new BlockPos(x, y, z);
+                    
+                    if (spawnPos != null && blockPos.equals(spawnPos)) {
+                        return true;
+                    }
+                    
+                    Block block = world.getBlockState(blockPos).getBlock();
+                    if (block instanceof net.minecraft.block.ChestBlock ||
+                        block instanceof net.minecraft.block.TrappedChestBlock ||
+                        block instanceof net.minecraft.block.BarrelBlock ||
+                        block instanceof net.minecraft.block.BedBlock ||
+                        block instanceof net.minecraft.block.EnderChestBlock ||
+                        block instanceof net.minecraft.block.StairsBlock ||
+                        block instanceof net.minecraft.block.DoorBlock ||
+                        block instanceof net.minecraft.block.GlassBlock ||
+                        block instanceof net.minecraft.block.FenceBlock ||
+                        block instanceof net.minecraft.block.PaneBlock ||
+                        block instanceof net.minecraft.block.AnvilBlock ||
+                        block instanceof net.minecraft.block.FurnaceBlock ||
+                        block instanceof net.minecraft.block.LadderBlock ||
+                        block instanceof net.minecraft.block.HopperBlock ||
+                        block instanceof net.minecraft.block.CraftingTableBlock) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void deleteChunkBlocks(MinecraftServer server, int startX, int startZ, 
+                                          int worldBottomY, int worldTopY) {
+        int endX = startX + 15;
+        int endZ = startZ + 15;
+        var world = server.getOverworld();
+        var airState = Blocks.AIR.getDefaultState();
+
+        for (int x = startX; x <= endX; x++) {
+            for (int z = startZ; z <= endZ; z++) {
+                for (int y = worldBottomY; y < worldTopY; y++) {
+                    world.setBlockState(new BlockPos(x, y, z), airState);
+                }
+            }
+        }
     }
 
     private static boolean burningForestEvent(MinecraftServer server, ServerPlayerEntity player) {
