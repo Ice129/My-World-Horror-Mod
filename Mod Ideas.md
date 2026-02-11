@@ -2,7 +2,7 @@
 ### commented out ideas are implmented
 
 ## Entity Behavior Ideas
-- if Blueice129 sees the player, it has a chance to get scared, look like their mouse shook, go still nd then log out
+<!-- - if Blueice129 sees the player, it has a chance to get scared, look like their mouse shook, go still nd then log out -->
 
 - register and remember if Blueice129 is in the world at the moment or not (for entity sightings)
 
@@ -103,7 +103,7 @@ TODO:
 
 - fov decreases super slowly over 30 seconds
 
-- increasing the players graphics settings to try and lag the player out (able to disable this in config as i can see people not wanting this if recording or with bad pcs)
+<!-- - increasing the players graphics settings to try and lag the player out (able to disable this in config as i can see people not wanting this if recording or with bad pcs) -->
 
 <!-- - capping fps to 30 or lower when entity is nearby -->
 
@@ -121,15 +121,6 @@ TODO:
 
 - mobs swap sounds eg: chicken makes cow sound
 
-- world is set not to day 0 when spawning in, but whatever (3 (days in an hour)) * 24 * (days since 20th july 2024) * (random percent between 0.5 and 0.8(represents nights slept though))
+<!-- - world is set not to day 0 when spawning in, but whatever (3 (days in an hour)) * 24 * (days since 20th july 2024) * (random percent between 0.5 and 0.8(represents nights slept though)) -->
 
 - entity takes screenshot of player when stalking them and the screenshot shows up in the screenshots folder, names somthing spooky and lore revealing
-
-
-TODO:
-## meta ideas
-- add reminder to follow mod for when updates come out - modrinth
-
-- take screenshots for the mod showcase/gallery
-
-- brainstorm new mod names (engram, imprint, backup-1)
