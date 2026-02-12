@@ -19,8 +19,8 @@ public class PlayerDeathItemsScheduler {
     private static final String TIMER_ID = "player_death_items_timer";
     private static final Random RANDOM = Random.create();
 
-    private static final int MIN_DELAY = 20 * 60 * 10; // 10 minutes
-    private static final int MAX_DELAY = 20 * 60 * 30; // 30 minutes
+    private static final int MIN_DELAY = 20 * 60 * 20; // 20 minutes
+    private static final int MAX_DELAY = 20 * 60 * 40; // 40 minutes
 
     /**
      * Gets a random delay for the next event.

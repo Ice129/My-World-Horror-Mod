@@ -142,12 +142,12 @@
             "nameChance": 0.3
         },
         "starterGear": {
-            "minecraft:wooden": 3,
-            "minecraft:stone": 2
+            "minecraft:leather": 5,
+            "minecraft:chainmail": 1
         },
         "gettingGear": {
-            "minecraft:wooden": 1,
-            "minecraft:stone": 3,
+            "minecraft:leather": 4,
+            "minecraft:chainmail": 1,
             "minecraft:iron": 2,
             "minecraft:golden": 1
         },
@@ -263,7 +263,7 @@
                 "Axe",
                 "Deaths Divider",
                 "Harbringer of Logs",
-                "bring back the my original self"
+                "Backup-1"
             ],
             "nameChance": 0.3
         },
@@ -334,13 +334,15 @@
                 "minecraft:cooked_potato"
             ],
             "minAmount": 5,
-            "maxAmount": 50
+            "maxAmount": 25
         }
     },
     "randomItems": {
         "64Stacking": [
             "minecraft:arrow",
             "minecraft:oak_planks",
+            "minecraft:birch_planks",
+            "minecraft:spruce_planks",
             "minecraft:cobblestone",
             "minecraft:dirt",
             "minecraft:torch",
@@ -349,29 +351,23 @@
             "minecraft:gravel",
             "minecraft:coal",
             "minecraft:iron_nugget",
-            "minecraft:birch_planks",
             "minecraft:stick",
             "minecraft:lily_of_the_valley",
             "minecraft:lily_of_the_valley",
-            "minecraft:oak_sapling",
+            "minecraft:lily_of_the_valley",
             "minecraft:bone",
             "minecraft:string",
             "minecraft:rotten_flesh",
             "minecraft:gunpowder",
             "minecraft:wheat_seeds",
-            "minecraft:beef",
-            "minecraft:porkchop",
-            "minecraft:mutton",
             "minecraft:arrow",
             "minecraft:raw_copper",
-            "minecraft:raw_iron",
             "minecraft:cobbled_deepslate",
             "minecraft:moss_block"
         ],
         "16Stacking": [
             "minecraft:ender_pearl",
             "minecraft:bread",
-            "minecraft:diamond",
             "minecraft:emerald",
             "minecraft:tuff",
             "minecraft:flint",
@@ -392,8 +388,13 @@
             "minecraft:black_wool",
             "minecraft:redstone_dust",
             "minecraft:bone_meal",
-            "minecraft:mossy_cobblestone"
-
+            "minecraft:mossy_cobblestone",
+            "minecraft:mutton",
+            "minecraft:oak_sapling",
+            "minecraft:beef",
+            "minecraft:raw_iron",
+            "minecraft:porkchop"
+            
         ],
         "1Stacking": [
             "minecraft:shield",
@@ -410,9 +411,10 @@
             "minecraft:book",
             "minecraft:red_bed",
             "minecraft:yellow_bed",
+            "minecraft:diamond",
             "minecraft:oak_door"
         ],
-        "minNumberItems": 10,
+        "minNumberItems": 5,
         "maxNumberItems": 27
     }
 }
