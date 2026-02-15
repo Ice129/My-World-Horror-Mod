@@ -12,6 +12,7 @@ import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
 import horror.blueice129.feature.CavePreMiner;
+import horror.blueice129.feature.EntityHouse;
 import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.MusicVolumeLocker;
 import horror.blueice129.feature.BrightnessChanger;
@@ -214,6 +215,8 @@ public class DebugCommands {
                                     .executes(context -> premineCave(
                                         context.getSource(),
                                         IntegerArgumentType.getInteger(context, "attempts"))))))
+                        .then(literal("flatness")
+                            .executes(context -> checkFlatness(context.getSource())))
                         .then(literal("visualize")
                             .then(literal("fov")
                                 .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
@@ -915,6 +918,31 @@ public class DebugCommands {
                 return 0;
             }
         }
+    }
+
+    private static int checkFlatness(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+
+        ServerWorld world = (ServerWorld) player.getWorld();
+        int x = player.getBlockX();
+        int z = player.getBlockZ();
+
+        int surfaceY = SurfaceFinder.findPointSurfaceY(world, x, z, true, false, true);
+        
+        if (surfaceY == -1) {
+            source.sendError(Text.literal("Failed to find surface at your position"));
+            return 0;
+        }
+
+        BlockPos surfacePos = new BlockPos(x, surfaceY, z);
+        int flatnessScore = EntityHouse.debugForEvaluateFlatness(world, surfacePos);
+
+        source.sendFeedback(() -> Text.literal("Flatness score at surface: " + flatnessScore + " (lower is flatter)"), false);
+        return Command.SINGLE_SUCCESS;
     }
     
     /**

@@ -5,6 +5,7 @@ import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.Direction;
 
@@ -106,6 +107,10 @@ public class EntityHouse {
                     flatnessScore += 1; // block above means a raise, which is bad for flatness
                 }
             }
+        }
+
+        for (BlockPos visitedPos : visited) {
+            world.setBlockState(visitedPos, Blocks.RED_WOOL.getDefaultState());
         }
 
         return flatnessScore;
