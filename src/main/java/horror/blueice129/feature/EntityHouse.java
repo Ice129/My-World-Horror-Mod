@@ -1,6 +1,9 @@
 package horror.blueice129.feature;
 
 import horror.blueice129.utils.StructurePlacer;
+import horror.blueice129.utils.SurfaceFinder;
+import horror.blueice129.utils.BlockTypes;
+
 // import net.minecraft.block.Block;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
@@ -69,50 +72,27 @@ public class EntityHouse {
 
     private static int evaluateFlatness(ServerWorld world, BlockPos pos) {
         int maxSquaredDistance = 15 * 15; // 15 block radius
-        int flatnessScore = 0; // the closer to 0, the flatter it is. 
+        int flatnessScore = 0; // the closer to 0, the flatter it is.
         // boolean isCurrentAir = true; // used with helping with raises
 
-        java.util.Set<BlockPos> visited = new java.util.HashSet<>();
-        java.util.Queue<BlockPos> queue = new java.util.LinkedList<>();
-        Direction[] AIR_DIRECTIONS = { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN};
-
-        // using the same sort of flood fill method from cave miner
-        queue.add(pos);
-        visited.add(pos);
-        while (!queue.isEmpty()) {
-            BlockPos currentPos = queue.poll();
-            if (currentPos.getSquaredDistance(pos) > maxSquaredDistance) {
-                continue; // skip positions outside the radius
-            }
-
-            boolean isAir = world.isAir(currentPos);
-            if (isAir) {
-                for (Direction dir : AIR_DIRECTIONS) {
-
-                    BlockPos neighborPos = currentPos.offset(dir);
-                    
-                    if (!visited.contains(neighborPos)) {
-                        visited.add(neighborPos);
-                        queue.add(neighborPos);
-                        if (world.isAir(neighborPos) && dir == Direction.DOWN) {
-                            flatnessScore += 1; // air below means a hole, which is bad for flatness
-                        }
+        // using findSerfaceAt function to get the surface height at each point
+        for (int x = -15; x <= 15; x++) {
+            for (int z = -15; z <= 15; z++) {
+                // BlockPos checkPos = pos.add(x, 0, z);
+                int surfaceY = SurfaceFinder.findPointSurfaceY(world, x, z, true, true, false);
+                if (surfaceY == -1) {
+                    flatnessScore += 3;
+                } else {
+                    BlockPos checkPos = new BlockPos(x, surfaceY, z);
+                    // while loop to get true surface, in case of trees, foliage, or air
+                    while (BlockTypes.isLogBlock(world.getBlockState(checkPos.down()).getBlock())
+                            || BlockTypes.isFoliage(world.getBlockState(checkPos.down()).getBlock(), false)
+                            || world.getBlockState(checkPos.down()).isAir()) {
+                        checkPos = checkPos.down();
                     }
                 }
-            } else {
-                BlockPos neighborPos = currentPos.offset(Direction.UP);
-                if (!visited.contains(neighborPos)) {
-                    visited.add(neighborPos);
-                    queue.add(neighborPos);
-                    flatnessScore += 1; // block above means a raise, which is bad for flatness
-                }
             }
         }
-
-        for (BlockPos visitedPos : visited) {
-            world.setBlockState(visitedPos, Blocks.RED_WOOL.getDefaultState());
-        }
-
         return flatnessScore;
     }
 
