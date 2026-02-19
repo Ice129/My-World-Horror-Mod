@@ -71,24 +71,30 @@ public class EntityHouse {
     }
 
     private static int evaluateFlatness(ServerWorld world, BlockPos pos) {
-        int maxSquaredDistance = 15 * 15; // 15 block radius
+        int checkDistance = 15; // how far out to check in each direction
         int flatnessScore = 0; // the closer to 0, the flatter it is.
-        // boolean isCurrentAir = true; // used with helping with raises
 
         // using findSerfaceAt function to get the surface height at each point
-        for (int x = -15; x <= 15; x++) {
-            for (int z = -15; z <= 15; z++) {
-                // BlockPos checkPos = pos.add(x, 0, z);
-                int surfaceY = SurfaceFinder.findPointSurfaceY(world, x, z, true, true, false);
+        for (int x = -checkDistance; x <= checkDistance; x++) {
+            for (int z = -checkDistance; z <= checkDistance; z++) {
+                int worldX = pos.getX() + x;
+                int worldZ = pos.getZ() + z;
+                int surfaceY = SurfaceFinder.findPointSurfaceY(world, worldX, worldZ, true, true, false);
                 if (surfaceY == -1) {
                     flatnessScore += 3;
                 } else {
-                    BlockPos checkPos = new BlockPos(x, surfaceY, z);
+                    BlockPos checkPos = new BlockPos(worldX, surfaceY, worldZ);
                     // while loop to get true surface, in case of trees, foliage, or air
                     while (BlockTypes.isLogBlock(world.getBlockState(checkPos.down()).getBlock())
                             || BlockTypes.isFoliage(world.getBlockState(checkPos.down()).getBlock(), false)
                             || world.getBlockState(checkPos.down()).isAir()) {
                         checkPos = checkPos.down();
+                    }
+                    if (checkPos.getY() == pos.getY()) {
+                        flatnessScore += 0;
+                    } else {
+                        int change = Math.abs(checkPos.getY() - pos.getY());
+                        flatnessScore += change;
                     }
                 }
             }
