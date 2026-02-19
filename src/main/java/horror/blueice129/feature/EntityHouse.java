@@ -9,7 +9,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.Direction;
 
 public class EntityHouse {
@@ -94,6 +96,7 @@ public class EntityHouse {
                     flatnessScore += 3;
                 } else {
                     BlockPos checkPos = new BlockPos(worldX, surfaceY, worldZ);
+
                     // while loop to get true surface, in case of trees, foliage, or air
                     while (BlockTypes.isLogBlock(world.getBlockState(checkPos.down()).getBlock())
                             || BlockTypes.isFoliage(world.getBlockState(checkPos.down()).getBlock(), false)
@@ -113,34 +116,54 @@ public class EntityHouse {
     }
 
     public static FlatnessResult getBestLocalFlatness(ServerWorld world, BlockPos firstPos) {
-        int bestFlatness = evaluateFlatness(world, firstPos);
-        BlockPos bestPos = firstPos;
-        int checkDistance = 15;
-        int maxIterations = 10;
-        Direction[] directions = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
+        int gridStride = 15;
+        int gridPointsPerAxis = 15;
+        int checkDistance = (gridPointsPerAxis - 1) * gridStride / 2;
+        int gridSize = gridPointsPerAxis * gridPointsPerAxis;
+        BlockPos[] toCheckGrid = new BlockPos[gridSize];
+        int[] flatnessScores = new int[gridSize];
         
-        for (int i = 0; i < maxIterations; i++) {
-            boolean foundBetter = false;
-            BlockPos iterationBestPos = bestPos;
-            int iterationBestFlatness = bestFlatness;
-            
-            for (Direction dir : directions) {
-                BlockPos checkPos = bestPos.offset(dir, checkDistance);
-                int flatness = evaluateFlatness(world, checkPos);
-                
-                if (flatness < iterationBestFlatness) {
-                    iterationBestFlatness = flatness;
-                    iterationBestPos = checkPos;
-                    foundBetter = true;
+        int index = 0;
+        for (int x = -checkDistance; x <= checkDistance; x += gridStride) {
+            for (int z = -checkDistance; z <= checkDistance; z += gridStride) {
+                int worldX = firstPos.getX() + x;
+                int worldZ = firstPos.getZ() + z;
+                int surfaceY = SurfaceFinder.findPointSurfaceY(world, worldX, worldZ, true, true, false);
+                if (surfaceY == -1) {
+                    surfaceY = firstPos.getY();
                 }
+                toCheckGrid[index++] = new BlockPos(worldX, surfaceY, worldZ);
             }
-            
-            if (!foundBetter) break;
-            
-            bestFlatness = iterationBestFlatness;
-            bestPos = iterationBestPos;
         }
         
+        int bestFlatness = Integer.MAX_VALUE;
+        BlockPos bestPos = firstPos;
+        
+        for (int i = 0; i < toCheckGrid.length; i++) {
+            int flatness = evaluateFlatness(world, toCheckGrid[i]);
+            flatnessScores[i] = flatness;
+            if (flatness < bestFlatness) {
+                bestFlatness = flatness;
+                bestPos = toCheckGrid[i];
+            }
+        }
+        
+        for (int i = 0; i < toCheckGrid.length; i++) {
+            BlockPos checkPos = toCheckGrid[i];
+            int flatness = flatnessScores[i];
+            
+            world.setBlockState(checkPos, Blocks.DIAMOND_BLOCK.getDefaultState());
+            
+            BlockPos signPos = new BlockPos(checkPos.getX(), 100, checkPos.getZ());
+            world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState());
+            if (world.getBlockEntity(signPos) instanceof SignBlockEntity sign) {
+                sign.changeText(signText -> {
+                    return signText.withMessage(0, Text.literal("Flatness:"))
+                            .withMessage(1, Text.literal(String.valueOf(flatness)));
+                }, true);
+                sign.markDirty();
+            }
+        }
         return new FlatnessResult(bestPos, bestFlatness);
     }
 
