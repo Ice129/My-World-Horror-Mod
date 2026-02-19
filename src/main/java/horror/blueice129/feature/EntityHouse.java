@@ -14,6 +14,16 @@ import net.minecraft.util.math.Direction;
 
 public class EntityHouse {
 
+    public static class FlatnessResult {
+        public final BlockPos pos;
+        public final int flatness;
+
+        public FlatnessResult(BlockPos pos, int flatness) {
+            this.pos = pos;
+            this.flatness = flatness;
+        }
+    }
+
     // functions planned for this event
     //
     // find house start location
@@ -102,7 +112,44 @@ public class EntityHouse {
         return flatnessScore;
     }
 
+    public static FlatnessResult getBestLocalFlatness(ServerWorld world, BlockPos firstPos) {
+        int bestFlatness = evaluateFlatness(world, firstPos);
+        BlockPos bestPos = firstPos;
+        int checkDistance = 15;
+        int maxIterations = 10;
+        Direction[] directions = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
+        
+        for (int i = 0; i < maxIterations; i++) {
+            boolean foundBetter = false;
+            BlockPos iterationBestPos = bestPos;
+            int iterationBestFlatness = bestFlatness;
+            
+            for (Direction dir : directions) {
+                BlockPos checkPos = bestPos.offset(dir, checkDistance);
+                int flatness = evaluateFlatness(world, checkPos);
+                
+                if (flatness < iterationBestFlatness) {
+                    iterationBestFlatness = flatness;
+                    iterationBestPos = checkPos;
+                    foundBetter = true;
+                }
+            }
+            
+            if (!foundBetter) break;
+            
+            bestFlatness = iterationBestFlatness;
+            bestPos = iterationBestPos;
+        }
+        
+        return new FlatnessResult(bestPos, bestFlatness);
+    }
+
     public static int debugForEvaluateFlatness(ServerWorld world, BlockPos pos) {
-        return evaluateFlatness(world, pos);
+        // return evaluateFlatness(world, pos);
+        FlatnessResult result = getBestLocalFlatness(world, pos);
+        for (int x = 0; x < 30; x++) {
+            world.setBlockState(result.pos.add(0,x,0), Blocks.REDSTONE_BLOCK.getDefaultState());
+        }
+        return result.flatness;
     }
 }
