@@ -1,6 +1,7 @@
 package horror.blueice129;
 
 import horror.blueice129.command.DebugCommands;
+import horror.blueice129.command.RtpCommand;
 import horror.blueice129.config.ConfigManager;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.network.ModNetworking;
@@ -74,6 +75,9 @@ public class HorrorMod129 implements ModInitializer {
 		
 		// Register debug commands
 		DebugCommands.register();
+		
+		// Register RTP command
+		RtpCommand.register();
 
 		LOGGER.info("Horror Mod 129 initialization complete!");
 	}

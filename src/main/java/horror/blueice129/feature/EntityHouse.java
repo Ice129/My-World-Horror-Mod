@@ -148,22 +148,24 @@ public class EntityHouse {
             }
         }
         
-        for (int i = 0; i < toCheckGrid.length; i++) {
-            BlockPos checkPos = toCheckGrid[i];
-            int flatness = flatnessScores[i];
+
+        // Debug visualization - place blocks and signs showing flatness scores
+        // for (int i = 0; i < toCheckGrid.length; i++) {
+        //     BlockPos checkPos = toCheckGrid[i];
+        //     int flatness = flatnessScores[i];
             
-            world.setBlockState(checkPos, Blocks.DIAMOND_BLOCK.getDefaultState());
+        //     world.setBlockState(checkPos, Blocks.DIAMOND_BLOCK.getDefaultState());
             
-            BlockPos signPos = new BlockPos(checkPos.getX(), 100, checkPos.getZ());
-            world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState());
-            if (world.getBlockEntity(signPos) instanceof SignBlockEntity sign) {
-                sign.changeText(signText -> {
-                    return signText.withMessage(0, Text.literal("Flatness:"))
-                            .withMessage(1, Text.literal(String.valueOf(flatness)));
-                }, true);
-                sign.markDirty();
-            }
-        }
+        //     BlockPos signPos = new BlockPos(checkPos.getX(), 100, checkPos.getZ());
+        //     world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState());
+        //     if (world.getBlockEntity(signPos) instanceof SignBlockEntity sign) {
+        //         sign.changeText(signText -> {
+        //             return signText.withMessage(0, Text.literal("Flatness:"))
+        //                     .withMessage(1, Text.literal(String.valueOf(flatness)));
+        //         }, true);
+        //         sign.markDirty();
+        //     }
+        // }
         return new FlatnessResult(bestPos, bestFlatness);
     }
 
