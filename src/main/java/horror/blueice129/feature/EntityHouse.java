@@ -73,8 +73,9 @@ public class EntityHouse {
 
         boolean foundLocation = false;
         int attempts = 0;
-        while (!foundLocation && attempts < 100) {
-            BlockPos candidatePos = StructurePlacer.findSurfaceLocation(world, player.getBlockPos(), player, 20, 100,
+        while (!foundLocation && attempts < 4) {
+            BlockPos candidatePos = StructurePlacer.findSurfaceLocation(world, player.getBlockPos(), player, 16 * 7,
+                    16 * 20,
                     true);
             if (candidatePos != null) {
                 int flatnessRating = evaluateFlatness(world, candidatePos);
@@ -122,7 +123,7 @@ public class EntityHouse {
         int gridSize = gridPointsPerAxis * gridPointsPerAxis;
         BlockPos[] toCheckGrid = new BlockPos[gridSize];
         int[] flatnessScores = new int[gridSize];
-        
+
         int index = 0;
         for (int x = -checkDistance; x <= checkDistance; x += gridStride) {
             for (int z = -checkDistance; z <= checkDistance; z += gridStride) {
@@ -135,10 +136,10 @@ public class EntityHouse {
                 toCheckGrid[index++] = new BlockPos(worldX, surfaceY, worldZ);
             }
         }
-        
+
         int bestFlatness = Integer.MAX_VALUE;
         BlockPos bestPos = firstPos;
-        
+
         for (int i = 0; i < toCheckGrid.length; i++) {
             int flatness = evaluateFlatness(world, toCheckGrid[i]);
             flatnessScores[i] = flatness;
@@ -147,24 +148,23 @@ public class EntityHouse {
                 bestPos = toCheckGrid[i];
             }
         }
-        
 
         // Debug visualization - place blocks and signs showing flatness scores
         // for (int i = 0; i < toCheckGrid.length; i++) {
-        //     BlockPos checkPos = toCheckGrid[i];
-        //     int flatness = flatnessScores[i];
-            
-        //     world.setBlockState(checkPos, Blocks.DIAMOND_BLOCK.getDefaultState());
-            
-        //     BlockPos signPos = new BlockPos(checkPos.getX(), 100, checkPos.getZ());
-        //     world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState());
-        //     if (world.getBlockEntity(signPos) instanceof SignBlockEntity sign) {
-        //         sign.changeText(signText -> {
-        //             return signText.withMessage(0, Text.literal("Flatness:"))
-        //                     .withMessage(1, Text.literal(String.valueOf(flatness)));
-        //         }, true);
-        //         sign.markDirty();
-        //     }
+        // BlockPos checkPos = toCheckGrid[i];
+        // int flatness = flatnessScores[i];
+
+        // world.setBlockState(checkPos, Blocks.DIAMOND_BLOCK.getDefaultState());
+
+        // BlockPos signPos = new BlockPos(checkPos.getX(), 100, checkPos.getZ());
+        // world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState());
+        // if (world.getBlockEntity(signPos) instanceof SignBlockEntity sign) {
+        // sign.changeText(signText -> {
+        // return signText.withMessage(0, Text.literal("Flatness:"))
+        // .withMessage(1, Text.literal(String.valueOf(flatness)));
+        // }, true);
+        // sign.markDirty();
+        // }
         // }
         return new FlatnessResult(bestPos, bestFlatness);
     }
@@ -173,7 +173,7 @@ public class EntityHouse {
         // return evaluateFlatness(world, pos);
         FlatnessResult result = getBestLocalFlatness(world, pos);
         for (int x = 0; x < 30; x++) {
-            world.setBlockState(result.pos.add(0,x,0), Blocks.REDSTONE_BLOCK.getDefaultState());
+            world.setBlockState(result.pos.add(0, x, 0), Blocks.REDSTONE_BLOCK.getDefaultState());
         }
         return result.flatness;
     }
