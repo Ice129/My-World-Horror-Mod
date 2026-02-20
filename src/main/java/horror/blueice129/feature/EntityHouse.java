@@ -9,10 +9,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.SignBlockEntity;
+// import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Direction;
+// import net.minecraft.text.Text;
+// import net.minecraft.util.math.Direction;
 
 public class EntityHouse {
 

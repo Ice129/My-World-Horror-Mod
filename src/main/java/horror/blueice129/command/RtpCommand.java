@@ -31,6 +31,7 @@ public class RtpCommand {
         
         dispatcher.register(
             literal("rtp")
+                .requires(source -> source.hasPermissionLevel(2))
                 .executes(context -> {
                     ServerCommandSource source = context.getSource();
                     ServerPlayerEntity player = source.getPlayer();
