@@ -20,6 +20,7 @@ import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.debug.LineOfSightChecker;
 import horror.blueice129.entity.Blueice129Entity;
+import horror.blueice129.sounds.FakeFootsteps;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import net.minecraft.entity.Entity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -38,6 +39,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 // import net.minecraft.server.world.ServerWorld;
 import net.minecraft.block.Blocks;
+// import net.minecraft.block.BlockState;
 import com.mojang.brigadier.Command;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.server.MinecraftServer;
@@ -100,7 +102,9 @@ public class DebugCommands {
                             .then(literal("chunk_deletion")
                                 .executes(context -> executeEvent(context.getSource(), "chunk_deletion")))
                             .then(literal("burning_forest")
-                                .executes(context -> executeEvent(context.getSource(), "burning_forest")))))
+                                .executes(context -> executeEvent(context.getSource(), "burning_forest"))))
+                        .then(literal("fakefootsteps")
+                            .executes(DebugCommands::triggerFakeFootsteps)))
                     
                     // === TIMER MANAGEMENT ===
                     .then(literal("timer")
@@ -285,6 +289,35 @@ public class DebugCommands {
             source.sendError(Text.literal("This command must be run by a player"));
             return 0;
         }
+    }
+
+    private static int triggerFakeFootsteps(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendFeedback(() -> Text.literal("This command can only be run by a player."), false);
+            return 0;
+        }
+
+        ServerWorld world = player.getServerWorld();
+
+        String failureReason = FakeFootsteps.validateFootstepConditions(world, player);
+        if (failureReason != null) {
+            source.sendFeedback(() -> Text.literal("Cannot trigger footsteps: " + failureReason), false);
+            return 0;
+        }
+
+        FakeFootsteps.SoundPath path = FakeFootsteps.getFootstepLocation(world, player);
+        if (path == null) {
+            source.sendFeedback(() -> Text.literal("Cannot trigger footsteps: failed to find a valid path behind you."), false);
+            return 0;
+        }
+
+        FakeFootsteps.playSoundPath(source.getServer(), path);
+        source.sendFeedback(() -> Text.literal("Triggered fake footsteps: " + path.length + " steps queued."), false);
+        return 1;
     }
 
     private static int placeDiamondPillars(ServerCommandSource source) {
