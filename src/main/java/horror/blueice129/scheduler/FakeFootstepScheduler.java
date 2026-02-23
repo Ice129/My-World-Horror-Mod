@@ -100,6 +100,7 @@ public class FakeFootstepScheduler {
         FakeFootsteps.SoundPath path = FakeFootsteps.getFootstepLocation(targetPlayer.getServerWorld(), targetPlayer);
 
         if (path != null) {
+            FakeFootsteps.playAmbientCue(targetPlayer);
             FakeFootsteps.playSoundPath(server, path);
             return true;
         } else {

@@ -315,6 +315,7 @@ public class DebugCommands {
             return 0;
         }
 
+        FakeFootsteps.playAmbientCue(player);
         FakeFootsteps.playSoundPath(source.getServer(), path);
         source.sendFeedback(() -> Text.literal("Triggered fake footsteps: " + path.length + " steps queued."), false);
         return 1;

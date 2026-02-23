@@ -9,6 +9,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.LightType;
@@ -20,7 +22,7 @@ public class FakeFootsteps {
     private static final int MIN_LIGHT_LEVEL = 4;
     // private static final int MIN_SOLID_OVERHEAD = 5;
     private static final int MIN_PATH_STEPS = 10;
-    private static final int STEP_TICKS = 3;
+    private static final int STEP_TICKS = 4;
     private static final int MAX_RADIUS = 32;
     private static final int MIN_TARGET_DISTANCE = 20;
     private static final int MAX_TARGET_DISTANCE = 30;
@@ -104,6 +106,19 @@ public class FakeFootsteps {
     }
 
     /**
+     * Plays an ambient cave cue for the target player before footsteps begin.
+     */
+    public static void playAmbientCue(ServerPlayerEntity player) {
+        if (player == null) {
+            return;
+        }
+
+        ServerWorld world = player.getServerWorld();
+        float pitch = 0.9f + world.getRandom().nextFloat() * 0.2f; // 0.9 - 1.1
+        player.playSound(SoundEvents.AMBIENT_CAVE.value(), SoundCategory.AMBIENT, 0.1f, pitch);
+    }
+
+    /**
      * Plays a single footstep sound at the specified position.
      * Pitch is slightly randomized for realism.
      */
@@ -173,10 +188,10 @@ public class FakeFootsteps {
         if (overworld != null) {
             BlockPos stepPos = path.get(currentStep);
 
-            if (FootstepPathUtils.isNearAnyPlayer(server, stepPos, 5.0)) {
+            if (FootstepPathUtils.isNearAnyPlayer(server, stepPos, 3.0)) {
                 state.setIntValue("fakeFootstepActive", 0);
                 state.removePositionList("fakeFootstepPath");
-                HorrorMod129.LOGGER.info("Footstep playback stopped: within 5 blocks of a player");
+                HorrorMod129.LOGGER.info("Footstep playback stopped: within 3 blocks of a player");
                 return false;
             }
 
