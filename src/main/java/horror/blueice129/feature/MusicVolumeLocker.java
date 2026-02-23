@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
  */
 @Environment(EnvType.CLIENT)
 public class MusicVolumeLocker {
-    private static final double MIN_MUSIC_VOLUME = 0.5; // 50%
+    private static final double MIN_MUSIC_VOLUME = 0.01; // 1% volume
 
     /**
      * Ensures music volume is at least 50%
