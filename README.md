@@ -22,7 +22,7 @@ Join the [Discord](https://discord.gg/hgCNtXbqkC) to report bugs, give feedback,
 - **Explored caves** - Already lit, with ores already mined.
 - **Chopped-down trees** - You aren't the only one who needs wood.
 - **Punched off ledges** - Knocked from cliffs by unseen hands
-- **\* Footsteps behind you** - You're being followed
+- **Footsteps behind you** - You're being followed
 - **A Not So New World** - It must just be a glitch
 - **Stolen items** - Missing tools, rearranged chests, doors left ajar
 - **Escalating aggression** - The longer you survive, the bolder it becomes
