@@ -116,7 +116,7 @@ public class FakeFootsteps {
 
         ServerWorld world = player.getServerWorld();
         float pitch = 0.9f + world.getRandom().nextFloat() * 0.2f; // 0.9 - 1.1
-        player.playSound(SoundEvents.AMBIENT_CAVE.value(), SoundCategory.AMBIENT, 0.1f, pitch);
+        player.playSound(SoundEvents.AMBIENT_CAVE.value(), SoundCategory.AMBIENT, 0.01f, pitch);
     }
 
     /**

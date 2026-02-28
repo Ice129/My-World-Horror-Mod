@@ -143,11 +143,11 @@ public class StalkingFootsteps {
             return;
         }
 
-        // Pause: stalker too close to player or the step would be visible
+        // Pause: stalker too close to player or the step would be visible to any player
         boolean tooClose = stepPos.getSquaredDistance(closestPlayer.getBlockPos()) <= MIN_FOLLOW_DISTANCE * MIN_FOLLOW_DISTANCE;
-        boolean visible = isStepVisible(overworld, closestPlayer, stepPos);
+        boolean visible = isVisibleToAnyPlayer(server, stepPos);
         if (!visible && stepIndex + 1 < path.size()) {
-            visible = isStepVisible(overworld, closestPlayer, path.get(stepIndex + 1));
+            visible = isVisibleToAnyPlayer(server, path.get(stepIndex + 1));
         }
 
         if (tooClose || visible) {
@@ -183,8 +183,8 @@ public class StalkingFootsteps {
         ServerPlayerEntity closestPlayer = getClosestPlayer(server, lastPos);
         if (closestPlayer == null) return;
 
-        // Stay paused while the stalker's last position is still visible
-        if (isStepVisible(overworld, closestPlayer, lastPos)) return;
+        // Stay paused while the stalker's last position is visible to any player
+        if (isVisibleToAnyPlayer(server, lastPos)) return;
 
         // LoS broken — wait for player to move before re-pathing
         BlockPos pausedPlayerPos = state.getPosition(KEY_PAUSED_POS);
@@ -243,13 +243,18 @@ public class StalkingFootsteps {
     }
 
     /**
-     * Returns true if the player has line of sight to the foot level, mid body,
-     * or head level of the position — matching the space a walking entity occupies.
+     * Returns true if ANY online player has line of sight to the foot, torso, or
+     * head level of {@code pos}. Used to pause the stalker if anyone can see it.
      */
-    private static boolean isStepVisible(ServerWorld world, ServerPlayerEntity player, BlockPos pos) {
-        return LineOfSightUtils.hasLineOfSight(player, pos, LOS_CHECK_DISTANCE)
-                || LineOfSightUtils.hasLineOfSight(player, pos.up(), LOS_CHECK_DISTANCE)
-                || LineOfSightUtils.hasLineOfSight(player, pos.up(2), LOS_CHECK_DISTANCE);
+    private static boolean isVisibleToAnyPlayer(MinecraftServer server, BlockPos pos) {
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            if (LineOfSightUtils.hasLineOfSight(player, pos, LOS_CHECK_DISTANCE)
+                    || LineOfSightUtils.hasLineOfSight(player, pos.up(), LOS_CHECK_DISTANCE)
+                    || LineOfSightUtils.hasLineOfSight(player, pos.up(2), LOS_CHECK_DISTANCE)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Returns the player currently closest to {@code pos}, or null if no players online. */
