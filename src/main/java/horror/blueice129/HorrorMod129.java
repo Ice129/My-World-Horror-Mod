@@ -6,6 +6,7 @@ import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.FakeFootstepScheduler;
 import horror.blueice129.scheduler.HomeEventScheduler;
+import horror.blueice129.scheduler.StalkingFootstepScheduler;
 import horror.blueice129.scheduler.PlayerDeathItemsScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
 import horror.blueice129.scheduler.LedgePusherScheduler;
@@ -57,6 +58,7 @@ public class HorrorMod129 implements ModInitializer {
 		Blueice129SpawnScheduler.register();
 		CaveMinerScheduler.register();
 		FakeFootstepScheduler.register();
+		StalkingFootstepScheduler.register();
 		HomeEventScheduler.register();
 		SmallStructureScheduler.register();
 		LedgePusherScheduler.register();

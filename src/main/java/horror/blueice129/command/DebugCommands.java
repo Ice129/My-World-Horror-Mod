@@ -21,6 +21,7 @@ import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.debug.LineOfSightChecker;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.sounds.FakeFootsteps;
+import horror.blueice129.sounds.StalkingFootsteps;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import net.minecraft.entity.Entity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -104,7 +105,9 @@ public class DebugCommands {
                             .then(literal("burning_forest")
                                 .executes(context -> executeEvent(context.getSource(), "burning_forest"))))
                         .then(literal("fakefootsteps")
-                            .executes(DebugCommands::triggerFakeFootsteps)))
+                            .executes(DebugCommands::triggerFakeFootsteps))
+                        .then(literal("stalkingfootsteps")
+                            .executes(DebugCommands::triggerStalkingFootsteps)))
                     
                     // === TIMER MANAGEMENT ===
                     .then(literal("timer")
@@ -289,6 +292,37 @@ public class DebugCommands {
             source.sendError(Text.literal("This command must be run by a player"));
             return 0;
         }
+    }
+
+    private static int triggerStalkingFootsteps(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendFeedback(() -> Text.literal("This command can only be run by a player."), false);
+            return 0;
+        }
+
+        if (StalkingFootsteps.isActive(source.getServer())) {
+            source.sendFeedback(() -> Text.literal("Stalking footsteps are already active."), false);
+            return 0;
+        }
+
+        String failureReason = FakeFootsteps.validateFootstepConditions(player.getServerWorld(), player);
+        if (failureReason != null) {
+            source.sendFeedback(() -> Text.literal("Cannot trigger stalking footsteps: " + failureReason), false);
+            return 0;
+        }
+
+        boolean started = StalkingFootsteps.startStalking(source.getServer(), player);
+        if (!started) {
+            source.sendFeedback(() -> Text.literal("Cannot trigger stalking footsteps: failed to generate an initial path."), false);
+            return 0;
+        }
+
+        source.sendFeedback(() -> Text.literal("Stalking footsteps started."), false);
+        return 1;
     }
 
     private static int triggerFakeFootsteps(CommandContext<ServerCommandSource> context) {

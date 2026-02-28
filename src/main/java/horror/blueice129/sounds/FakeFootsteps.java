@@ -5,6 +5,7 @@ import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.FootstepPathUtils;
 import net.minecraft.block.BlockState;
+// import net.minecraft.block.Blocks; // used in debbugging
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -135,6 +136,9 @@ public class FakeFootsteps {
                 net.minecraft.sound.SoundCategory.BLOCKS,
                 1.0f,
                 pitch);
+        
+        // world.setBlockState(pos, Blocks.GOLD_BLOCK.getDefaultState()); // used in debbugging
+
     }
 
     /**

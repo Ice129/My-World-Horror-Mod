@@ -10,8 +10,10 @@ import net.minecraft.util.math.Direction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class FootstepPathUtils {
 
@@ -142,5 +144,62 @@ public final class FootstepPathUtils {
         BlockState air = world.getBlockState(pos.up());
         BlockState head = world.getBlockState(pos.up(2));
         return !ground.isAir() && ground.isSolidBlock(world, pos) && air.isAir() && head.isAir();
+    }
+
+    /**
+     * Greedily walks from {@code from} toward {@code to}, choosing the walkable
+     * neighbour that minimises distance to {@code to} at each step.
+     *
+     * Stops when within {@code stopDistance} blocks of {@code to} or after
+     * {@code maxSteps} steps. Visited positions are tracked to prevent loops.
+     *
+     * @return ordered list of positions walked (not including {@code from}),
+     *         or {@code null} if no progress could be made at all.
+     */
+    public static List<BlockPos> walkToward(
+            ServerWorld world,
+            BlockPos from,
+            BlockPos to,
+            int stopDistance,
+            int maxSteps) {
+
+        List<BlockPos> path = new ArrayList<>();
+        Set<BlockPos> visited = new HashSet<>();
+        BlockPos current = from;
+        visited.add(current);
+
+        int stopDistSq = stopDistance * stopDistance;
+        int[][] offsets = {
+                {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+                {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+        };
+
+        for (int step = 0; step < maxSteps; step++) {
+            if (current.getSquaredDistance(to) <= stopDistSq) {
+                break;
+            }
+
+            BlockPos best = null;
+            double bestDistSq = Double.MAX_VALUE;
+
+            for (int[] offset : offsets) {
+                BlockPos candidate = findWalkableNearby(world, current.add(offset[0], 0, offset[1]));
+                if (candidate == null || visited.contains(candidate)) continue;
+
+                double distSq = candidate.getSquaredDistance(to);
+                if (distSq < bestDistSq) {
+                    bestDistSq = distSq;
+                    best = candidate;
+                }
+            }
+
+            if (best == null) break; // Stuck — no unvisited walkable neighbour
+
+            visited.add(best);
+            current = best;
+            path.add(current);
+        }
+
+        return path.isEmpty() ? null : path;
     }
 }
