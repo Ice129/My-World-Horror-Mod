@@ -433,6 +433,9 @@ public class SmallStructureEvent {
 
     private static boolean deforestationEvent(MinecraftServer server, ServerPlayerEntity player) {
         BlockPos pos = findAndLoadSurfaceLocation(server, player, 80, 100);
+        if (pos == null) {
+            return false;
+        }
         
         BlockPos[] treePositions = SurfaceFinder.findTreePositions(server.getOverworld(), pos, 40);
         if (treePositions.length == 0) {
