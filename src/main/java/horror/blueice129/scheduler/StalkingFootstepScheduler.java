@@ -18,6 +18,7 @@ public class StalkingFootstepScheduler {
     private static final String TIMER_ID = "stalkingFootstepTimer";
     private static final int MIN_DELAY = 20 * 60 * 25; // 25 minutes in ticks
     private static final int MAX_DELAY = 20 * 60 * 50; // 50 minutes in ticks
+    private static final int MIN_AGRO = 4;
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(StalkingFootstepScheduler::onServerTick);
@@ -37,6 +38,12 @@ public class StalkingFootstepScheduler {
     }
 
     private static void onServerTick(MinecraftServer server) {
+
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        if (state.getIntValue("agroLevel", 0) < MIN_AGRO) {
+            return; // Don't run stalking logic if agro level is too low
+        }
+
         // While a stalking event is active, drive its tick logic every tick
         if (StalkingFootsteps.isActive(server)) {
             StalkingFootsteps.tickStalking(server);
@@ -44,7 +51,7 @@ public class StalkingFootstepScheduler {
         }
 
         // Main trigger timer
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        // HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
         int currentTimer = state.getTimer(TIMER_ID);
         if (currentTimer <= 0) return;
 

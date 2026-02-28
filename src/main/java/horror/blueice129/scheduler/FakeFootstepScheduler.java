@@ -16,6 +16,8 @@ public class FakeFootstepScheduler {
     private static final String TIMER_ID = "fakeFootstepTimer";
     private static final int MIN_DELAY = 20 * 60 * 20; // 20 minutes in ticks
     private static final int MAX_DELAY = 20 * 60 * 45; // 45 minutes in ticks
+    private static final int MIN_AGRO = 7;
+
 
     /**
      * Registers the tick event to handle fake footstep scheduling.
@@ -43,6 +45,10 @@ public class FakeFootstepScheduler {
 
     private static void onServerTick(MinecraftServer server) {
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+
+        if (state.getIntValue("agroLevel", 0) < MIN_AGRO) {
+            return; // Don't run footstep logic if agro level is too low
+        }
 
         // Handle active footstep playback
         int playbackActive = state.getIntValue("fakeFootstepActive", 0);
