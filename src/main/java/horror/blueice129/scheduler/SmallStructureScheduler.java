@@ -48,10 +48,10 @@ public class SmallStructureScheduler {
         // get agro meter from persistent state
         int agroMeter = state.getIntValue("agroMeter", 0);
         // The delay is reduced based on the square of the agro meter value
-        int agroReduction = (-agroMeter * agroMeter) * 200;
+        int agroReduction = (-agroMeter * agroMeter) * 70; 
         int delay = random.nextBetween(MIN_DELAY, MAX_DELAY + 1) + agroReduction;
         // Clamp delay to at least 1 tick to avoid negative or zero values
-        return Math.max(delay, 1);
+        return Math.max(delay, 20*60); // Minimum 1 minute delay to prevent too rapid triggering
     }
 
     private static void onServerTick(MinecraftServer server) {
