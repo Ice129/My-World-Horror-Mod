@@ -147,7 +147,7 @@ public class PlayerDeathItems {
             return items;
         }
         
-        // Choose a class tier for the player based on agro meter (low, mid, high)
+        // Choose a class tier for the player based on agro meter
         String classTier = chooseClassTierBasedOnAgro(agroMeter);
         
         // Add armor items based on the chosen class tier
@@ -521,11 +521,20 @@ public class PlayerDeathItems {
             JsonObject consumables = json.getAsJsonObject("consumables");
             JsonObject food = consumables.getAsJsonObject("food");
             
-            // Get food types
+            // Get food types and validate they exist
             JsonArray typesArray = food.getAsJsonArray("types");
             List<String> foodTypes = new ArrayList<>();
             for (JsonElement element : typesArray) {
-                foodTypes.add(element.getAsString());
+                String foodType = element.getAsString();
+                Item foodItem = Registries.ITEM.get(new Identifier(foodType));
+                if (foodItem != Items.AIR) {
+                    foodTypes.add(foodType);
+                }
+            }
+            
+            if (foodTypes.isEmpty()) {
+                HorrorMod129.LOGGER.warn("No valid food items found in configuration");
+                return;
             }
             
             // Determine amount of food to add
@@ -535,16 +544,9 @@ public class PlayerDeathItems {
             
             // Add random food items
             while (totalAmount > 0) {
-                // Choose a random food type
                 String foodType = foodTypes.get(RANDOM.nextInt(foodTypes.size()));
                 Item foodItem = Registries.ITEM.get(new Identifier(foodType));
                 
-                // Skip if item doesn't exist
-                if (foodItem == Items.AIR) {
-                    continue;
-                }
-                
-                // Create a stack with up to 64 items (or remaining amount)
                 int stackSize = Math.min(64, totalAmount);
                 ItemStack stack = new ItemStack(foodItem, stackSize);
                 items.add(stack);
@@ -583,13 +585,13 @@ public class PlayerDeathItems {
                 JsonArray itemArray;
                 int maxStackSize;
                 
-                if (stackCategory < 6) { // 60% chance for 64-stacking items
+                if (stackCategory < 4) { // 40% chance for 64-stacking items
                     itemArray = stack64Array;
                     maxStackSize = 64;
-                } else if (stackCategory < 9) { // 30% chance for 16-stacking items
+                } else if (stackCategory < 7) { // 30% chance for 16-stacking items
                     itemArray = stack16Array;
                     maxStackSize = 16;
-                } else { // 10% chance for 1-stacking items
+                } else { // 30% chance for 1-stacking items
                     itemArray = stack1Array;
                     maxStackSize = 1;
                 }
@@ -636,17 +638,17 @@ public class PlayerDeathItems {
         // Convert BlockPos to Vec3d for more precise positioning
         Vec3d spawnPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
         
+        int scatterStrength = 5;
+
         // Scatter each item
         for (ItemStack stack : items) {
-            // Calculate random offset from center
-            double xOffset = RANDOM.nextDouble() * 2.0 - 1.0; // -1.0 to 1.0
-            double yOffset = RANDOM.nextDouble() * 0.5; // 0 to 0.5
-            double zOffset = RANDOM.nextDouble() * 2.0 - 1.0; // -1.0 to 1.0
+            double xOffset = (RANDOM.nextDouble() * 2.0 - 1.0) * scatterStrength;
+            double yOffset = RANDOM.nextDouble() * 0.5;
+            double zOffset = (RANDOM.nextDouble() * 2.0 - 1.0) * scatterStrength;
             
-            // Calculate velocity for the item
-            double xVel = RANDOM.nextDouble() * 0.2 - 0.1; // -0.1 to 0.1
-            double yVel = RANDOM.nextDouble() * 0.2 + 0.2; // 0.2 to 0.4
-            double zVel = RANDOM.nextDouble() * 0.2 - 0.1; // -0.1 to 0.1
+            double xVel = RANDOM.nextDouble() * 0.2 - 0.1;
+            double yVel = RANDOM.nextDouble() * 0.2 + 0.2;
+            double zVel = RANDOM.nextDouble() * 0.2 - 0.1;
             
             // Create and spawn the item entity
             ItemEntity itemEntity = new ItemEntity(
