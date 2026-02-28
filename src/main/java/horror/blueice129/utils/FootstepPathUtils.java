@@ -141,9 +141,12 @@ public final class FootstepPathUtils {
 
     private static boolean isWalkable(ServerWorld world, BlockPos pos) {
         BlockState ground = world.getBlockState(pos);
-        BlockState air = world.getBlockState(pos.up());
+        BlockState above = world.getBlockState(pos.up());
         BlockState head = world.getBlockState(pos.up(2));
-        return !ground.isAir() && ground.isSolidBlock(world, pos) && air.isAir() && head.isAir();
+        return !ground.isAir()
+                && ground.isSolidBlock(world, pos)
+                && above.getCollisionShape(world, pos.up()).isEmpty()
+                && head.getCollisionShape(world, pos.up(2)).isEmpty();
     }
 
     /**

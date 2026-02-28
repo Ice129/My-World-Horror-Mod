@@ -107,7 +107,9 @@ public class DebugCommands {
                         .then(literal("fakefootsteps")
                             .executes(DebugCommands::triggerFakeFootsteps))
                         .then(literal("stalkingfootsteps")
-                            .executes(DebugCommands::triggerStalkingFootsteps)))
+                            .executes(DebugCommands::triggerStalkingFootsteps)
+                            .then(literal("stop")
+                                .executes(DebugCommands::stopStalkingFootsteps))))
                     
                     // === TIMER MANAGEMENT ===
                     .then(literal("timer")
@@ -322,6 +324,17 @@ public class DebugCommands {
         }
 
         source.sendFeedback(() -> Text.literal("Stalking footsteps started."), false);
+        return 1;
+    }
+
+    private static int stopStalkingFootsteps(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        if (!StalkingFootsteps.isActive(source.getServer())) {
+            source.sendFeedback(() -> Text.literal("No stalking footstep event is currently active."), false);
+            return 0;
+        }
+        StalkingFootsteps.stopStalking(source.getServer());
+        source.sendFeedback(() -> Text.literal("Stalking footsteps stopped and cleared."), false);
         return 1;
     }
 

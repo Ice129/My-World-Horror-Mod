@@ -15,7 +15,7 @@ import java.util.List;
 
 public class StalkingFootsteps {
 
-    static final int MIN_FOLLOW_DISTANCE = 14;
+    static final int MIN_FOLLOW_DISTANCE = 12;
     static final int MAX_FOLLOW_DISTANCE = 23;
     private static final int CHECK_INTERVAL = 7;    // ticks between footstep sounds
     private static final int MAX_PATH_LENGTH = 80;  // total steps before aborting
@@ -89,6 +89,17 @@ public class StalkingFootsteps {
             clearState(state);
             HorrorMod129.LOGGER.info("StalkingFootsteps: event timed out");
             return;
+        }
+
+        // Deactivate if no player is within 64 blocks of the last footstep position
+        BlockPos lastFootstep = state.getPosition(KEY_LAST_POS);
+        if (lastFootstep != null) {
+            ServerPlayerEntity closest = getClosestPlayer(server, lastFootstep);
+            if (closest == null || closest.getBlockPos().getSquaredDistance(lastFootstep) > 64 * 64) {
+                clearState(state);
+                HorrorMod129.LOGGER.info("StalkingFootsteps: deactivated — no player within 64 blocks of last footstep");
+                return;
+            }
         }
 
         if (active == 1) {
@@ -270,6 +281,14 @@ public class StalkingFootsteps {
             }
         }
         return closest;
+    }
+
+    /**
+     * Immediately stops and clears any active stalking event.
+     * Safe to call even when no event is active.
+     */
+    public static void stopStalking(MinecraftServer server) {
+        clearState(HorrorModPersistentState.getServerState(server));
     }
 
     /** Clears all stalking state, returning the event to idle. */

@@ -46,7 +46,7 @@ public class FakeFootstepScheduler {
     private static void onServerTick(MinecraftServer server) {
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
 
-        if (state.getIntValue("agroLevel", 0) < MIN_AGRO) {
+        if (state.getIntValue("agroMeter", 0) < MIN_AGRO) {
             return; // Don't run footstep logic if agro level is too low
         }
 
