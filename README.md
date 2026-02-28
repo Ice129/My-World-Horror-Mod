@@ -3,13 +3,13 @@
 # ENGRAM 
 ##### (Previously My World.jar)
 ## A Vanilla-Style Slow-Burn Psychological Horror Mod
-#### *Version 0.4.1-beta*
+#### *Version 0.5.0-beta*
 
 Horror lives in the familiar, and there is no game more familiar than Minecraft. Playing off your own paranoia, ENGRAM is designed to make you question even the most innocuous aspects of your world. 
 
 This mod takes its time to play with you, letting you stew in your own fears all while something hides just out of sight, just as afraid as you are. There is a reason to all events, all building with one cohesive background narrative.
 
-With multiplayer support recently added, this mod will leave you unable to tell where it ends, and your game begins. There are no flashy effects, no overt modded textures. Just subtle, escalating disturbances that make you question whether you did that, or someone else did.
+With multiplayer support, this mod will leave you unable to tell where it ends, and your game begins. There are no flashy effects, no overt modded textures. Just subtle, escalating disturbances that make you question whether you did that, or someone else did.
 
 Join the [Discord](https://discord.gg/hgCNtXbqkC) to report bugs, give feedback, or learn more about the mod's development.
 
