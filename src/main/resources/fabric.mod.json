@@ -23,6 +23,9 @@
 		],
 		"client": [
 			"horror.blueice129.client.HorrorMod129Client"
+		],
+		"modmenu": [
+			"horror.blueice129.integration.ModMenuIntegration"
 		]
 	},
 	"mixins": [

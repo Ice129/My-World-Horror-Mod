@@ -1,5 +1,6 @@
 package horror.blueice129.feature;
 
+import horror.blueice129.config.ConfigManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -26,6 +27,10 @@ public class MusicVolumeLocker {
      * @return true if volume was below 50% and was increased to 50%, false otherwise
      */
     public static boolean enforceMinimumMusicVolume() {
+        if (!ConfigManager.getConfig().enableMusicVolumeLocking) {
+            return false;
+        }
+        
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) {
             return false;

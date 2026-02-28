@@ -6,16 +6,20 @@ This mod aims to maintain a vanilla feel in all aspects. Everything done by the 
 ## Entity Behavior
 The entity should feel uncannily like a real human player, to the point where the player questions if it's real or not. All entity sightings should be impactful—the more frequently they occur, the less impactful they become. 
 
-This entity should be designed as if **it is** the real human, and the player is the entity invading **its** world. A scared human wouldn't kill the player on sight or run directly at them.
+when first encountered, the entity should be fleeting and hard to catch a glimpse of. as the player interacts more with the entity or the world, the entity should become more bold and direct in its interactions. 
+
+the most important aspect of the entity is that it does as a player would, not as an "entity" would.
 
 ## Entity Lore
-The entity is a human engram of the mods creator, who anaged to upload their concious to this mod as a form of digital preservation and immortality. They didnt upload the file publicly so never expected to see another player. They are scared and confused on what this might mean for them as a concious if another player has access to their "brain file".
+The entity is a human engram of the mods creator, who anaged to upload their concious to this mod as a form of digital preservation and immortality. They didnt upload the file publicly (at least the mod creator didnt) so never expected to see another player. They are scared and confused on what this might mean for them as a concious if another player has access to their "brain file".
 
-They existed in this world before the player joined. Seeing another human is terrifying to them—suddenly they are not alone, even though they were promised solitude. If that promise was broken, what else was a lie? They don't know if this player is real or another engram, and they find the idea of being trapped in a world with another human forever terrifying.
+They existed in this world before the player joined. Seeing another human is terrifying to them—suddenly they are not alone, even though they were expected solitude. If that expectation was broken, what else is possible? They don't know if this player is real or another engram, and they find the idea of being trapped in a world with another human forever terrifying.
 
-They can join one other world, allowing them to have a survival world (this one) and a creative world they can escape to if things get too overwhelming.
+They can join one other world, allowing them to have a survival world (this one) and a creative world they can escape to if things get too overwhelming. (this is sort of implied by the entity "logging out" when scared).
 
-Because they are literally within this world, they have some extra control over it, like limited access to the player's computer and Minecraft settings. However, they're not very skilled at it—they're still fresh to this whole digital existence thing.
+Because they are literally within this world, they have some extra control over it, like limited access to the player's computer and Minecraft settings. However, they're not very skilled at it—they're still fresh to this whole digital existence thing, especially with another player around.
+
+They reset every 10(?) days, the world resets so the engram does not go mad from importality. it needs to not be paused though as that could "kill" it as it is still a soul
 
 ## Progression
 *I use the term phase here, but transitions between each phase is "fuzzy", where most interactions are RNG based but impacted by the aggro meter*

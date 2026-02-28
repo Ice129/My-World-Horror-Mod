@@ -232,6 +232,11 @@ public class DebugCommands {
                                 .executes(context -> fillNotVisibleBlocksWithConcrete(context.getSource())))
                             .then(literal("trees")
                                 .executes(context -> placeDiamondPillars(context.getSource())))))
+                    
+                    // === PERSISTENT STATE ===
+                    .then(literal("state")
+                        .then(literal("list")
+                            .executes(context -> listPersistentStateKeys(context.getSource()))))
             );
             
             // Register entity state commands
@@ -1268,7 +1273,115 @@ public class DebugCommands {
             return 1;
         } catch (Exception e) {
             source.sendError(Text.literal("Error getting spawn chance: " + e.getMessage()));
-            e.printStackTrace();
+            HorrorMod129.LOGGER.error("Error getting spawn chance", e);
+            return 0;
+        }
+    }
+
+    /**
+     * Lists all keys currently stored in the persistent state
+     * @param source Command source
+     * @return Command success value
+     */
+    private static int listPersistentStateKeys(ServerCommandSource source) {
+        try {
+            MinecraftServer server = source.getServer();
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            
+            // Build a comprehensive message with all keys organized by type
+            StringBuilder message = new StringBuilder("§6=== Persistent State Keys ===\n");
+            
+            // Timers
+            var timerIds = state.getTimerIds();
+            message.append("§e[Timers] (").append(timerIds.size()).append("):\n");
+            if (timerIds.isEmpty()) {
+                message.append("  §7(none)\n");
+            } else {
+                for (String id : timerIds) {
+                    int value = state.getTimer(id);
+                    message.append("  §f").append(id).append(" = ").append(value).append(" ticks\n");
+                }
+            }
+            
+            // Integer Values
+            var intValueIds = state.getIntValueIds();
+            message.append("§e[Integer Values] (").append(intValueIds.size()).append("):\n");
+            if (intValueIds.isEmpty()) {
+                message.append("  §7(none)\n");
+            } else {
+                for (String id : intValueIds) {
+                    int value = state.getIntValue(id, 0);
+                    message.append("  §f").append(id).append(" = ").append(value).append("\n");
+                }
+            }
+            
+            // Long Values
+            var longValueIds = state.getLongValueIds();
+            message.append("§e[Long Values] (").append(longValueIds.size()).append("):\n");
+            if (longValueIds.isEmpty()) {
+                message.append("  §7(none)\n");
+            } else {
+                for (String id : longValueIds) {
+                    long value = state.getLongValue(id, 0L);
+                    message.append("  §f").append(id).append(" = ").append(value).append("\n");
+                }
+            }
+            
+            // Block Positions
+            var positionIds = state.getPositionIds();
+            message.append("§e[Block Positions] (").append(positionIds.size()).append("):\n");
+            if (positionIds.isEmpty()) {
+                message.append("  §7(none)\n");
+            } else {
+                for (String id : positionIds) {
+                    BlockPos pos = state.getPosition(id);
+                    message.append("  §f").append(id).append(" = ")
+                        .append(pos.getX()).append(", ")
+                        .append(pos.getY()).append(", ")
+                        .append(pos.getZ()).append("\n");
+                }
+            }
+            
+            // Position Lists
+            var positionListIds = state.getPositionListIds();
+            message.append("§e[Position Lists] (").append(positionListIds.size()).append("):\n");
+            if (positionListIds.isEmpty()) {
+                message.append("  §7(none)\n");
+            } else {
+                for (String id : positionListIds) {
+                    var posList = state.getPositionList(id);
+                    message.append("  §f").append(id).append(" (").append(posList.size()).append(" positions)\n");
+                }
+            }
+            
+            // 2D Integer Arrays
+            var int2DArrayIds = state.getInt2DArrayIds();
+            message.append("§e[2D Integer Arrays] (").append(int2DArrayIds.size()).append("):\n");
+            if (int2DArrayIds.isEmpty()) {
+                message.append("  §7(none)\n");
+            } else {
+                for (String id : int2DArrayIds) {
+                    int[][] array = state.getInt2DArray(id);
+                    message.append("  §f").append(id).append(" (")
+                        .append(array.length).append("x")
+                        .append(array.length > 0 ? array[0].length : 0)
+                        .append(")\n");
+                }
+            }
+            
+            // Calculate total keys
+            int totalKeys = timerIds.size() + intValueIds.size() + longValueIds.size() + 
+                           positionIds.size() + positionListIds.size() + int2DArrayIds.size();
+            message.append("§6Total Keys: ").append(totalKeys);
+            
+            // Send the message
+            String finalMessage = message.toString();
+            source.sendFeedback(() -> Text.literal(finalMessage), false);
+            
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Error listing persistent state keys: " + e.getMessage()));
+            HorrorMod129.LOGGER.error("Error listing persistent state keys", e);
             return 0;
         }
     }

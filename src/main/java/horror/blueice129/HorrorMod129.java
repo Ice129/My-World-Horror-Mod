@@ -1,7 +1,10 @@
 package horror.blueice129;
 
 import horror.blueice129.command.DebugCommands;
+import horror.blueice129.config.ConfigManager;
 import horror.blueice129.entity.Blueice129Entity;
+import horror.blueice129.network.ModNetworking;
+import horror.blueice129.scheduler.AgroMeterScheduler;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.FakeFootstepScheduler;
@@ -10,6 +13,8 @@ import horror.blueice129.scheduler.StalkingFootstepScheduler;
 import horror.blueice129.scheduler.PlayerDeathItemsScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
 import horror.blueice129.scheduler.LedgePusherScheduler;
+import horror.blueice129.scheduler.SettingsScheduler;
+import horror.blueice129.scheduler.OnWorldCreation;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -44,17 +49,20 @@ public class HorrorMod129 implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
-
-
 		LOGGER.info("Initializing Horror Mod 129!");
+		
+		// Load config first before any feature registration
+		ConfigManager.loadConfig();
+		
+		// Register networking packets
+		ModNetworking.registerPackets();
 		
 		// Register entity attributes
 		FabricDefaultAttributeRegistry.register(BLUEICE129_ENTITY, Blueice129Entity.createBlueice129Attributes());
 		
 		// Register schedulers
+		OnWorldCreation.register();
+		AgroMeterScheduler.register();
 		Blueice129SpawnScheduler.register();
 		CaveMinerScheduler.register();
 		FakeFootstepScheduler.register();
@@ -63,7 +71,7 @@ public class HorrorMod129 implements ModInitializer {
 		SmallStructureScheduler.register();
 		LedgePusherScheduler.register();
 		PlayerDeathItemsScheduler.register();
-		// Note: SettingsScheduler is registered in HorrorMod129Client as it runs on client side
+		SettingsScheduler.register(); // Now server-side
 		
 		// Register fleeing entity tick handler
 		ServerTickEvents.START_SERVER_TICK.register(horror.blueice129.feature.LedgePusher::onServerTick);
