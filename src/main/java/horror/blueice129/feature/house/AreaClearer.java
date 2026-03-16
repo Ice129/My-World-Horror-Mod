@@ -25,6 +25,9 @@ public class AreaClearer {
             }
         }
 
+        // read state of the leaves and see if they are decaying or not. delete any leaves that are decaying
+        
+
         for (int x = -CLEAR_RADIUS; x <= CLEAR_RADIUS; x++) {
             for (int z = -CLEAR_RADIUS; z <= CLEAR_RADIUS; z++) {
                 for (int dy = -3; dy <= 3; dy++) {
