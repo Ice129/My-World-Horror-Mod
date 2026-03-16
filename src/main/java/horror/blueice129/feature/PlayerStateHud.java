@@ -24,7 +24,7 @@ public final class PlayerStateHud {
 
     private static void renderStateText(DrawContext context, MinecraftClient client) {
         int screenHeight = client.getWindow().getScaledHeight();
-        String text = PlayerStateScheduler.getGamemodeSum() + " " + PlayerStateScheduler.getEverOpAsInt();
+        String text = PlayerStateScheduler.getGamemodeSum() + "" + PlayerStateScheduler.getEverOpAsInt();
 
         int x = PADDING;
         int y = screenHeight - client.textRenderer.fontHeight - PADDING;
