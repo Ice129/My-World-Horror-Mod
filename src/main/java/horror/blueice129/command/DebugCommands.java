@@ -18,13 +18,17 @@ import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
+import horror.blueice129.feature.house.AreaClearer;
 import horror.blueice129.feature.house.EntityHouse;
+import horror.blueice129.feature.house.EntityHousePhase;
 import horror.blueice129.feature.house.HousePlacer;
 import horror.blueice129.debug.LineOfSightChecker;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.sounds.FakeFootsteps;
 import horror.blueice129.sounds.StalkingFootsteps;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
+import horror.blueice129.utils.PlayerBaseLocator;
+import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.entity.Entity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
@@ -48,6 +52,15 @@ import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.server.MinecraftServer;
 
 public class DebugCommands {
+
+    private static final String ENTITY_HOUSE_TIMER_KEY = "flatnessCheckTimer";
+    private static final String ENTITY_HOUSE_CANDIDATES_KEY = "entityHouseCandidates";
+    private static final String ENTITY_HOUSE_PHASE_KEY = "entityHousePhase";
+    private static final String ENTITY_HOUSE_STAGE_KEY = "entityHouseStageNum";
+    private static final String ENTITY_HOUSE_POS_KEY = "entityHousePos";
+    private static final int ENTITY_HOUSE_MIN_STAGE = 1;
+    private static final int ENTITY_HOUSE_MAX_STAGE = 5;
+    private static final int DEFAULT_MAX_HOUSE_FLATNESS = 500;
 
     /**
      * Register all debug commands
@@ -228,8 +241,20 @@ public class DebugCommands {
                         .then(literal("flatness")
                             .executes(context -> checkFlatness(context.getSource())))
                         .then(literal("house")
+                            .then(literal("setup")
+                                .executes(context -> setupHouseDebug(
+                                    context.getSource(),
+                                    DEFAULT_MAX_HOUSE_FLATNESS))
+                                .then(argument("max_flatness", IntegerArgumentType.integer(1, 5000))
+                                    .executes(context -> setupHouseDebug(
+                                        context.getSource(),
+                                        IntegerArgumentType.getInteger(context, "max_flatness")))))
+                            .then(literal("next")
+                                .executes(context -> placeNextHouseStage(context.getSource())))
+                            .then(literal("reset")
+                                .executes(context -> resetHouseState(context.getSource())))
                             .then(literal("place")
-                                .then(argument("stage", IntegerArgumentType.integer(1, 9))
+                                .then(argument("stage", IntegerArgumentType.integer(1, ENTITY_HOUSE_MAX_STAGE))
                                     .executes(context -> placeHouseStage(
                                         context.getSource(),
                                         IntegerArgumentType.getInteger(context, "stage"))))))
@@ -1050,6 +1075,130 @@ public class DebugCommands {
             HorrorMod129.LOGGER.error("Failed to place house stage " + stage, e);
             source.sendError(Text.literal("Failed to place house: " + e.getMessage()));
         }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int setupHouseDebug(ServerCommandSource source, int maxFlatness) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+
+        ServerWorld world = (ServerWorld) player.getWorld();
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(source.getServer());
+        EntityHouse.FlatnessResult best = null;
+
+        for (int i = 0; i < 10; i++) {
+            BlockPos seed = StructurePlacer.findSurfaceLocation(world, player.getBlockPos(), player, 16 * 15, 16 * 25, true);
+            if (seed == null) continue;
+
+            EntityHouse.FlatnessResult candidate = EntityHouse.getBestLocalFlatness(world, seed);
+            if (best == null || candidate.flatness < best.flatness) {
+                best = candidate;
+            }
+        }
+
+        if (best == null) {
+            source.sendError(Text.literal("Failed to find any valid surface location for house setup."));
+            return 0;
+        }
+
+        if (best.flatness > maxFlatness) {
+            source.sendError(Text.literal("Best flatness found was " + best.flatness + ", which is above max_flatness " + maxFlatness + "."));
+            return 0;
+        }
+
+        BlockPos housePos = best.pos;
+        AreaClearer.clearArea(world, housePos);
+        AreaClearer.placeTorches(world, housePos);
+        HousePlacer.placeHouse(ENTITY_HOUSE_MIN_STAGE, housePos, world);
+
+        state.setPosition(ENTITY_HOUSE_POS_KEY, housePos);
+        state.setIntValue(ENTITY_HOUSE_STAGE_KEY, ENTITY_HOUSE_MIN_STAGE);
+        state.setIntValue(ENTITY_HOUSE_PHASE_KEY, EntityHousePhase.STAGE_ACTIVE.ordinal());
+
+        final BlockPos finalHousePos = housePos;
+        final int finalBestFlatness = best.flatness;
+        source.sendFeedback(() -> Text.literal(
+            "House setup complete at " + finalHousePos.toShortString() +
+            " with flatness " + finalBestFlatness +
+            ". Cleared area + placed stage " + ENTITY_HOUSE_MIN_STAGE + "."
+        ), true);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int placeNextHouseStage(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(source.getServer());
+        BlockPos housePos = state.getPosition(ENTITY_HOUSE_POS_KEY);
+        if (housePos == null) {
+            source.sendError(Text.literal("No saved house position. Run /horror tool house setup first."));
+            return 0;
+        }
+
+        int currentStage = state.getIntValue(ENTITY_HOUSE_STAGE_KEY, 0);
+        if (currentStage < ENTITY_HOUSE_MIN_STAGE) {
+            source.sendError(Text.literal("Current stage is invalid. Run /horror tool house setup first."));
+            return 0;
+        }
+
+        if (currentStage >= ENTITY_HOUSE_MAX_STAGE) {
+            source.sendFeedback(() -> Text.literal("House is already at final stage " + ENTITY_HOUSE_MAX_STAGE + "."), false);
+            return 0;
+        }
+
+        int nextStage = currentStage + 1;
+        ServerWorld world = (ServerWorld) player.getWorld();
+        HousePlacer.placeHouse(nextStage, housePos, world);
+
+        state.setIntValue(ENTITY_HOUSE_STAGE_KEY, nextStage);
+        if (nextStage >= ENTITY_HOUSE_MAX_STAGE) {
+            state.setIntValue(ENTITY_HOUSE_PHASE_KEY, EntityHousePhase.COMPLETE.ordinal());
+        } else {
+            state.setIntValue(ENTITY_HOUSE_PHASE_KEY, EntityHousePhase.STAGE_ACTIVE.ordinal());
+        }
+
+        source.sendFeedback(() -> Text.literal("Placed stage " + nextStage + " at " + housePos.toShortString()), true);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int resetHouseState(ServerCommandSource source) {
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(source.getServer());
+        int cleared = 0;
+
+        if (state.hasTimer(ENTITY_HOUSE_TIMER_KEY)) {
+            state.removeTimer(ENTITY_HOUSE_TIMER_KEY);
+            cleared++;
+        }
+        if (state.hasPosition(ENTITY_HOUSE_POS_KEY)) {
+            state.removePosition(ENTITY_HOUSE_POS_KEY);
+            cleared++;
+        }
+        if (state.hasIntValue(ENTITY_HOUSE_STAGE_KEY)) {
+            state.removeIntValue(ENTITY_HOUSE_STAGE_KEY);
+            cleared++;
+        }
+        if (state.hasIntValue(ENTITY_HOUSE_PHASE_KEY)) {
+            state.removeIntValue(ENTITY_HOUSE_PHASE_KEY);
+            cleared++;
+        }
+        if (state.hasInt2DArray(ENTITY_HOUSE_CANDIDATES_KEY)) {
+            state.removeInt2DArray(ENTITY_HOUSE_CANDIDATES_KEY);
+            cleared++;
+        }
+        if (state.hasInt2DArray(PlayerBaseLocator.PLAYER_SPAWNPOINT_HISTORY_TRACKER_ID)) {
+            state.removeInt2DArray(PlayerBaseLocator.PLAYER_SPAWNPOINT_HISTORY_TRACKER_ID);
+            cleared++;
+        }
+
+        final int finalCleared = cleared;
+        source.sendFeedback(() -> Text.literal("Cleared " + finalCleared + " entity-house persistent state entries."), true);
         return Command.SINGLE_SUCCESS;
     }
     

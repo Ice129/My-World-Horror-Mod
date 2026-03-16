@@ -29,7 +29,7 @@ public class EntityHouse {
 
     // functions planned for this event
     //
-    // find house start location 
+    // find house start location --DONE--
     // - takes environment into account, like a flat ish forrest area, or plains
     //
     // calculate house stage --DONE--

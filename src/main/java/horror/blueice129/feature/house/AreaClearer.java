@@ -42,7 +42,7 @@ public class AreaClearer {
     public static void placeTorches(ServerWorld world, BlockPos center) {
         for (int x = -TORCH_RADIUS; x <= TORCH_RADIUS; x++) {
             for (int z = -TORCH_RADIUS; z <= TORCH_RADIUS; z++) {
-                if (random.nextFloat() < 0.07f) {
+                if (random.nextFloat() < 0.01f) {
                     int posy = SurfaceFinder.findPointSurfaceY(world, center.getX() + x, center.getZ() + z, true,
                             true, true);
                     

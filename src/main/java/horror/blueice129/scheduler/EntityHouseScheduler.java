@@ -38,6 +38,7 @@ public class EntityHouseScheduler {
     private static final int MIN_HOUSE_CHUNKS = 20;
     private static final int MAX_HOUSE_CHUNKS = 30;
     private static final int PLACEMENT_MIN_DISTANCE = 100;
+    private static final int MAX_STAGE = 5;
     // aggro value required to place each stage (index 0 = stage 1, index 4 = stage 5)
     private static final int[] STAGE_AGGRO_THRESHOLDS = { 2, 4, 6, 8, 10 };
 
@@ -137,8 +138,7 @@ public class EntityHouseScheduler {
 
         if (!isPlacementWindowOpen(player, housePos)) return;
 
-
-
+        // stage 1 is always the first structure placement in the progression.
         HousePlacer.placeHouse(1, housePos, world);
         state.setIntValue(STAGE_KEY, 1);
         setPhase(state, EntityHousePhase.STAGE_ACTIVE);
@@ -146,8 +146,18 @@ public class EntityHouseScheduler {
     }
 
     private static void handleStageActive(ServerWorld world, PlayerEntity player, HorrorModPersistentState state) {
-        int currentStage = state.getIntValue(STAGE_KEY, 1);
-        if (currentStage >= 5) {
+        int currentStage = state.getIntValue(STAGE_KEY, 0);
+
+        // If stage state is missing/corrupt, restart from first placement instead of skipping ahead.
+        if (currentStage < 1) {
+            setPhase(state, EntityHousePhase.AWAITING_PLACEMENT);
+            state.setIntValue(STAGE_KEY, 0);
+            HorrorMod129.LOGGER.warn("EntityHouseScheduler: invalid current stage {}, resetting to awaiting placement", currentStage);
+            return;
+        }
+
+        if (currentStage >= MAX_STAGE) {
+            state.setIntValue(STAGE_KEY, MAX_STAGE);
             setPhase(state, EntityHousePhase.COMPLETE);
             return;
         }
@@ -165,9 +175,9 @@ public class EntityHouseScheduler {
         HousePlacer.placeHouse(nextStage, housePos, world);
         state.setIntValue(STAGE_KEY, nextStage);
 
-        if (nextStage == 5) {
+        if (nextStage == MAX_STAGE) {
             setPhase(state, EntityHousePhase.COMPLETE);
-            HorrorMod129.LOGGER.info("EntityHouseScheduler: placed final stage 5 at {}", housePos.toShortString());
+            HorrorMod129.LOGGER.info("EntityHouseScheduler: placed final stage {} at {}", MAX_STAGE, housePos.toShortString());
         } else {
             HorrorMod129.LOGGER.info("EntityHouseScheduler: placed stage {} at {}", nextStage, housePos.toShortString());
         }
