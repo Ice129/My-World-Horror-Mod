@@ -3,6 +3,7 @@ package horror.blueice129.feature.house;
 import horror.blueice129.utils.BlockTypes;
 import horror.blueice129.utils.SurfaceFinder;
 import horror.blueice129.utils.TorchPlacer;
+// import horror.blueice129.utils.BlockTypes;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.world.ServerWorld;
@@ -19,14 +20,17 @@ public class AreaClearer {
         int y = SurfaceFinder.findPointSurfaceY(world, center.getX(), center.getZ(), true, true, true);
 
         BlockPos[] trees = SurfaceFinder.findTreePositions(world, center, CLEAR_RADIUS);
+
         for (BlockPos treeBase : trees) {
             for (BlockPos logPos : SurfaceFinder.getTreeLogPositions(world, treeBase)) {
                 world.setBlockState(logPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
             }
         }
 
-        // read state of the leaves and see if they are decaying or not. delete any leaves that are decaying
-        
+        BlockPos[] decayingLeafBlocks = SurfaceFinder.getDecayingLeafBlocks(world, trees);
+        for (BlockPos leafPos : decayingLeafBlocks) {
+            world.setBlockState(leafPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+        }
 
         for (int x = -CLEAR_RADIUS; x <= CLEAR_RADIUS; x++) {
             for (int z = -CLEAR_RADIUS; z <= CLEAR_RADIUS; z++) {
@@ -39,7 +43,6 @@ public class AreaClearer {
                 }
             }
         }
-
     }
 
     public static void placeTorches(ServerWorld world, BlockPos center) {
@@ -48,7 +51,7 @@ public class AreaClearer {
                 if (random.nextFloat() < 0.01f) {
                     int posy = SurfaceFinder.findPointSurfaceY(world, center.getX() + x, center.getZ() + z, true,
                             true, true);
-                    
+
                     if (posy != -1) {
                         BlockPos pos = new BlockPos(center.getX() + x, posy + 1, center.getZ() + z);
                         TorchPlacer.placeTorch(world, pos, random, null);

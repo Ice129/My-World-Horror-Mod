@@ -87,4 +87,11 @@ public class BlockTypes {
         return block == Blocks.OAK_LOG || block == Blocks.SPRUCE_LOG || block == Blocks.BIRCH_LOG
                 || block == Blocks.JUNGLE_LOG || block == Blocks.ACACIA_LOG || block == Blocks.DARK_OAK_LOG;
     }
+
+    public static boolean willLeafDecay(BlockState state) {
+        if (!(state.getBlock() instanceof LeavesBlock))
+            return false;
+        return !state.get(LeavesBlock.PERSISTENT) && state.get(LeavesBlock.DISTANCE) == 7;
+    }
+
 }

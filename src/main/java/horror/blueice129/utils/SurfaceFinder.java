@@ -235,4 +235,38 @@ public class SurfaceFinder {
         
         return logPositions.toArray(new BlockPos[0]);
     }
+
+    public static BlockPos[] getDecayingLeafBlocks(ServerWorld world, BlockPos[] treeLogPositions) {
+        // flood fill out from the log positions to find all connected leaves, then filter for decaying ones
+        // only add decaying leaves to the queue
+        List<BlockPos> decayingLeaves = new ArrayList<>();
+        Set<BlockPos> visited = new HashSet<>();
+        Queue<BlockPos> toCheck = new LinkedList<>();
+        for (BlockPos logPos : treeLogPositions) {
+            toCheck.add(logPos);
+            visited.add(logPos);
+        }
+        while (!toCheck.isEmpty()) {
+            BlockPos current = toCheck.poll();
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dy == 0 && dz == 0) continue;
+                        BlockPos adjacentPos = current.add(dx, dy, dz);
+                        if (!visited.contains(adjacentPos)) {
+                            visited.add(adjacentPos);
+                            BlockState adjacentState = world.getBlockState(adjacentPos);
+                            if (adjacentState.getBlock() instanceof LeavesBlock) {
+                                if (BlockTypes.willLeafDecay(adjacentState)) {
+                                    decayingLeaves.add(adjacentPos);
+                                    toCheck.add(adjacentPos); // continue flood fill through decaying leaves
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return decayingLeaves.toArray(new BlockPos[0]);
+    }
 }
