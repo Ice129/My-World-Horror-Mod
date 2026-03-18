@@ -36,10 +36,9 @@ public class AgroMeterScheduler {
                     long worldTime = server.getOverworld().getTimeOfDay();
                     long worldTimeOffset = state.getLongValue("worldTimeOffset", 0L);
                     int currentDay = DayUtils.getCurrentActualDay(worldTime, worldTimeOffset);
-                    int daysPerAggroLevel = getDaysPerAggroLevel();
                     
                     state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
-                    int initialAggro = Math.min(10, Math.max(1, (int) Math.ceil(currentDay / (double) daysPerAggroLevel)));
+                    int initialAggro = calculateAggroForDay(currentDay);
                     state.setIntValue("agroMeter", initialAggro);
                     
                     HorrorMod129.LOGGER.info("AgroMeterScheduler initialized: Day {}, Aggro {}", currentDay, initialAggro);
@@ -70,7 +69,6 @@ public class AgroMeterScheduler {
         long worldTimeOffset = state.getLongValue("worldTimeOffset", 0L);
         int currentDay = DayUtils.getCurrentActualDay(worldTime, worldTimeOffset);
         int lastKnownDay = state.getIntValue(LAST_KNOWN_DAY_KEY, 0);
-        int daysPerAggroLevel = getDaysPerAggroLevel();
         
         // Check if a new day has started
         if (currentDay > lastKnownDay) {
@@ -78,12 +76,40 @@ public class AgroMeterScheduler {
             state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
             
             // Set aggro meter to current day (minimum 1, capped at 10)
-            int newAggro = Math.min(10, Math.max(1, (int) Math.ceil(currentDay / (double) daysPerAggroLevel)));
+            int newAggro = calculateAggroForDay(currentDay);
             state.setIntValue("agroMeter", newAggro);
             
             HorrorMod129.LOGGER.info("Day changed from {} to {}. Aggro meter set to {}", 
                 lastKnownDay, currentDay, newAggro);
         }
+    }
+
+    public static void recalculateAggroForCurrentDay(MinecraftServer server) {
+        if (server == null) {
+            return;
+        }
+
+        World overworld = server.getOverworld();
+        if (overworld == null) {
+            return;
+        }
+
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        long worldTime = overworld.getTimeOfDay();
+        long worldTimeOffset = state.getLongValue("worldTimeOffset", 0L);
+        int currentDay = DayUtils.getCurrentActualDay(worldTime, worldTimeOffset);
+        int oldAggro = state.getIntValue("agroMeter", 1);
+        int newAggro = calculateAggroForDay(currentDay);
+
+        state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
+        state.setIntValue("agroMeter", newAggro);
+
+        HorrorMod129.LOGGER.info("Aggro recalculated after config change: Day {}, Aggro {} -> {}", currentDay, oldAggro, newAggro);
+    }
+
+    private static int calculateAggroForDay(int currentDay) {
+        int daysPerAggroLevel = getDaysPerAggroLevel();
+        return Math.min(10, Math.max(1, (int) Math.ceil(currentDay / (double) daysPerAggroLevel)));
     }
 
     private static int getDaysPerAggroLevel() {
