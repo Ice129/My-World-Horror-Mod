@@ -1,6 +1,8 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.config.ConfigManager;
+import horror.blueice129.config.ModConfig;
 import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.utils.DayUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -10,7 +12,7 @@ import net.minecraft.world.World;
 
 /**
  * Scheduler that tracks actual days passed and sets the aggro meter accordingly.
- * The aggro meter increases progressively, reaching maximum (10) on day 30.
+ * The aggro meter increases progressively based on configured speed.
  * Maximum aggro meter value is capped at 10.
  */
 public class AgroMeterScheduler {
@@ -34,9 +36,10 @@ public class AgroMeterScheduler {
                     long worldTime = server.getOverworld().getTimeOfDay();
                     long worldTimeOffset = state.getLongValue("worldTimeOffset", 0L);
                     int currentDay = DayUtils.getCurrentActualDay(worldTime, worldTimeOffset);
+                    int daysPerAggroLevel = getDaysPerAggroLevel();
                     
                     state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
-                    int initialAggro = Math.min(10, Math.max(1, (int)Math.ceil(currentDay / 3.0)));
+                    int initialAggro = Math.min(10, Math.max(1, (int) Math.ceil(currentDay / (double) daysPerAggroLevel)));
                     state.setIntValue("agroMeter", initialAggro);
                     
                     HorrorMod129.LOGGER.info("AgroMeterScheduler initialized: Day {}, Aggro {}", currentDay, initialAggro);
@@ -67,6 +70,7 @@ public class AgroMeterScheduler {
         long worldTimeOffset = state.getLongValue("worldTimeOffset", 0L);
         int currentDay = DayUtils.getCurrentActualDay(worldTime, worldTimeOffset);
         int lastKnownDay = state.getIntValue(LAST_KNOWN_DAY_KEY, 0);
+        int daysPerAggroLevel = getDaysPerAggroLevel();
         
         // Check if a new day has started
         if (currentDay > lastKnownDay) {
@@ -74,11 +78,19 @@ public class AgroMeterScheduler {
             state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
             
             // Set aggro meter to current day (minimum 1, capped at 10)
-            int newAggro = Math.min(10, Math.max(1, (int)Math.ceil(currentDay / 3.0)));
+            int newAggro = Math.min(10, Math.max(1, (int) Math.ceil(currentDay / (double) daysPerAggroLevel)));
             state.setIntValue("agroMeter", newAggro);
             
             HorrorMod129.LOGGER.info("Day changed from {} to {}. Aggro meter set to {}", 
                 lastKnownDay, currentDay, newAggro);
         }
+    }
+
+    private static int getDaysPerAggroLevel() {
+        ModConfig config = ConfigManager.getConfig();
+        if (config == null || config.speedOfProgression == null) {
+            return ModConfig.SpeedOption.NORMAL.getDaysPerAggroLevel();
+        }
+        return config.speedOfProgression.getDaysPerAggroLevel();
     }
 }

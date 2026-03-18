@@ -62,6 +62,14 @@ public class ConfigScreen {
                 .setSaveConsumer(newValue -> config.enableMusicVolumeLocking = newValue)
                 .build());
         
+        ConfigCategory speedCategory = builder.getOrCreateCategory(Text.literal("Progression"));
+        // multiple string options: slowest, slower, normal, faster, fastest
+        speedCategory.addEntry(entryBuilder.startEnumSelector(Text.literal("Speed"), ModConfig.SpeedOption.class, config.speedOfProgression)
+                .setDefaultValue(ModConfig.SpeedOption.NORMAL)
+                .setTooltip(Text.literal("Adjusts how quickly the mod progresses through stages"))
+                .setSaveConsumer(newValue -> config.speedOfProgression = newValue)
+                .build());
+        
         builder.setSavingRunnable(() -> ConfigManager.saveConfig(config));
         
         return builder.build();
