@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Set;
+
+// import horror.blueice129.HorrorMod129;
+
 import java.util.HashSet;
 
 /**
@@ -39,51 +42,43 @@ public class SurfaceFinder {
      */
     public static int findPointSurfaceY(ServerWorld world, int x, int z, boolean ignoreFoliage, boolean avoidWater,
             boolean includeSnow) {
-        // Start from the top of the world and move downwards
-        int y = world.getTopY();
-        BlockPos.Mutable pos = new BlockPos.Mutable(x, y, z);
+        int bottomY = world.getBottomY();
+        int topY = world.getTopY();
+        int midY = bottomY + (topY - bottomY) / 2;
+        BlockPos.Mutable pos = new BlockPos.Mutable(x, topY, z);
 
         // Make sure the chunk is loaded before accessing blocks
-        if (!ChunkLoader.loadChunksInRadius(world,
-                new BlockPos(x, world.getBottomY() + (world.getTopY() - world.getBottomY()) / 2, z), 1)) {
+        if (!ChunkLoader.loadChunksInRadius(world, new BlockPos(x, midY, z), 1)) {
             return -1; // Return -1 if chunk couldn't be loaded
         }
 
-        while (y > world.getBottomY()) {
+        for (int y = topY; y > bottomY; y--) {
             pos.setY(y);
             BlockState block = world.getBlockState(pos);
 
-            // Check if the block is not air
-            if (!block.isAir()) {
-                // Special handling for snow: if includeSnow is true, treat it as a valid surface
-                // even when ignoreFoliage is true
-                if (block.getBlock() == Blocks.SNOW && includeSnow) {
-                    // If avoiding water, check if the block below snow is water
-                    if (avoidWater) {
-                        BlockState belowBlock = world.getBlockState(pos.down());
-                        if (BlockTypes.isWater(belowBlock.getBlock())) {
-                            return -1;
-                        }
-                    }
-                    // Snow is a valid surface when includeSnow is true
-                    return y - 1; // to account for the snow
-                }
-                
-                // If ignoring foliage, check if the block is foliage (excluding snow when includeSnow is true)
-                if (ignoreFoliage && BlockTypes.isFoliage(block.getBlock(), false)) {
-                    y--;
-                    continue;
-                }
-                
-                // If avoiding water, check if the block is water
-                if (avoidWater && BlockTypes.isWater(block.getBlock())) {
-                    return -1;
-                }
-                // Found a suitable surface block
-                return y;
+            if (block.isAir()) {
+                continue;
             }
 
-            y--;
+            if (block.isOf(Blocks.SNOW) && includeSnow) {
+                if (avoidWater) {
+                    BlockState belowBlock = world.getBlockState(pos.down());
+                    if (BlockTypes.isWater(belowBlock.getBlock())) {
+                        return -1;
+                    }
+                }
+                return y - 1; // to account for the snow
+            }
+
+            if (ignoreFoliage && BlockTypes.isFoliage(block.getBlock(), false)) {
+                continue;
+            }
+
+            if (avoidWater && BlockTypes.isWater(block.getBlock())) {
+                return -1;
+            }
+
+            return y;
         }
 
         // Return -1 if no suitable surface was found
@@ -236,37 +231,38 @@ public class SurfaceFinder {
         return logPositions.toArray(new BlockPos[0]);
     }
 
-    public static BlockPos[] getDecayingLeafBlocks(ServerWorld world, BlockPos[] treeLogPositions) {
-        // flood fill out from the log positions to find all connected leaves, then filter for decaying ones
-        // only add decaying leaves to the queue
-        List<BlockPos> decayingLeaves = new ArrayList<>();
-        Set<BlockPos> visited = new HashSet<>();
-        Queue<BlockPos> toCheck = new LinkedList<>();
-        for (BlockPos logPos : treeLogPositions) {
-            toCheck.add(logPos);
-            visited.add(logPos);
-        }
-        while (!toCheck.isEmpty()) {
-            BlockPos current = toCheck.poll();
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dy == 0 && dz == 0) continue;
-                        BlockPos adjacentPos = current.add(dx, dy, dz);
-                        if (!visited.contains(adjacentPos)) {
-                            visited.add(adjacentPos);
-                            BlockState adjacentState = world.getBlockState(adjacentPos);
-                            if (adjacentState.getBlock() instanceof LeavesBlock) {
-                                if (BlockTypes.willLeafDecay(adjacentState)) {
-                                    decayingLeaves.add(adjacentPos);
-                                    toCheck.add(adjacentPos); // continue flood fill through decaying leaves
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return decayingLeaves.toArray(new BlockPos[0]);
-    }
+    // public static BlockPos[] getDecayingLeafBlocks(ServerWorld world, BlockPos[] treeLogPositions) {
+    //     // flood fill out from the log positions to find all connected leaves, then filter for decaying ones
+    //     // only add decaying leaves to the queue
+    //     List<BlockPos> decayingLeaves = new ArrayList<>();
+    //     Set<BlockPos> visited = new HashSet<>();
+    //     Queue<BlockPos> toCheck = new LinkedList<>();
+    //     for (BlockPos logPos : treeLogPositions) {
+    //         toCheck.add(logPos);
+    //         visited.add(logPos);
+    //     }
+    //     while (!toCheck.isEmpty()) {
+    //         BlockPos current = toCheck.poll();
+    //         for (int dx = -1; dx <= 1; dx++) {
+    //             for (int dy = -1; dy <= 1; dy++) {
+    //                 for (int dz = -1; dz <= 1; dz++) {
+    //                     if (dx == 0 && dy == 0 && dz == 0) continue;
+    //                     BlockPos adjacentPos = current.add(dx, dy, dz);
+    //                     if (!visited.contains(adjacentPos)) {
+    //                         visited.add(adjacentPos);
+    //                         BlockState adjacentState = world.getBlockState(adjacentPos);
+    //                         if (adjacentState.getBlock() instanceof LeavesBlock) {
+    //                             if (BlockTypes.willLeafDecay(adjacentState)) {
+    //                                 decayingLeaves.add(adjacentPos);
+    //                                 toCheck.add(adjacentPos); // continue flood fill through decaying leaves
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     HorrorMod129.LOGGER.info("[SurfaceFinder] Found {} decaying leaves around tree logs", decayingLeaves.size());
+    //     return decayingLeaves.toArray(new BlockPos[0]);
+    // }
 }

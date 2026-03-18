@@ -27,11 +27,6 @@ public class AreaClearer {
             }
         }
 
-        BlockPos[] decayingLeafBlocks = SurfaceFinder.getDecayingLeafBlocks(world, trees);
-        for (BlockPos leafPos : decayingLeafBlocks) {
-            world.setBlockState(leafPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
-        }
-
         for (int x = -CLEAR_RADIUS; x <= CLEAR_RADIUS; x++) {
             for (int z = -CLEAR_RADIUS; z <= CLEAR_RADIUS; z++) {
                 for (int dy = -3; dy <= 3; dy++) {
