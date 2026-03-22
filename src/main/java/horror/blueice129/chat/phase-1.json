@@ -3,23 +3,36 @@
         {
             "name": "first_greeting",
             "catagory": "simple",
+            "fuzzy_error": 0.2,
             "min_agro": 2,
             "max_agro": 5,
-            "repeats": 1,
+            "repeats": 2,
             "chat_prerequisites": null,
             "game_prerequisites": null,
             "patterns": [
                 "hi",
                 "hello",
                 "hey",
-                "hiya"
+                "hiya",
+                "greetings",
+                "sup",
+                "yo",
+                "whats up",
+                "hai",
+                "haiii",
+                "wsp",
+                "hihi",
+                "halo",
+                "hallo",  
+                "wsg"
             ],
             "responses": [
                 "who are you?",
                 "i dont recognise you",
                 "are you me?",
                 "hey?",
-                "hi?"
+                "hi?",
+                "are you one of my mates?"
             ]
         },
         {
