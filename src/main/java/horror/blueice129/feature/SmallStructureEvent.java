@@ -248,7 +248,9 @@ public class SmallStructureEvent {
 
     private static boolean cobblestonePillarEvent(MinecraftServer server, ServerPlayerEntity player) {
 
-        BlockPos pos = intrestingAreaFinder(server, player);
+        IntrestingLocation location = intrestingAreaFinder(server, player);
+        BlockPos pos = location.pos;
+        String type = location.type;
         if (pos == null) {
             return false; // No suitable location found
         }
@@ -285,7 +287,17 @@ public class SmallStructureEvent {
         return true;
     }
 
-    private static BlockPos intrestingAreaFinder(MinecraftServer server, ServerPlayerEntity player) {
+    static class IntrestingLocation {
+        BlockPos pos;
+        String type;
+
+        public IntrestingLocation(BlockPos pos, String type) {
+            this.pos = pos;
+            this.type = type;
+        }
+    }
+
+    private static IntrestingLocation intrestingAreaFinder(MinecraftServer server, ServerPlayerEntity player) {
         int tries = 200;
         // list of block types that are considered intresting
         Block[] intrestingBlocks = { Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.TORCH,
@@ -294,7 +306,7 @@ public class SmallStructureEvent {
                 Blocks.HAY_BLOCK, Blocks.MOSS_BLOCK, Blocks.LAVA, Blocks.FIRE, Blocks.EMERALD_ORE, Blocks.DIAMOND_ORE, Blocks.SPAWNER
             };
 
-        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "plank", "glass", "rail", "path"};
+        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "plank", "glass", "rail", "anvil"};
         for (int i = 0; i < tries; i++) {
             BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 80,
                     200);
@@ -311,7 +323,7 @@ public class SmallStructureEvent {
                             Block blockAtPos = server.getOverworld().getBlockState(checkPos).getBlock();
                             if (checkPos.getY() <= 45) {
                                 HorrorMod129.LOGGER.info("returned cave pos: " + checkPos);
-                                return pos; // Found a deep hole/cave, return this position
+                                return new IntrestingLocation(pos, "cave"); // Found a cave entrance, return this position with type
                             }
                             if (blockAtPos != Blocks.AIR || blockAtPos != Blocks.GRASS_BLOCK
                                     || blockAtPos != Blocks.DIRT || blockAtPos != Blocks.SAND
@@ -320,14 +332,14 @@ public class SmallStructureEvent {
                                 if (java.util.Arrays.asList(intrestingBlocks)
                                         .contains(blockAtPos)) {
                                     HorrorMod129.LOGGER.info("returned intresting block pos: " + checkPos);
-                                    return pos; // Found an intresting block, return this position
+                                    return new IntrestingLocation(pos, blockAtPos.getTranslationKey()); // Found an intresting block, return this position with type
                                 } else {
                                     String blockName = blockAtPos.getTranslationKey();
                                     for (String partialName : intrestingPartialBlockNames) {
                                         if (blockName.contains(partialName)) {
                                             HorrorMod129.LOGGER.info("returned intresting partial block pos: " + checkPos);
                                             HorrorMod129.LOGGER.info("block name: " + blockName);
-                                            return pos; // Found a block with an intresting structure attached
+                                            return new IntrestingLocation(pos, partialName); // Found an intresting block, return this position with type
                                         }
                                     }
                                 }
