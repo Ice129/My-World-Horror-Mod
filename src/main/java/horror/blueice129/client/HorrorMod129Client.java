@@ -5,6 +5,7 @@ import horror.blueice129.HorrorMod129;
 import horror.blueice129.feature.VersionHud;
 import horror.blueice129.network.ClientPacketHandler;
 import horror.blueice129.scheduler.MinMusicSetter;
+import horror.blueice129.scheduler.DisclaimerScheduler;
 import horror.blueice129.utils.ScreenshotFromEntity;
 import horror.blueice129.client.entity.model.Blueice129EntityModel;
 import horror.blueice129.client.entity.renderer.Blueice129EntityRenderer;
@@ -26,6 +27,7 @@ public class HorrorMod129Client implements ClientModInitializer {
         
         // Register client-side features
         MinMusicSetter.initialize();
+        DisclaimerScheduler.initialize();
         VersionHud.initialize();
         ScreenshotFromEntity.initialize();
 
