@@ -6,6 +6,7 @@ import horror.blueice129.feature.VersionHud;
 import horror.blueice129.network.ClientPacketHandler;
 import horror.blueice129.scheduler.MinMusicSetter;
 import horror.blueice129.utils.ScreenshotFromEntity;
+import horror.blueice129.scheduler.FullbrightKiller;
 import horror.blueice129.client.entity.model.Blueice129EntityModel;
 import horror.blueice129.client.entity.renderer.Blueice129EntityRenderer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -28,6 +29,7 @@ public class HorrorMod129Client implements ClientModInitializer {
         MinMusicSetter.initialize();
         VersionHud.initialize();
         ScreenshotFromEntity.initialize();
+        FullbrightKiller.initialize();
 
         // entity rendering needed to do on client side, as its visual and the server side logic are separate
         
