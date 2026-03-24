@@ -3,7 +3,9 @@
 	"package": "horror.blueice129.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"ExampleMixin"
+		"ExampleMixin",
+		"ServerWorldSleepStatusMixin",
+		"SleepManagerMixin"
 	],
 	"client": [
 		"client.GameRendererAccessor",

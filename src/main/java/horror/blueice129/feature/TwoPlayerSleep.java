@@ -1,11 +1,31 @@
 package horror.blueice129.feature;
 
 public class TwoPlayerSleep {
+    public enum FakeSleeperMode {
+        LOGGED_OUT,
+        AWAKE,
+        ASLEEP
+    }
 
-    public static boolean isEntitySleeping() {
-        // check if its late night time
-        // check if the player is spam sleeping
-        // check if 
+    private static FakeSleeperMode fakeSleeperMode = FakeSleeperMode.LOGGED_OUT;
+
+    private TwoPlayerSleep() {
+    }
+
+    public static FakeSleeperMode getFakeSleeperMode() {
+        return fakeSleeperMode;
+    }
+
+    public static void setFakeSleeperMode(FakeSleeperMode mode) {
+        fakeSleeperMode = mode == null ? FakeSleeperMode.LOGGED_OUT : mode;
+    }
+
+    public static int getExtraOnlinePlayers() {
+        return fakeSleeperMode == FakeSleeperMode.LOGGED_OUT ? 0 : 1;
+    }
+
+    public static int getExtraSleepingPlayers() {
+        return fakeSleeperMode == FakeSleeperMode.ASLEEP ? 1 : 0;
     }
 
 }

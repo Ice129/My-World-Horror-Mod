@@ -18,6 +18,7 @@ import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
+import horror.blueice129.feature.TwoPlayerSleep;
 import horror.blueice129.debug.LineOfSightChecker;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.sounds.FakeFootsteps;
@@ -156,6 +157,17 @@ public class DebugCommands {
                                 .executes(context -> setAgroMeter(
                                     context.getSource(),
                                     IntegerArgumentType.getInteger(context, "level"))))))
+
+                    // === SLEEP TESTING ===
+                    .then(literal("sleep")
+                        .then(literal("get")
+                            .executes(context -> getSleepMode(context.getSource())))
+                        .then(literal("logged_out")
+                            .executes(context -> setSleepMode(context.getSource(), TwoPlayerSleep.FakeSleeperMode.LOGGED_OUT)))
+                        .then(literal("awake")
+                            .executes(context -> setSleepMode(context.getSource(), TwoPlayerSleep.FakeSleeperMode.AWAKE)))
+                        .then(literal("asleep")
+                            .executes(context -> setSleepMode(context.getSource(), TwoPlayerSleep.FakeSleeperMode.ASLEEP))))
                     
                     // === CLIENT SETTINGS ===
                     .then(literal("settings")
@@ -1068,6 +1080,24 @@ public class DebugCommands {
             source.sendError(Text.literal("Failed to disable smooth lighting: " + e.getMessage()));
             return 0;
         }
+    }
+
+    /**
+     * Get the current fake sleeper mode used for sleep testing
+     */
+    private static int getSleepMode(ServerCommandSource source) {
+        TwoPlayerSleep.FakeSleeperMode mode = TwoPlayerSleep.getFakeSleeperMode();
+        source.sendFeedback(() -> Text.literal("Sleep test mode: " + mode.name().toLowerCase()), false);
+        return 1;
+    }
+
+    /**
+     * Set the current fake sleeper mode used for sleep testing
+     */
+    private static int setSleepMode(ServerCommandSource source, TwoPlayerSleep.FakeSleeperMode mode) {
+        TwoPlayerSleep.setFakeSleeperMode(mode);
+        source.sendFeedback(() -> Text.literal("Sleep test mode set to: " + mode.name().toLowerCase()), true);
+        return 1;
     }
 
     /**
