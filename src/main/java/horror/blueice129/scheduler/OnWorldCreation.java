@@ -4,7 +4,10 @@ import horror.blueice129.HorrorMod129;
 import net.minecraft.util.math.random.Random;
 import horror.blueice129.data.HorrorModPersistentState;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 
 /**
@@ -13,6 +16,8 @@ import net.minecraft.world.World;
  */
 public class OnWorldCreation {
     private static final String WORLD_INITIALIZED_KEY = "worldInitialized";
+    private static final String MAP_IDS_INITIALIZED_KEY = "mapIdsInitialized";
+    private static final int INITIAL_MAP_IDS_TO_CONSUME = 15;
 
     /**
      * Registers the world load event to detect world creation.
@@ -36,6 +41,15 @@ public class OnWorldCreation {
             }
         });
 
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            if (state.getIntValue(MAP_IDS_INITIALIZED_KEY, 0) == 0) {
+                initializeMapIds(server);
+                state.setIntValue(MAP_IDS_INITIALIZED_KEY, 1);
+                HorrorMod129.LOGGER.info("Map id initialization complete on first player join");
+            }
+        });
+
         HorrorMod129.LOGGER.info("Registered OnWorldCreation");
     }
 
@@ -49,6 +63,28 @@ public class OnWorldCreation {
 
         modifyWorldDate(server);
 
+    }
+
+    /**
+     * Creates and discards a set of filled maps so the first player-created map starts at a higher ID.
+     */
+    private static void initializeMapIds(MinecraftServer server) {
+        ServerWorld overworld = server.getOverworld();
+        if (overworld == null) {
+            HorrorMod129.LOGGER.warn("OnWorldCreation: Overworld was null, skipping initial map id setup");
+            return;
+        }
+
+        int spawnX = overworld.getSpawnPos().getX();
+        int spawnZ = overworld.getSpawnPos().getZ();
+
+        for (int i = 0; i < INITIAL_MAP_IDS_TO_CONSUME; i++) {
+            // Create map data to consume IDs and then immediately discard the item stack.
+            FilledMapItem.createMap(overworld, spawnX, spawnZ, (byte) 0, true, false);
+        }
+
+        HorrorMod129.LOGGER.info("OnWorldCreation: Consumed " + INITIAL_MAP_IDS_TO_CONSUME
+                + " map IDs so first player map should start around id 15");
     }
 
     /**
