@@ -8,7 +8,7 @@ import net.minecraft.server.world.ServerWorld;
 
 public class LilyDamageScheduler {
 
-    private static final int CHECK_INTERVAL = 20;
+    private static final int CHECK_INTERVAL = 20 * 2;
     private static int tickCounter = 0;
 
     public static void register() {

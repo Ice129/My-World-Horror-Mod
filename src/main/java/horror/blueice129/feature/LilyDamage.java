@@ -1,7 +1,7 @@
 package horror.blueice129.feature;
 
 import net.minecraft.block.Blocks;
-import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -13,21 +13,26 @@ public class LilyDamage {
     private static final int V_RADIUS = 1;
     private static final int DURABILITY_DRAIN_PER_FLOWER = 2;
 
-    private static final EquipmentSlot[] ARMOR_SLOTS = {
-        EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
-    };
-
     public static void applyToPlayer(ServerWorld world, ServerPlayerEntity player) {
         int flowers = countNearbyFlowers(world, player.getBlockPos());
         if (flowers == 0) return;
 
         int drain = flowers * DURABILITY_DRAIN_PER_FLOWER;
-        for (EquipmentSlot slot : ARMOR_SLOTS) {
-            ItemStack armor = player.getEquippedStack(slot);
-            if (!armor.isEmpty() && armor.isDamageable()) {
-                armor.damage(drain, player, p -> p.sendEquipmentBreakStatus(slot));
+        PlayerInventory inventory = player.getInventory();
+        ItemStack[] candidates = new ItemStack[inventory.size()];
+        int candidateCount = 0;
+
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            if (!stack.isEmpty() && stack.isDamageable()) {
+                candidates[candidateCount++] = stack;
             }
         }
+
+        if (candidateCount == 0) return;
+
+        ItemStack chosenStack = candidates[world.getRandom().nextInt(candidateCount)];
+        chosenStack.damage(drain, world.getRandom(), player);
     }
 
     private static int countNearbyFlowers(ServerWorld world, BlockPos center) {

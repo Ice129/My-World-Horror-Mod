@@ -1,9 +1,12 @@
 package horror.blueice129.config;
 
+import horror.blueice129.scheduler.AgroMeterScheduler;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.text.Text;
 
 public class ConfigScreen {
@@ -62,7 +65,22 @@ public class ConfigScreen {
                 .setSaveConsumer(newValue -> config.enableMusicVolumeLocking = newValue)
                 .build());
         
-        builder.setSavingRunnable(() -> ConfigManager.saveConfig(config));
+        ConfigCategory speedCategory = builder.getOrCreateCategory(Text.literal("Progression"));
+        // multiple string options: slowest, slower, normal, faster, fastest
+        speedCategory.addEntry(entryBuilder.startEnumSelector(Text.literal("Speed"), ModConfig.SpeedOption.class, config.speedOfProgression)
+                .setDefaultValue(ModConfig.SpeedOption.NORMAL)
+                .setTooltip(Text.literal("Adjusts how quickly the mod progresses through stages"))
+                .setSaveConsumer(newValue -> config.speedOfProgression = newValue)
+                .build());
+        
+        builder.setSavingRunnable(() -> {
+            ConfigManager.saveConfig(config);
+
+            MinecraftServer server = MinecraftClient.getInstance().getServer();
+            if (server != null) {
+                server.execute(() -> AgroMeterScheduler.recalculateAggroForCurrentDay(server));
+            }
+        });
         
         return builder.build();
     }

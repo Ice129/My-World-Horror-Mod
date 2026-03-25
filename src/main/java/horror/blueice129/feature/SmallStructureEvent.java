@@ -31,7 +31,7 @@ public class SmallStructureEvent {
             { "furnace", "5" },
             { "cobblestone_pillar", "5" },
             { "single_torch", "10" },
-            { "torched_area", "7" },
+            { "torched_area", "5" },
             { "tree_mined", "20" },
             { "deforestation", "5" },
             { "flower_patch", "13" },

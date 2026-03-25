@@ -1,6 +1,8 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.config.ConfigManager;
+import horror.blueice129.config.ModConfig;
 import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.utils.DayUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -10,7 +12,7 @@ import net.minecraft.world.World;
 
 /**
  * Scheduler that tracks actual days passed and sets the aggro meter accordingly.
- * The aggro meter increases progressively, reaching maximum (10) on day 30.
+ * The aggro meter increases progressively based on configured speed.
  * Maximum aggro meter value is capped at 10.
  */
 public class AgroMeterScheduler {
@@ -36,7 +38,7 @@ public class AgroMeterScheduler {
                     int currentDay = DayUtils.getCurrentActualDay(worldTime, worldTimeOffset);
                     
                     state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
-                    int initialAggro = Math.min(10, Math.max(1, (int)Math.ceil(currentDay / 3.0)));
+                    int initialAggro = calculateAggroForDay(currentDay);
                     state.setIntValue("agroMeter", initialAggro);
                     
                     HorrorMod129.LOGGER.info("AgroMeterScheduler initialized: Day {}, Aggro {}", currentDay, initialAggro);
@@ -74,11 +76,47 @@ public class AgroMeterScheduler {
             state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
             
             // Set aggro meter to current day (minimum 1, capped at 10)
-            int newAggro = Math.min(10, Math.max(1, (int)Math.ceil(currentDay / 3.0)));
+            int newAggro = calculateAggroForDay(currentDay);
             state.setIntValue("agroMeter", newAggro);
             
             HorrorMod129.LOGGER.info("Day changed from {} to {}. Aggro meter set to {}", 
                 lastKnownDay, currentDay, newAggro);
         }
+    }
+
+    public static void recalculateAggroForCurrentDay(MinecraftServer server) {
+        if (server == null) {
+            return;
+        }
+
+        World overworld = server.getOverworld();
+        if (overworld == null) {
+            return;
+        }
+
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        long worldTime = overworld.getTimeOfDay();
+        long worldTimeOffset = state.getLongValue("worldTimeOffset", 0L);
+        int currentDay = DayUtils.getCurrentActualDay(worldTime, worldTimeOffset);
+        int oldAggro = state.getIntValue("agroMeter", 1);
+        int newAggro = calculateAggroForDay(currentDay);
+
+        state.setIntValue(LAST_KNOWN_DAY_KEY, currentDay);
+        state.setIntValue("agroMeter", newAggro);
+
+        HorrorMod129.LOGGER.info("Aggro recalculated after config change: Day {}, Aggro {} -> {}", currentDay, oldAggro, newAggro);
+    }
+
+    private static int calculateAggroForDay(int currentDay) {
+        int daysPerAggroLevel = getDaysPerAggroLevel();
+        return Math.min(10, Math.max(1, (int) Math.ceil(currentDay / (double) daysPerAggroLevel)));
+    }
+
+    private static int getDaysPerAggroLevel() {
+        ModConfig config = ConfigManager.getConfig();
+        if (config == null || config.speedOfProgression == null) {
+            return ModConfig.SpeedOption.NORMAL.getDaysPerAggroLevel();
+        }
+        return config.speedOfProgression.getDaysPerAggroLevel();
     }
 }

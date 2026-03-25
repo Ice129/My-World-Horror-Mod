@@ -2,9 +2,11 @@ package horror.blueice129.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.feature.PlayerStateHud;
 import horror.blueice129.feature.VersionHud;
 import horror.blueice129.network.ClientPacketHandler;
 import horror.blueice129.scheduler.MinMusicSetter;
+import horror.blueice129.scheduler.PlayerStateScheduler;
 import horror.blueice129.utils.ScreenshotFromEntity;
 import horror.blueice129.client.entity.model.Blueice129EntityModel;
 import horror.blueice129.client.entity.renderer.Blueice129EntityRenderer;
@@ -26,7 +28,9 @@ public class HorrorMod129Client implements ClientModInitializer {
         
         // Register client-side features
         MinMusicSetter.initialize();
+        PlayerStateScheduler.initialize();
         VersionHud.initialize();
+        PlayerStateHud.initialize();
         ScreenshotFromEntity.initialize();
 
         // entity rendering needed to do on client side, as its visual and the server side logic are separate
