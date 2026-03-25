@@ -12,6 +12,7 @@ public class TwoPlayerSleep {
     private TwoPlayerSleep() {
     }
 
+    // Getters and setters for the fake sleeper mode
     public static FakeSleeperMode getFakeSleeperMode() {
         return fakeSleeperMode;
     }
