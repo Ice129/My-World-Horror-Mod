@@ -18,6 +18,7 @@ import horror.blueice129.scheduler.LedgePusherScheduler;
 import horror.blueice129.scheduler.SettingsScheduler;
 import horror.blueice129.scheduler.LilyDamageScheduler;
 import horror.blueice129.scheduler.OnWorldCreation;
+import horror.blueice129.scheduler.TwoPlayerSleepScheduler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -76,6 +77,7 @@ public class HorrorMod129 implements ModInitializer {
 		LedgePusherScheduler.register();
 		PlayerDeathItemsScheduler.register();
 		LilyDamageScheduler.register();
+		TwoPlayerSleepScheduler.register();
 		ScreenshotScheduler.register();
 		SettingsScheduler.register(); // Now server-side
 		
