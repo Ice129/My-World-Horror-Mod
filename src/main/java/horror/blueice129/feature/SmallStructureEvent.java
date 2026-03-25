@@ -288,9 +288,9 @@ public class SmallStructureEvent {
         Block bannerBlock = getBannerForColor(bannerColor);
         
         server.getOverworld().setBlockState(torchPos.up(), bannerBlock.getDefaultState());
-        BlockEntity bannerEntity = server.getOverworld().getBlockEntity(torchPos);
+        BlockEntity bannerEntity = server.getOverworld().getBlockEntity(torchPos.up());
         if (bannerEntity instanceof BannerBlockEntity banner) {
-            banner.setCustomName(Text.literal(bannerText));
+            banner.setCustomName(Text.literal(bannerText.toLowerCase().replace("_", " ")));
         }   
 
 
