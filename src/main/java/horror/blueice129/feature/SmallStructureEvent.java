@@ -19,6 +19,9 @@ import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.LineOfSightUtils;
 import horror.blueice129.utils.TorchPlacer;
 import net.minecraft.world.World;
+import net.minecraft.text.Text;
+import net.minecraft.util.DyeColor;
+import net.minecraft.block.entity.BannerBlockEntity;
 
 import net.minecraft.util.math.random.Random;
 
@@ -248,7 +251,9 @@ public class SmallStructureEvent {
 
     private static boolean cobblestonePillarEvent(MinecraftServer server, ServerPlayerEntity player) {
 
-        BlockPos pos = intrestingAreaFinder(server, player);
+        IntrestingLocation location = intrestingAreaFinder(server, player);
+        BlockPos pos = location.pos;
+        String type = location.type;
         if (pos == null) {
             return false; // No suitable location found
         }
@@ -274,7 +279,21 @@ public class SmallStructureEvent {
         // server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
         // use torchutil instead
         BlockPos torchPos = pos.up(height).down();
-        TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
+        // TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
+        // place a random colour banner with the name of the returned block type on the pillar
+        // make the block type just be the block, not minecraft: or net.minecraft.block. just the name of the block
+        String bannerText = type.replace("block.", "").replace("minecraft.", "").toUpperCase();
+        DyeColor[] colors = DyeColor.values();
+        DyeColor bannerColor = colors[RANDOM.nextInt(colors.length)];
+        Block bannerBlock = getBannerForColor(bannerColor);
+        
+        server.getOverworld().setBlockState(torchPos.up(), bannerBlock.getDefaultState());
+        BlockEntity bannerEntity = server.getOverworld().getBlockEntity(torchPos.up());
+        if (bannerEntity instanceof BannerBlockEntity banner) {
+            banner.setCustomName(Text.literal(bannerText.toLowerCase().replace("_", " ")));
+        }   
+
+
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.north(), RANDOM, player);
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.east(), RANDOM, player);
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.south(), RANDOM, player);
@@ -285,7 +304,38 @@ public class SmallStructureEvent {
         return true;
     }
 
-    private static BlockPos intrestingAreaFinder(MinecraftServer server, ServerPlayerEntity player) {
+    private static Block getBannerForColor(DyeColor color) {
+        return switch (color) {
+            case WHITE -> Blocks.WHITE_BANNER;
+            case ORANGE -> Blocks.ORANGE_BANNER;
+            case MAGENTA -> Blocks.MAGENTA_BANNER;
+            case LIGHT_BLUE -> Blocks.LIGHT_BLUE_BANNER;
+            case YELLOW -> Blocks.YELLOW_BANNER;
+            case LIME -> Blocks.LIME_BANNER;
+            case PINK -> Blocks.PINK_BANNER;
+            case GRAY -> Blocks.GRAY_BANNER;
+            case LIGHT_GRAY -> Blocks.LIGHT_GRAY_BANNER;
+            case CYAN -> Blocks.CYAN_BANNER;
+            case PURPLE -> Blocks.PURPLE_BANNER;
+            case BLUE -> Blocks.BLUE_BANNER;
+            case BROWN -> Blocks.BROWN_BANNER;
+            case GREEN -> Blocks.GREEN_BANNER;
+            case RED -> Blocks.RED_BANNER;
+            case BLACK -> Blocks.BLACK_BANNER;
+        };
+    }
+
+    static class IntrestingLocation {
+        BlockPos pos;
+        String type;
+
+        public IntrestingLocation(BlockPos pos, String type) {
+            this.pos = pos;
+            this.type = type;
+        }
+    }
+
+    private static IntrestingLocation intrestingAreaFinder(MinecraftServer server, ServerPlayerEntity player) {
         int tries = 200;
         // list of block types that are considered intresting
         Block[] intrestingBlocks = { Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.TORCH,
@@ -294,7 +344,7 @@ public class SmallStructureEvent {
                 Blocks.HAY_BLOCK, Blocks.MOSS_BLOCK, Blocks.LAVA, Blocks.FIRE, Blocks.EMERALD_ORE, Blocks.DIAMOND_ORE, Blocks.SPAWNER
             };
 
-        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "plank", "glass", "rail", "path"};
+        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "plank", "glass", "rail", "anvil"};
         for (int i = 0; i < tries; i++) {
             BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 80,
                     200);
@@ -311,7 +361,7 @@ public class SmallStructureEvent {
                             Block blockAtPos = server.getOverworld().getBlockState(checkPos).getBlock();
                             if (checkPos.getY() <= 45) {
                                 HorrorMod129.LOGGER.info("returned cave pos: " + checkPos);
-                                return pos; // Found a deep hole/cave, return this position
+                                return new IntrestingLocation(pos, "cave"); // Found a cave entrance, return this position with type
                             }
                             if (blockAtPos != Blocks.AIR || blockAtPos != Blocks.GRASS_BLOCK
                                     || blockAtPos != Blocks.DIRT || blockAtPos != Blocks.SAND
@@ -320,14 +370,14 @@ public class SmallStructureEvent {
                                 if (java.util.Arrays.asList(intrestingBlocks)
                                         .contains(blockAtPos)) {
                                     HorrorMod129.LOGGER.info("returned intresting block pos: " + checkPos);
-                                    return pos; // Found an intresting block, return this position
+                                    return new IntrestingLocation(pos, blockAtPos.getTranslationKey()); // Found an intresting block, return this position with type
                                 } else {
                                     String blockName = blockAtPos.getTranslationKey();
                                     for (String partialName : intrestingPartialBlockNames) {
                                         if (blockName.contains(partialName)) {
                                             HorrorMod129.LOGGER.info("returned intresting partial block pos: " + checkPos);
                                             HorrorMod129.LOGGER.info("block name: " + blockName);
-                                            return pos; // Found a block with an intresting structure attached
+                                            return new IntrestingLocation(pos, partialName); // Found an intresting block, return this position with type
                                         }
                                     }
                                 }
