@@ -287,7 +287,7 @@ public class SmallStructureEvent {
         DyeColor bannerColor = colors[RANDOM.nextInt(colors.length)];
         Block bannerBlock = getBannerForColor(bannerColor);
         
-        server.getOverworld().setBlockState(torchPos, bannerBlock.getDefaultState());
+        server.getOverworld().setBlockState(torchPos.up(), bannerBlock.getDefaultState());
         BlockEntity bannerEntity = server.getOverworld().getBlockEntity(torchPos);
         if (bannerEntity instanceof BannerBlockEntity banner) {
             banner.setCustomName(Text.literal(bannerText));
