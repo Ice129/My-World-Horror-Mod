@@ -16,11 +16,11 @@ public class LedgePusherScheduler {
     private static final Random random = Random.create();
 
     private final static String cooldownTimerKey = "ledgePusherCooldown";
-    private static int MIN_DELAY = 20 * 60 * 25;
+    private static int MIN_DELAY = 20 * 60 * 45;
     private static int ticksSinceLastPush;
     private static LedgePusher ledgePusher;
     private static HorrorModPersistentState state;
-    private static final int PUSH_CHANCE = 20 * 40; // chance is 1 in PUSH_CHANCE every tick, so for 1 minute on an edge,
+    private static final int PUSH_CHANCE = 20 * 60; // chance is 1 in PUSH_CHANCE every tick, so for 1 minute on an edge,
                                                     // you can be expected to be pushed once
 
     public static void register() {

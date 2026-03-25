@@ -13,8 +13,8 @@ import net.minecraft.world.World;
 public class ScreenshotScheduler {
 
     private static final Random RANDOM = Random.create();
-    private static final int MIN_DELAY = 20 * 60 * 30;
-    private static final int MAX_DELAY = 20 * 60 * 60;
+    private static final int MIN_DELAY = 20 * 60 * 40;
+    private static final int MAX_DELAY = 20 * 60 * 70;
     private static final String TIMER_ID = "screenshotTimer";
 
     public static void register() {

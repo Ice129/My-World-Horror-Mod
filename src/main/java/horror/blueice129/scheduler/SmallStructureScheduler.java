@@ -14,7 +14,7 @@ public class SmallStructureScheduler {
     // Event delay is randomized between 5-15 minutes and further reduced based on
     // the square of the agro meter value
     private static final Random random = Random.create();
-    private static final int MAX_DELAY = 18000; // 15 minutes
+    private static final int MAX_DELAY = 20000; // 15 minutes
     private static final int MIN_DELAY = 6000; // 5 minutes
     private static final String TIMER_ID = "smallStructureTimer";
 
@@ -48,7 +48,7 @@ public class SmallStructureScheduler {
         // get agro meter from persistent state
         int agroMeter = state.getIntValue("agroMeter", 0);
         // The delay is reduced based on the square of the agro meter value
-        int agroReduction = (-agroMeter * agroMeter) * 70; 
+        int agroReduction = (-agroMeter * agroMeter) * 40; 
         int delay = random.nextBetween(MIN_DELAY, MAX_DELAY + 1) + agroReduction;
         // Clamp delay to at least 1 tick to avoid negative or zero values
         return Math.max(delay, 20*60); // Minimum 1 minute delay to prevent too rapid triggering

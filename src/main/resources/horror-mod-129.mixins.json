@@ -8,7 +8,8 @@
 	"client": [
 		"client.GameRendererAccessor",
 		"client.GameRendererMixin",
-		"client.MinecraftClientAccessor"
+		"client.MinecraftClientAccessor",
+		"client.PlayerEntityAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

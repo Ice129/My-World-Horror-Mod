@@ -2,6 +2,7 @@ package horror.blueice129.utils;
 
 import horror.blueice129.mixin.client.GameRendererAccessor;
 import horror.blueice129.mixin.client.MinecraftClientAccessor;
+import horror.blueice129.mixin.client.PlayerEntityAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -186,6 +187,10 @@ public class ScreenshotFromEntity {
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             fakePlayer.equipStack(slot, client.player.getEquippedStack(slot).copy());
         }
+
+        var playerModelParts = PlayerEntityAccessor.horrorMod129$getPlayerModelParts();
+        byte visibleParts = client.player.getDataTracker().get(playerModelParts);
+        fakePlayer.getDataTracker().set(playerModelParts, visibleParts);
     }
 }
 

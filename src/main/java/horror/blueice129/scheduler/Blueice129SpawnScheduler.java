@@ -185,10 +185,15 @@ public class Blueice129SpawnScheduler {
      * @return true if it's a forest biome
      */
     private static boolean isForestBiome(String biomeKey) {
-        return biomeKey.contains("forest") ||
+        if (biomeKey.contains("cherry")){
+            return false; // Exclude cherry grove biome
+        }
+
+        boolean isForest = biomeKey.contains("forest") ||
                 biomeKey.contains("taiga") ||
                 biomeKey.contains("grove") ||
                 biomeKey.contains("jungle");
+        return isForest;
     }
 
     /**
