@@ -19,6 +19,9 @@ import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.LineOfSightUtils;
 import horror.blueice129.utils.TorchPlacer;
 import net.minecraft.world.World;
+import net.minecraft.text.Text;
+import net.minecraft.util.DyeColor;
+import net.minecraft.block.entity.BannerBlockEntity;
 
 import net.minecraft.util.math.random.Random;
 
@@ -276,7 +279,21 @@ public class SmallStructureEvent {
         // server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
         // use torchutil instead
         BlockPos torchPos = pos.up(height).down();
-        TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
+        // TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
+        // place a random colour banner with the name of the returned block type on the pillar
+        // make the block type just be the block, not minecraft: or net.minecraft.block. just the name of the block
+        String bannerText = type.replace("block.", "").replace("minecraft.", "").toUpperCase();
+        DyeColor[] colors = DyeColor.values();
+        DyeColor bannerColor = colors[RANDOM.nextInt(colors.length)];
+        Block bannerBlock = getBannerForColor(bannerColor);
+        
+        server.getOverworld().setBlockState(torchPos, bannerBlock.getDefaultState());
+        BlockEntity bannerEntity = server.getOverworld().getBlockEntity(torchPos);
+        if (bannerEntity instanceof BannerBlockEntity banner) {
+            banner.setCustomName(Text.literal(bannerText));
+        }   
+
+
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.north(), RANDOM, player);
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.east(), RANDOM, player);
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.south(), RANDOM, player);
@@ -285,6 +302,27 @@ public class SmallStructureEvent {
 
         
         return true;
+    }
+
+    private static Block getBannerForColor(DyeColor color) {
+        return switch (color) {
+            case WHITE -> Blocks.WHITE_BANNER;
+            case ORANGE -> Blocks.ORANGE_BANNER;
+            case MAGENTA -> Blocks.MAGENTA_BANNER;
+            case LIGHT_BLUE -> Blocks.LIGHT_BLUE_BANNER;
+            case YELLOW -> Blocks.YELLOW_BANNER;
+            case LIME -> Blocks.LIME_BANNER;
+            case PINK -> Blocks.PINK_BANNER;
+            case GRAY -> Blocks.GRAY_BANNER;
+            case LIGHT_GRAY -> Blocks.LIGHT_GRAY_BANNER;
+            case CYAN -> Blocks.CYAN_BANNER;
+            case PURPLE -> Blocks.PURPLE_BANNER;
+            case BLUE -> Blocks.BLUE_BANNER;
+            case BROWN -> Blocks.BROWN_BANNER;
+            case GREEN -> Blocks.GREEN_BANNER;
+            case RED -> Blocks.RED_BANNER;
+            case BLACK -> Blocks.BLACK_BANNER;
+        };
     }
 
     static class IntrestingLocation {
