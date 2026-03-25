@@ -2,14 +2,14 @@
 	"schemaVersion": 1,
 	"id": "horror-mod-129",
 	"version": "${version}",
-	"name": "horror mod 129",
-	"description": "vanilla horror mod for 1.20.1",
+	"name": "ENGRAM",
+	"description": "Vanilla-Style Horror Mod for 1.20.1",
 	"authors": [
 		"Blueice129"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/Ice129/ENGRAM-Horror-Mod",
+		"sources": "https://modrinth.com/mod/engram"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/horror-mod-129/icon.png",
