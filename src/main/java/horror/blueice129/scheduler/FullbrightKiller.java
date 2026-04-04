@@ -1,6 +1,7 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.config.ConfigManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -14,13 +15,13 @@ import java.lang.reflect.Method;
 
 /**
  * Enforces a maximum gamma value every tick
- * This ensures the player cannot set gamma above 100% during gameplay
+ * This ensures the player cannot set gamma above full brightness during gameplay
  * The check runs every second (20 ticks)
  */
 @Environment(EnvType.CLIENT)
 public class FullbrightKiller {
-    private static final double MAX_ALLOWED_GAMMA = 0.7;
-    private static final double ENFORCED_GAMMA = 0.6;
+    private static final double REDUCED_GAMMA_CAP = 0.6;
+    private static final double FULL_GAMMA_CAP = 1.0;
     private static final int TICK_CHECK_INTERVAL = 20; // Check every second
     // private static final int HEARTBEAT_INTERVAL_TICKS = 20 * 30; // Log every 30 seconds
     private static final String GREENMAN_FULLBRIGHT_MOD_ID = "fullbright";
@@ -85,12 +86,13 @@ public class FullbrightKiller {
             disableGjebFullbright(client);
 
             double currentGamma = client.options.getGamma().getValue();
+            double gammaCap = getGammaCap();
 
             // HorrorMod129.LOGGER.debug("FullbrightKiller: Current gamma: " + currentGamma);
-            if (currentGamma > MAX_ALLOWED_GAMMA) {
-                client.options.getGamma().setValue(ENFORCED_GAMMA);
+            if (currentGamma > gammaCap) {
+                client.options.getGamma().setValue(gammaCap);
                 client.options.write();
-                HorrorMod129.LOGGER.info("FullbrightKiller: Detected gamma above 100%, resetting to 70%" + " (was " + currentGamma + ")");
+                HorrorMod129.LOGGER.info("FullbrightKiller: Detected gamma above cap, resetting to " + gammaCap + " (was " + currentGamma + ")");
             }
 
             tickCounter = TICK_CHECK_INTERVAL;
@@ -98,6 +100,10 @@ public class FullbrightKiller {
 
         isInitialized = true;
         HorrorMod129.LOGGER.info("FullbrightKiller initialized - enforcing gamma cap every second");
+    }
+
+    private static double getGammaCap() {
+        return ConfigManager.getConfig().disableGammaCap ? FULL_GAMMA_CAP : REDUCED_GAMMA_CAP;
     }
 
     private static void disableGreenmanFullbright() {
@@ -183,9 +189,10 @@ public class FullbrightKiller {
             }
 
             double gammaUtilsGamma = (double) gammaUtilsGetGammaMethod.invoke(null);
-            if (gammaUtilsGamma > MAX_ALLOWED_GAMMA) {
-                gammaUtilsSetGammaMethod.invoke(null, ENFORCED_GAMMA, false);
-                HorrorMod129.LOGGER.warn("FullbrightKiller: Clamped Gamma Utils gamma from " + gammaUtilsGamma + " to " + ENFORCED_GAMMA);
+            double gammaCap = getGammaCap();
+            if (gammaUtilsGamma > gammaCap) {
+                gammaUtilsSetGammaMethod.invoke(null, gammaCap, false);
+                HorrorMod129.LOGGER.warn("FullbrightKiller: Clamped Gamma Utils gamma from " + gammaUtilsGamma + " to " + gammaCap);
             }
 
             boolean nightVisionEnabled = (boolean) gammaUtilsIsNightVisionEnabledMethod.invoke(config);
@@ -226,10 +233,11 @@ public class FullbrightKiller {
         }
 
         double gamma = client.options.getGamma().getValue();
-        if (gamma > MAX_ALLOWED_GAMMA) {
-            client.options.getGamma().setValue(ENFORCED_GAMMA);
+        double gammaCap = getGammaCap();
+        if (gamma > gammaCap) {
+            client.options.getGamma().setValue(gammaCap);
             client.options.write();
-            HorrorMod129.LOGGER.warn("FullbrightKiller: Clamped GJEB gamma from " + gamma + " to " + ENFORCED_GAMMA);
+            HorrorMod129.LOGGER.warn("FullbrightKiller: Clamped GJEB gamma from " + gamma + " to " + gammaCap);
         }
     }
 }
