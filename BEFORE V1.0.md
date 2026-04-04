@@ -24,7 +24,7 @@
 - more natural wandering
 
 ### Event:
-- adjust spawn radius of cave mining, and other events
+<!-- - adjust spawn radius of cave mining, and other events -->
 - block certain events like screenshots until a min agro
 - force open lan
 - afk player trolling event
