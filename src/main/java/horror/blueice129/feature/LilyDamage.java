@@ -6,6 +6,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
@@ -41,6 +43,20 @@ public class LilyDamage {
 
         ItemStack chosenStack = candidates[world.getRandom().nextInt(candidateCount)];
         chosenStack.damage(drain, world.getRandom(), player);
+
+        if (chosenStack.getDamage() >= chosenStack.getMaxDamage()) {
+            world.playSound(
+                    null,
+                    player.getX(),
+                    player.getY(),
+                    player.getZ(),
+                    SoundEvents.ENTITY_ITEM_BREAK,
+                    SoundCategory.PLAYERS,
+                    0.8F,
+                    0.8F + world.getRandom().nextFloat() * 0.4F
+            );
+            chosenStack.decrement(1);
+        }
     }
 
     private static List<BlockPos> findNearbyFlowers(ServerWorld world, BlockPos center) {
