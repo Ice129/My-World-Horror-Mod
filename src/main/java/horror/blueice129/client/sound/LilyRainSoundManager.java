@@ -45,6 +45,7 @@ public final class LilyRainSoundManager {
         if (ACTIVE_FLOWERS.isEmpty()) {
             stopActiveSound(client.getSoundManager());
         } else {
+            ensureSound(client);
             updateSoundSource(client);
         }
     }
@@ -77,6 +78,14 @@ public final class LilyRainSoundManager {
 
     private static void ensureSound(MinecraftClient client) {
         if (activeSound != null) {
+            if (activeSound.isDone()) {
+                activeSound = null;
+            } else {
+                return;
+            }
+        }
+
+        if (client.world == null) {
             return;
         }
 
