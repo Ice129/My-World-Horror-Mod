@@ -157,13 +157,19 @@
             "patterns": [
                 "do you like my base",
                 "what is your opinion on my base",
+                "what is your opinion on my home",
+                "what is your opinion on my house",
                 "what do you think of my base",
                 "do you like my house",
+                "do you like my home",
                 "what you think of my house",
+                "what do you think of my home",
                 "like my house?",
                 "like my base?",
+                "like my home?",
                 "whatchya think of my base?",
                 "whatchya think of my house?",
+                "whatchya think of my home?",
                 "like it?"
             ],
             "responses": [
@@ -196,6 +202,36 @@
                 "i could ask you the same thing",
                 "i was here first",
                 "i think im a test of the ENGRAM protocall?"
+            ]
+        },
+        {
+            "name": "insult",
+            "catagory": "simple",
+            "min_agro": 4,
+            "max_agro": 10,
+            "fuzzy_error": 0.2,
+            "chat_prerequisites": null,
+            "game_prerequisites": null,
+            "patterns": [
+                "you suck",
+                "you are bad",
+                "you are terrible",
+                "i dont like you",
+                "you are not good",
+                "you are awful",
+                "you are the worst",
+                "you are trash",
+                "fuck you",
+                "fuck off",
+                "kys",
+                "kill yourself",
+                "i hate you",
+                "you creep me out",
+                ""
+            ],
+            "responses": [
+                "no u",
+                "ur mom"
             ]
         }
     ]
