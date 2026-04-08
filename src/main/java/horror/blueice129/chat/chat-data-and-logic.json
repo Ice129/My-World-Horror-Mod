@@ -63,6 +63,7 @@
             "min_agro": 2,
             "max_agro": 5,
             "repeats": 1,
+            "fuzzy_error": 0.2,
             "chat_prerequisites": null,
             "game_prerequisites": null,
             "patterns": [
@@ -79,6 +80,35 @@
                 "you dont know?",
                 "you should know this",
                 "cant you read my nametag? im BlueIce129"
+            ]
+        },
+        {
+            "name": "stayout",
+            "catagory": "simple",
+            "min_agro": 3,
+            "max_agro": 10,
+            "fuzzy_error": 0.2,
+            "chat_prerequisites": null,
+            "game_prerequisites": null,
+            "patterns": [
+                "stay out",
+                "get away",
+                "leave me alone",
+                "go away",
+                "back off",
+                "dont talk to me",
+                "stop talking to me",
+                "leave me be",
+                "leave",
+                "shoo",
+                "buzz off"
+            ],
+            "responses": [
+                "you cant just tell me to leave",
+                "why are you here if you dont want to interact?",
+                "no",
+                "no, i wont",
+                "i was here first"
             ]
         }
     ]
