@@ -145,6 +145,35 @@
                 "do you not use pillars too?",
                 "im just marking areas, why do you care? not like you make better builds"
             ]
+        },
+        {
+            "name": "base_like",
+            "catagory": "simple",
+            "min_agro": 2,
+            "max_agro": 10,
+            "fuzzy_error": 0.2,
+            "chat_prerequisites": null,
+            "game_prerequisites": null,
+            "patterns": [
+                "do you like my base",
+                "what is your opinion on my base",
+                "what do you think of my base",
+                "do you like my house",
+                "what you think of my house",
+                "like my house?",
+                "like my base?",
+                "whatchya think of my base?",
+                "whatchya think of my house?",
+                "like it?"
+            ],
+            "responses": [
+                "could be better",
+                "not bad",
+                "it has stuff i like, but overall mid",
+                "mid",
+                "mines better",
+                "i like it, but i like mine better"
+            ]
         }
     ]
 }
