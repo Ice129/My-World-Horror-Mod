@@ -132,7 +132,12 @@
                 "pillars",
                 "towers",
                 "stop with the pillars",
-                "stop with the towers"
+                "stop with the towers",
+                "are those pillars you?",
+                "why are you making pillars",
+                "why are you making towers",
+                "why do you have pillars",
+                "why do you have towers"
             ],
             "responses": [
                 "can i not mark places?",
