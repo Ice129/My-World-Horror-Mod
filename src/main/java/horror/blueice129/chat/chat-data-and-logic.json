@@ -227,11 +227,14 @@
                 "kill yourself",
                 "i hate you",
                 "you creep me out",
-                ""
+                "you are annoying"
             ],
             "responses": [
                 "no u",
-                "ur mom"
+                "ur mom",
+                "BASE_COORDS_HERE",
+                "man i didnt do anything to you",
+                "i can be a whole lot worse if thats how you feel"
             ]
         }
     ]
