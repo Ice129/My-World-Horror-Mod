@@ -57,7 +57,8 @@
             "responses": [
                 "You just said that.",
                 "i heard you the first time.",
-                "why do you keep saying that?"
+                "why do you keep saying that?",
+                "get more content"
             ]
         },
         {
@@ -227,15 +228,40 @@
                 "kill yourself",
                 "i hate you",
                 "you creep me out",
-                "you are annoying"
+                "you are annoying",
+                "youre ugly",
+                "youre stupid"
             ],
             "responses": [
                 "no u",
                 "ur mom",
                 "BASE_COORDS_HERE",
                 "man i didnt do anything to you",
-                "i can be a whole lot worse if thats how you feel"
+                "i can be a whole lot worse if thats how you feel",
+                "fuck you too",
+                ":(",
+                "{ONE OF A FEW ANGRY EVENTS} eg: rappid screenshot spam, chunk deletions, quickly turns night, all sounds mute, footstep rush"
+            ]
+        },
+        {
+            "name":"engram_q",
+            "category":"simple",
+            "min_agro":2,
+            "max_agro":10,
+            "fuzzy_error":0.2,
+            "chat_prerequisites":null,
+            "game_prerequisites":null,
+            "patterns":[
+                "what is an engram",
+                "what are engrams",
+                "whats an engram"
+            ],
+            "responses":[
+                "im an engram",
+                "its a new way to back up your conciousness i made",
+                "its like a digital clone"
             ]
         }
+
     ]
 }
