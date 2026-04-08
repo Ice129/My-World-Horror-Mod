@@ -261,6 +261,30 @@
                 "its a new way to back up your conciousness i made",
                 "its like a digital clone"
             ]
+        },
+        {
+            "name":"friends",
+            "category":"simple",
+            "min_agro":2,
+            "max_agro":10,
+            "fuzzy_error":0.2,
+            "chat_prerequisites":null,
+            "game_prerequisites":null,
+            "patterns":[
+                "Can we be friends",
+                "I want to be your friend",
+                "I want to be friends",
+                "be my friend",
+                "friends?",
+                "can we be friends?",
+                "friends"
+            ],
+            "responses":[
+                "i dont think so",
+                "maybe",
+                "i dont like you",
+                "back off"
+            ]
         }
 
     ]
