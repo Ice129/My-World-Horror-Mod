@@ -44,7 +44,10 @@
                 "hey?",
                 "hi?",
                 "are you one of my mates?",
-                "are you also an engram?"
+                "are you also an engram?",
+                "hey there?",
+                "hi there?",
+                "woah you are also real?"
             ]
         },
         {
@@ -109,6 +112,33 @@
                 "no",
                 "no, i wont",
                 "i was here first"
+            ]
+        },
+        {
+            "name": "pillars",
+            "catagory": "simple",
+            "min_agro": 2,
+            "max_agro": 10,
+            "fuzzy_error": 0.2,
+            "chat_prerequisites": null,
+            "game_prerequisites": null,
+            "patterns": [
+                "what are those pillars",
+                "Did you make those pillars",
+                "did you make those towers",
+                "whats with the pillars",
+                "whats with the towers",
+                "what are those towers",
+                "pillars",
+                "towers",
+                "stop with the pillars",
+                "stop with the towers"
+            ],
+            "responses": [
+                "can i not mark places?",
+                "i see nothing wrong with them",
+                "do you not use pillars too?",
+                "im just marking areas, why do you care? not like you make better builds"
             ]
         }
     ]
