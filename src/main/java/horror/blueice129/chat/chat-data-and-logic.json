@@ -3,7 +3,7 @@
         {
             "name": "first_greeting",
             "catagory": "simple",
-            "fuzzy_error": 0.2,
+            "fuzzy_error": 0.1,
             "min_agro": 2,
             "max_agro": 5,
             "repeats": 2,
