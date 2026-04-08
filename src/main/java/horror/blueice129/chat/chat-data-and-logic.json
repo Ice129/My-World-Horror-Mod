@@ -24,7 +24,18 @@
                 "hihi",
                 "halo",
                 "hallo",  
-                "wsg"
+                "wsg",
+                "helo",
+                "Wassap",
+                "wassup",
+                "wazzup",
+                "Greetings",
+                "Howdy",
+                "Salutations",
+                "Hey there",
+                "Hi there",
+                "Hello there",
+                "ay"
             ],
             "responses": [
                 "who are you?",
@@ -32,7 +43,8 @@
                 "are you me?",
                 "hey?",
                 "hi?",
-                "are you one of my mates?"
+                "are you one of my mates?",
+                "are you also an engram?"
             ]
         },
         {
@@ -41,7 +53,8 @@
             "patterns": [],
             "responses": [
                 "You just said that.",
-                "i heard you the first time."
+                "i heard you the first time.",
+                "why do you keep saying that?"
             ]
         },
         {
@@ -55,13 +68,17 @@
             "patterns": [
                 "who are you",
                 "what are you",
+                "who're you",
+                "who was that",
                 "tell me who you are",
-                "identify yourself"
+                "identify yourself",
+                "what is your name"
 
             ],
             "responses": [
                 "you dont know?",
-                "you should know this"
+                "you should know this",
+                "cant you read my nametag? im BlueIce129"
             ]
         }
     ]

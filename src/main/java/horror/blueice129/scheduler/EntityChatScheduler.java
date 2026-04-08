@@ -8,7 +8,7 @@ import net.minecraft.block.SignBlock;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
-import net.minecraft.world.World;
+// import net.minecraft.world.World;
 
 /**
  * Scheduler that detects when a player places or modifies a sign block
