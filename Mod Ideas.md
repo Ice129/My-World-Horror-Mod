@@ -50,6 +50,10 @@ TEST:
 
 ## Block Event Ideas
 
+- screenshot rarely when reading an entities sign
+
+- body swap entity screenshot at base. read: https://discord.com/channels/1427918788501704736/1491524316855013437/1491904321674285237
+
 <!-- - trees cut down, leaves still there - crafting table -->
 
 - bridges over water
