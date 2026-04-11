@@ -252,8 +252,8 @@ public class SmallStructureEvent {
     private static boolean cobblestonePillarEvent(MinecraftServer server, ServerPlayerEntity player) {
 
         IntrestingLocation location = intrestingAreaFinder(server, player);
-        BlockPos pos = location.pos;
-        String type = location.type;
+        BlockPos pos = location != null ? location.pos : findAndLoadSurfaceLocation(server, player, 20, 80);
+        String type = location != null ? location.type : "unknown";
         if (pos == null) {
             return false; // No suitable location found
         }
@@ -282,7 +282,10 @@ public class SmallStructureEvent {
         // TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
         // place a random colour banner with the name of the returned block type on the pillar
         // make the block type just be the block, not minecraft: or net.minecraft.block. just the name of the block
-        String bannerText = type.replace("block.", "").replace("minecraft.", "").toUpperCase();
+        String bannerText = (type == null ? "unknown" : type)
+            .replace("block.", "")
+            .replace("minecraft.", "")
+            .toUpperCase();
         DyeColor[] colors = DyeColor.values();
         DyeColor bannerColor = colors[RANDOM.nextInt(colors.length)];
         Block bannerBlock = getBannerForColor(bannerColor);
