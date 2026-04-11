@@ -7,6 +7,7 @@ import horror.blueice129.feature.VersionHud;
 import horror.blueice129.network.ClientPacketHandler;
 import horror.blueice129.scheduler.MinMusicSetter;
 import horror.blueice129.scheduler.DisclaimerScheduler;
+import horror.blueice129.scheduler.AutoLanScheduler;
 import horror.blueice129.scheduler.PlayerStateScheduler;
 import horror.blueice129.utils.ScreenshotFromEntity;
 import horror.blueice129.scheduler.FullbrightKiller;
@@ -30,6 +31,7 @@ public class HorrorMod129Client implements ClientModInitializer {
         
         // Register client-side features
         MinMusicSetter.initialize();
+        AutoLanScheduler.initialize();
         DisclaimerScheduler.initialize();
         PlayerStateScheduler.initialize();
         VersionHud.initialize();
