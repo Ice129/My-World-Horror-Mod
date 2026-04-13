@@ -5,6 +5,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+
+import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 
 
@@ -38,7 +40,9 @@ public class BridgeOverWater {
 
     private static boolean placeBridge(ServerWorld world, BlockPos waterLocation) {
         int bridgeMinLength = 4;
-        int bridgeMaxLength = 32;
+        int bridgeMaxLength = 50;
+        Block[] bridgeBlocks = {Blocks.OAK_PLANKS, Blocks.BIRCH_PLANKS, Blocks.COBBLED_DEEPSLATE, Blocks.COBBLESTONE, Blocks.DIRT, Blocks.DIORITE, Blocks.GRANITE, Blocks.ANDESITE};
+
 
         BlockPos topWater = getTopWaterInColumn(world, waterLocation);
         if (topWater == null) {
@@ -61,11 +65,12 @@ public class BridgeOverWater {
             return false;
         }
 
+        Block blockToPlace = bridgeBlocks[world.random.nextInt(bridgeBlocks.length)];
         for (int i = 0; i <= steps; i++) {
             int x = end1.getX() + Math.round((dx * i) / (float) steps);
             int y = end1.getY() + Math.round((dy * i) / (float) steps);
             int z = end1.getZ() + Math.round((dz * i) / (float) steps);
-            world.setBlockState(new BlockPos(x, y, z), Blocks.OAK_PLANKS.getDefaultState(), 3);
+            world.setBlockState(new BlockPos(x, y, z), blockToPlace.getDefaultState(), 3);
         }
 
         
