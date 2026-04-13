@@ -95,6 +95,8 @@ public class DebugCommands {
                                 .executes(context -> executeEvent(context.getSource(), "torched_area")))
                             .then(literal("tree_mined")
                                 .executes(context -> executeEvent(context.getSource(), "tree_mined")))
+                            .then(literal("bridge_over_water")
+                                .executes(context -> executeEvent(context.getSource(), "bridge_over_water")))
                             .then(literal("deforestation")
                                 .executes(context -> executeEvent(context.getSource(), "deforestation")))
                             .then(literal("flower_patch")
