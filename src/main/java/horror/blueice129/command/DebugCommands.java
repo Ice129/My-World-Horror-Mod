@@ -19,6 +19,7 @@ import horror.blueice129.feature.FpsLimiter;
 import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.feature.TwoPlayerSleep;
+import horror.blueice129.feature.BridgeOverWater;
 import horror.blueice129.debug.LineOfSightChecker;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.sounds.FakeFootsteps;
@@ -79,6 +80,8 @@ public class DebugCommands {
                             .executes(DebugCommands::triggerHomeVisitor))
                         .then(literal("playerdeathitems")
                             .executes(context -> triggerPlayerDeathItems(context.getSource())))
+                        .then(literal("bridgeoverwater")
+                            .executes(context -> triggerBridgeOverWater(context.getSource())))
                         .then(literal("structure")
                             .then(literal("crafting_table")
                                 .executes(context -> executeEvent(context.getSource(), "crafting_table")))
@@ -92,6 +95,8 @@ public class DebugCommands {
                                 .executes(context -> executeEvent(context.getSource(), "torched_area")))
                             .then(literal("tree_mined")
                                 .executes(context -> executeEvent(context.getSource(), "tree_mined")))
+                            .then(literal("bridge_over_water")
+                                .executes(context -> executeEvent(context.getSource(), "bridge_over_water")))
                             .then(literal("deforestation")
                                 .executes(context -> executeEvent(context.getSource(), "deforestation")))
                             .then(literal("flower_patch")
@@ -587,6 +592,23 @@ public class DebugCommands {
             source.sendError(Text.literal("Error triggering player death items event: " + e.getMessage()));
             return 0;
         }
+    }
+
+    private static int triggerBridgeOverWater(ServerCommandSource source) {
+        ServerPlayerEntity player = source.getPlayer();
+        if (player == null) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+
+        boolean success = BridgeOverWater.debugPlaceBridgeFromPosition(player.getServerWorld(), player.getBlockPos());
+        if (success) {
+            source.sendFeedback(() -> Text.literal("Bridge over water debug placement succeeded from your current location."), false);
+            return 1;
+        }
+
+        source.sendError(Text.literal("Bridge over water debug placement failed from your current location."));
+        return 0;
     }
 
     /**
