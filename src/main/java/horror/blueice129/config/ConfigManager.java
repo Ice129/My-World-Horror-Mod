@@ -26,6 +26,10 @@ public class ConfigManager {
             if (Files.exists(CONFIG_PATH)) {
                 String json = Files.readString(CONFIG_PATH);
                 instance = GSON.fromJson(json, ModConfig.class);
+                if (instance == null) {
+                    instance = ModConfig.createDefault();
+                }
+                instance.applySafetyDefaults();
                 HorrorMod129.LOGGER.info("Loaded config from ENGRAM.json");
             } else {
                 HorrorMod129.LOGGER.info("Config file not found, creating default ENGRAM.json");

@@ -1,6 +1,10 @@
 package horror.blueice129.config;
 
 public class ModConfig {
+    public static final int DEFAULT_AUTO_LAN_PORT = 25565;
+    public static final int MIN_AUTO_LAN_PORT = 1024;
+    public static final int MAX_AUTO_LAN_PORT = 65535;
+
     public enum SpeedOption {
         SLOWEST,
         SLOWER,
@@ -34,8 +38,19 @@ public class ModConfig {
     
     public boolean enableMusicVolumeLocking = true;
     public SpeedOption speedOfProgression = SpeedOption.NORMAL;
+    public int autoLanPort = DEFAULT_AUTO_LAN_PORT;
 
     public ModConfig() {}
+
+    public void applySafetyDefaults() {
+        if (speedOfProgression == null) {
+            speedOfProgression = SpeedOption.NORMAL;
+        }
+
+        if (autoLanPort < MIN_AUTO_LAN_PORT || autoLanPort > MAX_AUTO_LAN_PORT) {
+            autoLanPort = DEFAULT_AUTO_LAN_PORT;
+        }
+    }
 
     public static ModConfig createDefault() {
         return new ModConfig();

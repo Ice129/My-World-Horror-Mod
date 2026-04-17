@@ -1,6 +1,8 @@
 package horror.blueice129.scheduler;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.config.ConfigManager;
+import horror.blueice129.config.ModConfig;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -39,12 +41,22 @@ public class AutoLanScheduler {
             return;
         }
 
+        int configuredPort = ConfigManager.getConfig().autoLanPort;
+        if (configuredPort < ModConfig.MIN_AUTO_LAN_PORT || configuredPort > ModConfig.MAX_AUTO_LAN_PORT) {
+            HorrorMod129.LOGGER.warn(
+                    "Invalid auto LAN port {} in config, using default {}",
+                    configuredPort,
+                    ModConfig.DEFAULT_AUTO_LAN_PORT
+            );
+            configuredPort = ModConfig.DEFAULT_AUTO_LAN_PORT;
+        }
+
         attemptedOpen = true;
-        boolean lanOpened = server.openToLan(null, false, 0);
+        boolean lanOpened = server.openToLan(null, false, configuredPort);
         if (lanOpened) {
-            HorrorMod129.LOGGER.info("Auto LAN enabled for current singleplayer world");
+            HorrorMod129.LOGGER.info("Auto LAN enabled for current singleplayer world on port {}", configuredPort);
         } else {
-            HorrorMod129.LOGGER.warn("Failed to auto-open LAN for current singleplayer world");
+            HorrorMod129.LOGGER.warn("Failed to auto-open LAN for current singleplayer world on port {}", configuredPort);
         }
     }
 }
