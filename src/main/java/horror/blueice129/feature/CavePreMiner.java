@@ -28,24 +28,24 @@ public class CavePreMiner {
     private static final Random random = Random.create();
 
     /**
-     * Checks if a position is roughly within the player's field of view cone (wider than actual FOV)
+     * Checks if a position is roughly within the player's field of view cone (wider
+     * than actual FOV)
      * Uses a generous angle of ~100 degrees to catch edge cases
      * 
      * @param player The player to check against
-     * @param pos The position to check
+     * @param pos    The position to check
      * @return True if the position is within the wider FOV cone
      */
     private static boolean isInWideFOVCone(PlayerEntity player, BlockPos pos) {
         // Get player's look direction
         net.minecraft.util.math.Vec3d lookVec = player.getRotationVector();
-        
+
         // Vector from player to position
         net.minecraft.util.math.Vec3d toPos = new net.minecraft.util.math.Vec3d(
-            pos.getX() - player.getX(),
-            pos.getY() - player.getEyeY(),
-            pos.getZ() - player.getZ()
-        ).normalize();
-        
+                pos.getX() - player.getX(),
+                pos.getY() - player.getEyeY(),
+                pos.getZ() - player.getZ()).normalize();
+
         // Dot product gives cosine of angle between vectors
         // cos(100°) ≈ -0.17, so we use a wider cone than normal FOV
         double dotProduct = lookVec.dotProduct(toPos);
@@ -57,7 +57,7 @@ public class CavePreMiner {
      * Only used for torches within the FOV cone for performance
      * 
      * @param player The player to check against
-     * @param pos The torch position
+     * @param pos    The torch position
      * @return True if torch or nearby blocks are visible
      */
     private static boolean isEnhancedVisible(PlayerEntity player, BlockPos pos) {
@@ -65,7 +65,7 @@ public class CavePreMiner {
         if (LineOfSightUtils.isBlockRenderedOnScreen(player, pos, 16 * 10)) {
             return true;
         }
-        
+
         // Check blocks 1-2 blocks up
         for (int dy = 1; dy <= 2; dy++) {
             BlockPos upPos = pos.up(dy);
@@ -73,14 +73,16 @@ public class CavePreMiner {
                 return true;
             }
         }
-        
+
         // Check within 4 block radius at ground level and 1 layer up
         for (int dy = 0; dy <= 1; dy++) {
             for (int dx = -4; dx <= 4; dx++) {
                 for (int dz = -4; dz <= 4; dz++) {
-                    if (dx == 0 && dz == 0 && dy == 0) continue; // Already checked
-                    if (dx * dx + dz * dz > 16) continue; // Keep within 4 block radius
-                    
+                    if (dx == 0 && dz == 0 && dy == 0)
+                        continue; // Already checked
+                    if (dx * dx + dz * dz > 16)
+                        continue; // Keep within 4 block radius
+
                     BlockPos nearPos = pos.add(dx, dy, dz);
                     if (LineOfSightUtils.isBlockRenderedOnScreen(player, nearPos, 16 * 10)) {
                         return true;
@@ -88,7 +90,7 @@ public class CavePreMiner {
                 }
             }
         }
-        
+
         return false;
     }
 
@@ -142,7 +144,8 @@ public class CavePreMiner {
     }
 
     /**
-     * Result container for cave exploration that includes both cave air blocks and ore count
+     * Result container for cave exploration that includes both cave air blocks and
+     * ore count
      */
     public static class CaveExplorationResult {
         public final java.util.List<BlockPos> caveAirBlocks;
@@ -155,13 +158,15 @@ public class CavePreMiner {
     }
 
     /**
-     * Finds all connected cave air blocks from startPos AND mines exposed ores in a single pass
+     * Finds all connected cave air blocks from startPos AND mines exposed ores in a
+     * single pass
      * Fills up to 4 blocks above ground, searches 8 blocks down to find ground
      * 
      * @param world    The world to check in
      * @param startPos The position to start from
      * @param player   The player to check line of sight against for ore mining
-     * @return CaveExplorationResult containing the list of cave air blocks and count of ores mined
+     * @return CaveExplorationResult containing the list of cave air blocks and
+     *         count of ores mined
      */
     public static CaveExplorationResult findCaveAirAndMineOres(World world, BlockPos startPos, PlayerEntity player) {
         java.util.List<BlockPos> caveAirBlocks = new java.util.ArrayList<>();
@@ -174,13 +179,15 @@ public class CavePreMiner {
         // Cache for ground level (Y coordinate of solid block below)
         java.util.Map<BlockPos, Integer> groundLevelCache = new java.util.HashMap<>();
 
-        // Track ore blocks we've already processed to avoid mining the same vein multiple times
+        // Track ore blocks we've already processed to avoid mining the same vein
+        // multiple times
         java.util.Set<BlockPos> processedOres = new java.util.HashSet<>();
 
         // Define directions once to avoid recreating the array in each iteration
         net.minecraft.util.math.Direction[] DIRECTIONS = net.minecraft.util.math.Direction.values();
 
-        // Define max distance squared for faster distance checks (no square root calculation)
+        // Define max distance squared for faster distance checks (no square root
+        // calculation)
         int maxDistanceSquared = 50 * 50;
 
         queue.add(startPos);
@@ -203,7 +210,8 @@ public class CavePreMiner {
                 if (neighborPos.getY() > 55)
                     continue;
 
-                // Check if neighbor is within 50 blocks of start position using squared distance
+                // Check if neighbor is within 50 blocks of start position using squared
+                // distance
                 if (neighborPos.getSquaredDistance(startPos) > maxDistanceSquared)
                     continue;
 
@@ -231,7 +239,7 @@ public class CavePreMiner {
                 }
             }
         }
-        
+
         return new CaveExplorationResult(caveAirBlocks, oresMined);
     }
 
@@ -244,8 +252,8 @@ public class CavePreMiner {
      * @param processedOres Set of already processed ore positions to update
      * @return The number of ore blocks mined in this vein
      */
-    private static int mineOreVein(World world, BlockPos startOre, PlayerEntity player, 
-                                   java.util.Set<BlockPos> processedOres) {
+    private static int mineOreVein(World world, BlockPos startOre, PlayerEntity player,
+            java.util.Set<BlockPos> processedOres) {
         int mined = 0;
         java.util.Queue<BlockPos> oreQueue = new java.util.LinkedList<>();
         net.minecraft.util.math.Direction[] DIRECTIONS = net.minecraft.util.math.Direction.values();
@@ -261,22 +269,24 @@ public class CavePreMiner {
                 // Mine the ore block if not in view
                 if (!LineOfSightUtils.isBlockRenderedOnScreen(player, currentOre, 16 * 10)) {
                     world.breakBlock(currentOre, false);
-                    mined++;                    
+                    mined++;
                     // 25% chance to break an adjacent non-ore block
                     if (random.nextInt(100) < 25) {
-                        java.util.List<net.minecraft.util.math.Direction> shuffledDirs = java.util.Arrays.asList(DIRECTIONS);
+                        java.util.List<net.minecraft.util.math.Direction> shuffledDirs = java.util.Arrays
+                                .asList(DIRECTIONS);
                         java.util.Collections.shuffle(shuffledDirs);
                         for (net.minecraft.util.math.Direction dir : shuffledDirs) {
                             BlockPos adjacentPos = currentOre.offset(dir);
                             BlockState adjacentState = world.getBlockState(adjacentPos);
-                            if (!BlockTypes.isOreBlock(adjacentState) && 
-                                !adjacentState.isAir() && 
-                                !LineOfSightUtils.isBlockRenderedOnScreen(player, adjacentPos, 16 * 10)) {
+                            if (!BlockTypes.isOreBlock(adjacentState) &&
+                                    !adjacentState.isAir() &&
+                                    !LineOfSightUtils.isBlockRenderedOnScreen(player, adjacentPos, 16 * 10)) {
                                 world.breakBlock(adjacentPos, false);
                                 break; // Only break one adjacent block
                             }
                         }
-                    }                }
+                    }
+                }
 
                 // Check neighboring blocks for connected ores
                 for (net.minecraft.util.math.Direction direction : DIRECTIONS) {
@@ -339,8 +349,6 @@ public class CavePreMiner {
         return null;
     }
 
-
-
     /**
      * Populates the area with torches, updating lighting after each placement
      * 
@@ -356,7 +364,7 @@ public class CavePreMiner {
         int minTorchDistSquared = minTorchDistance * minTorchDistance;
 
         java.util.Map<Long, BlockPos> torchGrid = new java.util.HashMap<>();
-        
+
         java.util.Set<BlockPos> caveAirSet = new java.util.HashSet<>(caveAirBlocks);
 
         // Cache light levels to avoid querying world multiple times for same position
@@ -396,9 +404,9 @@ public class CavePreMiner {
             for (int dx = -checkRadius; dx <= checkRadius && !tooClose; dx++) {
                 for (int dy = -checkRadius; dy <= checkRadius && !tooClose; dy++) {
                     for (int dz = -checkRadius; dz <= checkRadius && !tooClose; dz++) {
-                        long neighborKey = (((long)(gridX + dx)) << 40) | 
-                                         (((long)(gridY + dy) & 0xFFFFL) << 20) | 
-                                         ((gridZ + dz) & 0xFFFFL);
+                        long neighborKey = (((long) (gridX + dx)) << 40) |
+                                (((long) (gridY + dy) & 0xFFFFL) << 20) |
+                                ((gridZ + dz) & 0xFFFFL);
                         BlockPos existing = torchGrid.get(neighborKey);
                         if (existing != null && pos.getSquaredDistance(existing) < minTorchDistSquared) {
                             tooClose = true;
@@ -412,30 +420,31 @@ public class CavePreMiner {
                 if (random.nextInt(100) < 20) {
                     continue;
                 }
-                
+
                 // Randomize position within 3 block radius to break up grid patterns
                 BlockPos torchPos = pos;
                 int attempts = 0;
                 boolean placed = false;
-                
+
                 while (attempts < 10 && !placed) {
                     int offsetX = random.nextInt(7) - 3;
                     int offsetZ = random.nextInt(7) - 3;
                     BlockPos horizontalPos = new BlockPos(pos.getX() + offsetX, pos.getY(), pos.getZ() + offsetZ);
-                    
+
                     BlockPos groundPos = null;
-                    
+
                     for (int dy = 0; dy <= 8; dy++) {
                         BlockPos checkBelow = horizontalPos.down(dy);
                         if (checkBelow.getY() < world.getBottomY() || checkBelow.getY() > 55) {
                             continue;
                         }
-                        if (world.getBlockState(checkBelow).isSideSolidFullSquare(world, checkBelow, net.minecraft.util.math.Direction.UP)) {
+                        if (world.getBlockState(checkBelow).isSideSolidFullSquare(world, checkBelow,
+                                net.minecraft.util.math.Direction.UP)) {
                             groundPos = checkBelow.up();
                             break;
                         }
                     }
-                    
+
                     if (groundPos == null) {
                         for (int dy = 1; dy <= 4; dy++) {
                             BlockPos checkAbove = horizontalPos.up(dy);
@@ -443,29 +452,31 @@ public class CavePreMiner {
                                 break;
                             }
                             BlockPos belowCheckAbove = checkAbove.down();
-                            if (world.getBlockState(belowCheckAbove).isSideSolidFullSquare(world, belowCheckAbove, net.minecraft.util.math.Direction.UP)) {
+                            if (world.getBlockState(belowCheckAbove).isSideSolidFullSquare(world, belowCheckAbove,
+                                    net.minecraft.util.math.Direction.UP)) {
                                 groundPos = checkAbove;
                                 break;
                             }
                         }
                     }
-                    
-                    if (groundPos != null && groundPos.getY() <= 55 && isSuitableForTorch(world, groundPos, player, caveAirSet)) {
+
+                    if (groundPos != null && groundPos.getY() <= 55
+                            && isSuitableForTorch(world, groundPos, player, caveAirSet)) {
                         torchPos = groundPos;
                         placed = TorchPlacer.placeTorch(world, torchPos, random, player);
                         break;
                     }
                     attempts++;
                 }
-                
+
                 if (!placed) {
                     placed = TorchPlacer.placeTorch(world, pos, random, player);
                     torchPos = pos;
                 }
-                
+
                 if (placed) {
                     torchesPlaced++;
-                    long gridKey = (((long)gridX) << 40) | (((long)gridY & 0xFFFFL) << 20) | (gridZ & 0xFFFFL);
+                    long gridKey = (((long) gridX) << 40) | (((long) gridY & 0xFFFFL) << 20) | (gridZ & 0xFFFFL);
                     torchGrid.put(gridKey, torchPos);
                 }
 
@@ -523,7 +534,7 @@ public class CavePreMiner {
 
             int roll = random.nextInt(100);
             boolean placed = false;
-            
+
             if (roll < 20) {
                 placed = placeFurnaceAt(world, target);
             } else if (roll < 60) {
@@ -546,7 +557,7 @@ public class CavePreMiner {
             return false;
         if (!world.getBlockState(pos).isAir())
             return false;
-        
+
         world.setBlockState(pos, Blocks.FURNACE.getDefaultState(), 3);
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity instanceof FurnaceBlockEntity furnace) {
@@ -634,48 +645,47 @@ public class CavePreMiner {
      * @return A suitable BlockPos, or null if none found
      */
     public static BlockPos findStarterBlock(World world, BlockPos playerPos) {
-        int chunkRadius = 20;
+        int chunkRadius = 13;
         int maxDistance = chunkRadius * 16;
         int minY = world.getBottomY();
         int maxY = Math.min(48, world.getTopY() - 1);
-        int playerY = playerPos.getY();
-        int idealY = Math.max(minY + 5, Math.min(maxY - 5, playerY - 10));
-        
+        int idealY = minY + random.nextInt(maxY - minY + 1);
+
         int stepSize = 16;
         int angularSteps = 8;
         int ySearchRange = 30;
         int yStepSize = 5;
-        
+
         int[] yOffsets = new int[ySearchRange / yStepSize * 2 + 1];
         for (int i = 0; i < yOffsets.length; i++) {
             yOffsets[i] = (i - yOffsets.length / 2) * yStepSize;
         }
-        
+
         java.util.Set<BlockPos> checkedPositions = new java.util.HashSet<>();
-        
+
         for (int distance = maxDistance; distance >= stepSize; distance -= stepSize) {
             for (int i = 0; i < angularSteps; i++) {
                 double angle = (2 * Math.PI * i) / angularSteps;
                 int xOffset = (int) (distance * Math.cos(angle));
                 int zOffset = (int) (distance * Math.sin(angle));
-                
+
                 for (int yOffset : yOffsets) {
                     int x = playerPos.getX() + xOffset;
                     int z = playerPos.getZ() + zOffset;
                     int y = idealY + yOffset;
-                    
+
                     if (y < minY || y > maxY)
                         continue;
-                    
+
                     BlockPos checkPos = new BlockPos(x, y, z);
                     if (checkedPositions.contains(checkPos))
                         continue;
                     checkedPositions.add(checkPos);
-                    
+
                     if (!ChunkLoader.loadChunksInRadius((ServerWorld) world, checkPos, 1)) {
                         continue;
                     }
-                    
+
                     BlockState state = world.getBlockState(checkPos);
                     if ((state.isOf(Blocks.CAVE_AIR) || state.isOf(Blocks.AIR))) {
                         BlockPos solidPos = findSolidBlockBelow(world, checkPos, minY, maxY);
@@ -694,7 +704,7 @@ public class CavePreMiner {
                 }
             }
         }
-        
+
         return null;
     }
 
@@ -739,7 +749,7 @@ public class CavePreMiner {
      * @return The new position moved up 1 and forward 1 in the direction
      */
     private static BlockPos moveInDirection(BlockPos pos, String direction) {
-        switch(direction) {
+        switch (direction) {
             case "N":
                 return pos.up().north();
             case "E":
@@ -757,11 +767,12 @@ public class CavePreMiner {
      * Rotates a cardinal direction 90 degrees left or right
      * 
      * @param direction The current cardinal direction ("N", "E", "S", "W")
-     * @param left      True to rotate left (counterclockwise), false for right (clockwise)
+     * @param left      True to rotate left (counterclockwise), false for right
+     *                  (clockwise)
      * @return The new direction after rotation
      */
     private static String rotate90Degrees(String direction, boolean left) {
-        String[] cardinals = {"N", "E", "S", "W"};
+        String[] cardinals = { "N", "E", "S", "W" };
         int index = java.util.Arrays.asList(cardinals).indexOf(direction);
         if (left) {
             index = (index - 1 + 4) % 4;
@@ -779,7 +790,7 @@ public class CavePreMiner {
      * @return The position offset by 1 in the direction
      */
     private static BlockPos getOffsetInDirection(BlockPos pos, String direction) {
-        switch(direction) {
+        switch (direction) {
             case "N":
                 return pos.north();
             case "E":
@@ -807,35 +818,34 @@ public class CavePreMiner {
         int stairLength = 0;
         BlockPos currentPos = starterPos;
         java.util.List<BlockPos> stairBlocks = new java.util.ArrayList<>();
-        
+
         // Random initial direction
-        String[] cardinals = {"N", "E", "S", "W"};
+        String[] cardinals = { "N", "E", "S", "W" };
         String currentDirection = cardinals[random.nextInt(4)];
-        
+
         // Turn tracking
         int turnsMade = 0;
         int maxTurns = 5;
         int blocksSinceLastTurn = 0;
         int minBlocksBetweenTurns = 6;
-        
+
         // Cache surface Y values to avoid repeated expensive calculations
         java.util.Map<Long, Integer> surfaceYCache = new java.util.HashMap<>();
-        
+
         // Helper to get cached surface Y
         java.util.function.BiFunction<Integer, Integer, Integer> getSurfaceY = (x, z) -> {
-            long key = ((long)x << 32) | (z & 0xFFFFFFFFL);
-            return surfaceYCache.computeIfAbsent(key, k -> 
-                SurfaceFinder.findPointSurfaceY((ServerWorld) world, x, z, true, false, true)
-            );
+            long key = ((long) x << 32) | (z & 0xFFFFFFFFL);
+            return surfaceYCache.computeIfAbsent(key,
+                    k -> SurfaceFinder.findPointSurfaceY((ServerWorld) world, x, z, true, false, true));
         };
-        
+
         // fill in the stairblocks list, checking surface level as we go
         while (true) {
             // if y value is getting too high, stop
             if (currentPos.getY() >= 130) {
                 break;
             }
-            
+
             // Check if we've reached the surface
             int surfaceY = getSurfaceY.apply(currentPos.getX(), currentPos.getZ());
             if (surfaceY != -1 && currentPos.getY() >= surfaceY) {
@@ -843,25 +853,25 @@ public class CavePreMiner {
                 stairLength++;
                 break;
             }
-            
+
             if (surfaceY == -1 && currentPos.getY() >= 60) {
                 return stairLength;
             }
-            
+
             stairBlocks.add(currentPos);
-            
+
             // Check if we should make a turn
-            if (blocksSinceLastTurn >= minBlocksBetweenTurns && 
-                turnsMade < maxTurns && 
-                random.nextInt(100) < 10) {
-                
+            if (blocksSinceLastTurn >= minBlocksBetweenTurns &&
+                    turnsMade < maxTurns &&
+                    random.nextInt(100) < 10) {
+
                 boolean turnLeft = random.nextBoolean();
                 currentDirection = rotate90Degrees(currentDirection, turnLeft);
-                
+
                 turnsMade++;
                 blocksSinceLastTurn = 0;
             }
-            
+
             currentPos = moveInDirection(currentPos, currentDirection);
             stairLength++;
             blocksSinceLastTurn++;
@@ -880,33 +890,38 @@ public class CavePreMiner {
         // Set the 3 blocks above each stair block to air
         int torchDistance = 0;
         String stairDirection = cardinals[random.nextInt(4)];
-        
+
         for (int i = 0; i < stairBlocks.size(); i++) {
             BlockPos stairPos = stairBlocks.get(i);
-            
+
             // Detect direction changes for corner fill
             if (i > 0) {
                 BlockPos prevPos = stairBlocks.get(i - 1);
                 int dx = stairPos.getX() - prevPos.getX();
                 int dz = stairPos.getZ() - prevPos.getZ();
-                
+
                 String detectedDirection;
-                if (dz < 0) detectedDirection = "N";
-                else if (dz > 0) detectedDirection = "S";
-                else if (dx > 0) detectedDirection = "E";
-                else detectedDirection = "W";
-                
+                if (dz < 0)
+                    detectedDirection = "N";
+                else if (dz > 0)
+                    detectedDirection = "S";
+                else if (dx > 0)
+                    detectedDirection = "E";
+                else
+                    detectedDirection = "W";
+
                 if (!detectedDirection.equals(stairDirection)) {
                     String oldDirection = stairDirection;
                     stairDirection = detectedDirection;
-                    
+
                     BlockPos cornerFill = getOffsetInDirection(stairPos, oldDirection);
-                    if (world.getBlockState(cornerFill).isAir() || world.getBlockState(cornerFill).isOf(Blocks.CAVE_AIR)) {
+                    if (world.getBlockState(cornerFill).isAir()
+                            || world.getBlockState(cornerFill).isOf(Blocks.CAVE_AIR)) {
                         world.setBlockState(cornerFill, Blocks.COBBLESTONE.getDefaultState());
                     }
                 }
             }
-            
+
             // Check if we're at or above surface (using cache)
             int surfaceY = getSurfaceY.apply(stairPos.getX(), stairPos.getZ());
             boolean isAtOrAboveSurface = (surfaceY != -1 && stairPos.getY() >= surfaceY);
@@ -944,9 +959,33 @@ public class CavePreMiner {
         // Add torches around entrance if we found one
         if (entrancePos != null) {
             placeEntranceTorches(world, entrancePos, player);
+            placePillar(world, entrancePos, player);
         }
 
         return stairLength;
+    }
+
+    private static void placePillar(World world, BlockPos entrancePos, PlayerEntity player) {
+        ServerWorld serverWorld = (ServerWorld) world;
+        BlockPos surfacePos = StructurePlacer.findSurfaceLocation(serverWorld, entrancePos, 2, 6);
+        int hight = 20 + random.nextInt(20);
+        if (surfacePos != null) {
+            for (int i = 0; i < hight; i++) {
+                BlockPos pillarPos = surfacePos.up(i);
+
+                if (!LineOfSightUtils.isBlockRenderedOnScreen(player, pillarPos, 16 * 10)) {
+                    world.setBlockState(pillarPos, Blocks.COBBLESTONE.getDefaultState());
+                } else {
+                    break; // Stop if we hit a non-air block
+                }
+            }
+            // place a jack o lantern on the top of the pillar
+            BlockPos topPos = surfacePos.up(hight);
+            if (topPos.getY() < world.getTopY()
+                    && (!LineOfSightUtils.isBlockRenderedOnScreen(player, topPos, 16 * 10))) {
+                world.setBlockState(topPos, Blocks.JACK_O_LANTERN.getDefaultState());
+            }
+        }
     }
 
     /**
@@ -986,17 +1025,17 @@ public class CavePreMiner {
                 if (!tooClose) {
                     BlockState currentState = world.getBlockState(surfacePos);
                     BlockState belowState = world.getBlockState(surfacePos.down());
-                    
+
                     if (currentState.isOf(Blocks.SNOW) || currentState.isReplaceable()) {
                         world.setBlockState(surfacePos, Blocks.AIR.getDefaultState(), 3);
                     }
-                    
+
                     BlockPos targetPos = surfacePos;
                     if (belowState.isOf(Blocks.SNOW)) {
                         world.setBlockState(surfacePos.down(), Blocks.AIR.getDefaultState(), 3);
                         targetPos = surfacePos.down();
                     }
-                    
+
                     if (TorchPlacer.placeTorch(world, targetPos, random, player)) {
                         placedPositions.add(targetPos);
                         torchesPlaced++;
@@ -1019,37 +1058,37 @@ public class CavePreMiner {
         if (starterPos == null) {
             return false;
         }
-        
+
         // Check if too close to existing pre-mined caves
         ServerWorld serverWorld = (ServerWorld) world;
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(serverWorld.getServer());
         java.util.List<BlockPos> existingCaves = state.getPositionList("preminedCaveLocations");
-        
+
         final int MIN_CAVE_DISTANCE_SQUARED = 100 * 100;
         for (BlockPos existingCave : existingCaves) {
             if (starterPos.getSquaredDistance(existingCave) < MIN_CAVE_DISTANCE_SQUARED) {
                 return false;
             }
         }
-        
+
         horror.blueice129.HorrorMod129.LOGGER.info("Cave Pre-Miner: Found starter block at " + starterPos);
-        
+
         // Combined cave exploration and ore mining in a single pass
         CaveExplorationResult result = findCaveAirAndMineOres(world, starterPos, player);
         java.util.List<BlockPos> caveAirBlocks = result.caveAirBlocks;
         int oresMined = result.oresMined;
-        
+
         if (caveAirBlocks.size() < 50) {
             return false; // Not enough cave air blocks to consider this a cave
         }
-        
+
         int torchesPlaced = populateTorches(world, caveAirBlocks, player);
         int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
         int stairLength = mineStairs(world, starterPos, player);
-        
+
         // Store this cave location to prevent future caves from being too close
         state.addPositionToList("preminedCaveLocations", starterPos);
-        
+
         HorrorMod129.LOGGER.info("Cave Pre-Miner: Mined " + oresMined + " ores, placed " + torchesPlaced
                 + " torches, extra blocks placed: " + extraBlocksPlaced + ", stair length: " + stairLength);
         return true;

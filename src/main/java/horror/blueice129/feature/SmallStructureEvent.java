@@ -2,22 +2,21 @@ package horror.blueice129.feature;
 
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
+import horror.blueice129.feature.BridgeOverWater;
+import horror.blueice129.utils.SurfaceFinder;
+import horror.blueice129.utils.ChunkLoader;
+import horror.blueice129.utils.LineOfSightUtils;
+import horror.blueice129.utils.TorchPlacer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Block;
-// import net.minecraft.block.BedBlock;
 import net.minecraft.item.Items;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.item.ItemStack;
 import net.minecraft.block.entity.FurnaceBlockEntity;
-// import net.minecraft.client.font.MultilineText.Line;
 import net.minecraft.block.entity.BlockEntity;
-import horror.blueice129.utils.SurfaceFinder;
-import horror.blueice129.utils.ChunkLoader;
-import horror.blueice129.utils.LineOfSightUtils;
-import horror.blueice129.utils.TorchPlacer;
 import net.minecraft.world.World;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
@@ -32,10 +31,11 @@ public class SmallStructureEvent {
     public static String[][] STRUCTURE_LIST = { // not final, agro meter will change weights
             { "crafting_table", "10" },
             { "furnace", "5" },
-            { "cobblestone_pillar", "5" },
+            { "cobblestone_pillar", "7" },
             { "single_torch", "10" },
             { "torched_area", "5" },
-            { "tree_mined", "20" },
+            { "tree_mined", "15" },
+            { "bridge_over_water", "15" },
             { "deforestation", "5" },
             { "flower_patch", "13" },
             { "chunk_deletion", "0" },
@@ -190,6 +190,9 @@ public class SmallStructureEvent {
             case "tree_mined":
                 success = treeMinedEvent(server, player);
                 break;
+            case "bridge_over_water":
+                success = BridgeOverWater.triggerEvent(server, player);
+                break;
             case "deforestation":
                 success = deforestationEvent(server, player);
                 break;
@@ -252,8 +255,8 @@ public class SmallStructureEvent {
     private static boolean cobblestonePillarEvent(MinecraftServer server, ServerPlayerEntity player) {
 
         IntrestingLocation location = intrestingAreaFinder(server, player);
-        BlockPos pos = location.pos;
-        String type = location.type;
+        BlockPos pos = location != null ? location.pos : findAndLoadSurfaceLocation(server, player, 20, 80);
+        String type = location != null ? location.type : "unknown";
         if (pos == null) {
             return false; // No suitable location found
         }
@@ -268,7 +271,7 @@ public class SmallStructureEvent {
             height += 30; // If the pillar is in a cave, make it taller to reach the surface
         }
 
-        Block[] pillarBlocks = { Blocks.COBBLESTONE, Blocks.DIRT, Blocks.OAK_PLANKS, Blocks.BIRCH_PLANKS};
+        Block[] pillarBlocks = { Blocks.COBBLESTONE, Blocks.DIRT, Blocks.OAK_PLANKS, Blocks.BIRCH_PLANKS };
         Block pillarBlock = pillarBlocks[RANDOM.nextInt(pillarBlocks.length)];
         for (int i = 0; i < height; i++) {
             BlockPos pillarPos = pos.up(i);
@@ -276,31 +279,32 @@ public class SmallStructureEvent {
                 server.getOverworld().setBlockState(pillarPos, pillarBlock.getDefaultState());
             }
         }
-        // server.getOverworld().setBlockState(pos.up(height), Blocks.TORCH.getDefaultState());
+        // server.getOverworld().setBlockState(pos.up(height),
+        // Blocks.TORCH.getDefaultState());
         // use torchutil instead
         BlockPos torchPos = pos.up(height).down();
         // TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
         // place a random colour banner with the name of the returned block type on the pillar
         // make the block type just be the block, not minecraft: or net.minecraft.block. just the name of the block
-        String bannerText = type.replace("block.", "").replace("minecraft.", "").toUpperCase();
+        String bannerText = (type == null ? "unknown" : type)
+            .replace("block.", "")
+            .replace("minecraft.", "")
+            .toUpperCase();
         DyeColor[] colors = DyeColor.values();
         DyeColor bannerColor = colors[RANDOM.nextInt(colors.length)];
         Block bannerBlock = getBannerForColor(bannerColor);
-        
+
         server.getOverworld().setBlockState(torchPos.up(), bannerBlock.getDefaultState());
         BlockEntity bannerEntity = server.getOverworld().getBlockEntity(torchPos.up());
         if (bannerEntity instanceof BannerBlockEntity banner) {
             banner.setCustomName(Text.literal(bannerText.toLowerCase().replace("_", " ")));
-        }   
-
+        }
 
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.north(), RANDOM, player);
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.east(), RANDOM, player);
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.south(), RANDOM, player);
         TorchPlacer.placeTorch(server.getOverworld(), torchPos.west(), RANDOM, player);
 
-
-        
         return true;
     }
 
@@ -341,10 +345,11 @@ public class SmallStructureEvent {
         Block[] intrestingBlocks = { Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.TORCH,
                 Blocks.LANTERN, Blocks.HOPPER, Blocks.OBSIDIAN, Blocks.GOLD_BLOCK, Blocks.IRON_BLOCK,
                 Blocks.DIAMOND_BLOCK, Blocks.EMERALD_BLOCK, Blocks.NETHERITE_BLOCK, Blocks.LILY_OF_THE_VALLEY,
-                Blocks.HAY_BLOCK, Blocks.MOSS_BLOCK, Blocks.LAVA, Blocks.FIRE, Blocks.EMERALD_ORE, Blocks.DIAMOND_ORE, Blocks.SPAWNER
-            };
+                Blocks.HAY_BLOCK, Blocks.MOSS_BLOCK, Blocks.LAVA, Blocks.FIRE, Blocks.EMERALD_ORE, Blocks.DIAMOND_ORE,
+                Blocks.SPAWNER
+        };
 
-        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "plank", "glass", "rail", "anvil"};
+        String[] intrestingPartialBlockNames = { "door", "bed", "stairs", "plank", "glass", "rail", "anvil" };
         for (int i = 0; i < tries; i++) {
             BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 80,
                     200);
@@ -361,7 +366,8 @@ public class SmallStructureEvent {
                             Block blockAtPos = server.getOverworld().getBlockState(checkPos).getBlock();
                             if (checkPos.getY() <= 45) {
                                 HorrorMod129.LOGGER.info("returned cave pos: " + checkPos);
-                                return new IntrestingLocation(pos, "cave"); // Found a cave entrance, return this position with type
+                                return new IntrestingLocation(pos, "cave"); // Found a cave entrance, return this
+                                                                            // position with type
                             }
                             if (blockAtPos != Blocks.AIR || blockAtPos != Blocks.GRASS_BLOCK
                                     || blockAtPos != Blocks.DIRT || blockAtPos != Blocks.SAND
@@ -370,14 +376,21 @@ public class SmallStructureEvent {
                                 if (java.util.Arrays.asList(intrestingBlocks)
                                         .contains(blockAtPos)) {
                                     HorrorMod129.LOGGER.info("returned intresting block pos: " + checkPos);
-                                    return new IntrestingLocation(pos, blockAtPos.getTranslationKey()); // Found an intresting block, return this position with type
+                                    return new IntrestingLocation(pos, blockAtPos.getTranslationKey()); // Found an
+                                                                                                        // intresting
+                                                                                                        // block, return
+                                                                                                        // this position
+                                                                                                        // with type
                                 } else {
                                     String blockName = blockAtPos.getTranslationKey();
                                     for (String partialName : intrestingPartialBlockNames) {
                                         if (blockName.contains(partialName)) {
-                                            HorrorMod129.LOGGER.info("returned intresting partial block pos: " + checkPos);
+                                            HorrorMod129.LOGGER
+                                                    .info("returned intresting partial block pos: " + checkPos);
                                             HorrorMod129.LOGGER.info("block name: " + blockName);
-                                            return new IntrestingLocation(pos, partialName); // Found an intresting block, return this position with type
+                                            return new IntrestingLocation(pos, partialName); // Found an intresting
+                                                                                             // block, return this
+                                                                                             // position with type
                                         }
                                     }
                                 }
@@ -461,8 +474,8 @@ public class SmallStructureEvent {
                     } else {
                         server.getOverworld().setBlockState(logPos, Blocks.AIR.getDefaultState());
                     }
-                        
-                } 
+
+                }
             }
         }
         return true;
@@ -493,7 +506,7 @@ public class SmallStructureEvent {
         if (pos == null) {
             return false;
         }
-        
+
         BlockPos[] treePositions = SurfaceFinder.findTreePositions(server.getOverworld(), pos, 40);
         if (treePositions.length == 0) {
             return false;
@@ -516,7 +529,8 @@ public class SmallStructureEvent {
             return false;
         }
         // if (!LineOfSightUtils.hasLineOfSight(player, pos.up(10), 200)) {
-        //     server.getOverworld().setBlockState(pos.up(10), Blocks.DIAMOND_BLOCK.getDefaultState());
+        // server.getOverworld().setBlockState(pos.up(10),
+        // Blocks.DIAMOND_BLOCK.getDefaultState());
         // }
 
         int flowerCount = 5 + RANDOM.nextInt(20);
@@ -536,7 +550,8 @@ public class SmallStructureEvent {
                         server.getOverworld().setBlockState(flowerPos, Blocks.LILY_OF_THE_VALLEY.getDefaultState());
                     }
                     // if (!LineOfSightUtils.hasLineOfSight(player, flowerPos.up(10), 200)) {
-                    //     server.getOverworld().setBlockState(flowerPos.up(10), Blocks.GOLD_BLOCK.getDefaultState());
+                    // server.getOverworld().setBlockState(flowerPos.up(10),
+                    // Blocks.GOLD_BLOCK.getDefaultState());
                     // }
                 }
             }
@@ -553,14 +568,15 @@ public class SmallStructureEvent {
     }
 
     private static boolean chunkDeletionEvent(MinecraftServer server, ServerPlayerEntity player) {
-        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100, 200);
+        BlockPos pos = StructurePlacer.findSurfaceLocation(server.getOverworld(), player.getBlockPos(), player, 100,
+                200);
         if (pos == null || LineOfSightUtils.hasLineOfSight(player, pos, 200)) {
             return false;
         }
 
         int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;
-        
+
         if (isChunkNearSpawn(player, chunkX, chunkZ, 3)) {
             return false;
         }
@@ -593,8 +609,8 @@ public class SmallStructureEvent {
         return Math.abs(chunkX - spawnChunkX) <= chunkRadius && Math.abs(chunkZ - spawnChunkZ) <= chunkRadius;
     }
 
-    private static boolean hasProtectedBlocks(MinecraftServer server, ServerPlayerEntity player, 
-                                              int startX, int startZ, int worldBottomY, int worldTopY) {
+    private static boolean hasProtectedBlocks(MinecraftServer server, ServerPlayerEntity player,
+            int startX, int startZ, int worldBottomY, int worldTopY) {
         int endX = startX + 15;
         int endZ = startZ + 15;
         BlockPos spawnPos = player.getSpawnPointPosition();
@@ -604,27 +620,27 @@ public class SmallStructureEvent {
             for (int z = startZ; z <= endZ; z++) {
                 for (int y = worldBottomY; y < worldTopY; y++) {
                     BlockPos blockPos = new BlockPos(x, y, z);
-                    
+
                     if (spawnPos != null && blockPos.equals(spawnPos)) {
                         return true;
                     }
-                    
+
                     Block block = world.getBlockState(blockPos).getBlock();
                     if (block instanceof net.minecraft.block.ChestBlock ||
-                        block instanceof net.minecraft.block.TrappedChestBlock ||
-                        block instanceof net.minecraft.block.BarrelBlock ||
-                        block instanceof net.minecraft.block.BedBlock ||
-                        block instanceof net.minecraft.block.EnderChestBlock ||
-                        block instanceof net.minecraft.block.StairsBlock ||
-                        block instanceof net.minecraft.block.DoorBlock ||
-                        block instanceof net.minecraft.block.GlassBlock ||
-                        block instanceof net.minecraft.block.FenceBlock ||
-                        block instanceof net.minecraft.block.PaneBlock ||
-                        block instanceof net.minecraft.block.AnvilBlock ||
-                        block instanceof net.minecraft.block.FurnaceBlock ||
-                        block instanceof net.minecraft.block.LadderBlock ||
-                        block instanceof net.minecraft.block.HopperBlock ||
-                        block instanceof net.minecraft.block.CraftingTableBlock) {
+                            block instanceof net.minecraft.block.TrappedChestBlock ||
+                            block instanceof net.minecraft.block.BarrelBlock ||
+                            block instanceof net.minecraft.block.BedBlock ||
+                            block instanceof net.minecraft.block.EnderChestBlock ||
+                            block instanceof net.minecraft.block.StairsBlock ||
+                            block instanceof net.minecraft.block.DoorBlock ||
+                            block instanceof net.minecraft.block.GlassBlock ||
+                            block instanceof net.minecraft.block.FenceBlock ||
+                            block instanceof net.minecraft.block.PaneBlock ||
+                            block instanceof net.minecraft.block.AnvilBlock ||
+                            block instanceof net.minecraft.block.FurnaceBlock ||
+                            block instanceof net.minecraft.block.LadderBlock ||
+                            block instanceof net.minecraft.block.HopperBlock ||
+                            block instanceof net.minecraft.block.CraftingTableBlock) {
                         return true;
                     }
                 }
@@ -633,8 +649,8 @@ public class SmallStructureEvent {
         return false;
     }
 
-    private static void deleteChunkBlocks(MinecraftServer server, int startX, int startZ, 
-                                          int worldBottomY, int worldTopY) {
+    private static void deleteChunkBlocks(MinecraftServer server, int startX, int startZ,
+            int worldBottomY, int worldTopY) {
         int endX = startX + 15;
         int endZ = startZ + 15;
         var world = server.getOverworld();

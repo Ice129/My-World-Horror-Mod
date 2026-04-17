@@ -38,6 +38,12 @@ public class ConfigScreen {
                 .setTooltip(Text.literal("Sets brightness to moody periodically"))
                 .setSaveConsumer(newValue -> config.enableBrightnessChange = newValue)
                 .build());
+
+        settingsCategory.addEntry(entryBuilder.startBooleanToggle(Text.literal("Disable Gamma Cap"), config.disableGammaCap)
+                .setDefaultValue(false)
+                .setTooltip(Text.literal("Removes the 60% cap and allows gamma up to full brightness"))
+                .setSaveConsumer(newValue -> config.disableGammaCap = newValue)
+                .build());
         
         settingsCategory.addEntry(entryBuilder.startBooleanToggle(Text.literal("Enable FPS Changes"), config.enableFpsChange)
                 .setDefaultValue(true)
