@@ -1,11 +1,11 @@
 package horror.blueice129.feature;
 
-import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.Heightmap;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -24,20 +24,16 @@ public class BridgeOverWater {
 
     public static boolean triggerEvent(MinecraftServer server, ServerPlayerEntity player) {
         ServerWorld world = server.getOverworld();
-        for (int i = 0; i < 300; i++) {
-            BlockPos surfacePos = StructurePlacer.findSurfaceLocation(world, player.getBlockPos(), 30, 100);
-            if (surfacePos == null) {
-                continue;
-            }
+        BlockPos center = player.getBlockPos();
 
-            BlockPos waterLocation = findStartWater(world, surfacePos, 8, 4);
-            if (waterLocation == null) {
-                continue;
-            }
+        BlockPos riverWater = findRiverWaterByRings(world, center, 32, 224, 16, 8);
+        if (riverWater != null && placeBridge(world, riverWater)) {
+            return true;
+        }
 
-            if (placeBridge(world, waterLocation)) {
-                return true;
-            }
+        BlockPos fallbackWater = findWaterByRings(world, center, 16, 160, 16, 8);
+        if (fallbackWater != null && placeBridge(world, fallbackWater)) {
+            return true;
         }
 
         return false;
@@ -160,6 +156,143 @@ public class BridgeOverWater {
             }
         }
         return best;
+    }
+
+    private static BlockPos findRiverWaterByRings(ServerWorld world, BlockPos center, int minRadius, int maxRadius,
+            int radiusStep, int edgeStep) {
+        int[] radii = buildRadii(minRadius, maxRadius, radiusStep);
+        shuffleIntArray(radii, world.random);
+
+        for (int radius : radii) {
+            BlockPos found = findWaterOnRing(world, center, radius, edgeStep, true);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private static BlockPos findWaterByRings(ServerWorld world, BlockPos center, int minRadius, int maxRadius,
+            int radiusStep, int edgeStep) {
+        int[] radii = buildRadii(minRadius, maxRadius, radiusStep);
+        shuffleIntArray(radii, world.random);
+
+        for (int radius : radii) {
+            BlockPos found = findWaterOnRing(world, center, radius, edgeStep, false);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private static BlockPos findWaterOnRing(ServerWorld world, BlockPos center, int radius, int edgeStep,
+            boolean riverOnly) {
+        boolean scanNorthSouthFirst = world.random.nextBoolean();
+        if (scanNorthSouthFirst) {
+            BlockPos found = scanNorthSouthEdges(world, center, radius, edgeStep, riverOnly);
+            if (found != null) {
+                return found;
+            }
+
+            return scanWestEastEdges(world, center, radius, edgeStep, riverOnly);
+        }
+
+        BlockPos found = scanWestEastEdges(world, center, radius, edgeStep, riverOnly);
+        if (found != null) {
+            return found;
+        }
+
+        return scanNorthSouthEdges(world, center, radius, edgeStep, riverOnly);
+    }
+
+    private static BlockPos scanNorthSouthEdges(ServerWorld world, BlockPos center, int radius, int edgeStep,
+            boolean riverOnly) {
+        boolean reverse = world.random.nextBoolean();
+        for (int i = 0; i <= radius * 2; i += edgeStep) {
+            int x = reverse ? radius - i : -radius + i;
+            BlockPos northAnchor = center.add(x, 0, -radius);
+            BlockPos southAnchor = center.add(x, 0, radius);
+
+            BlockPos found = checkAnchorPair(world, northAnchor, southAnchor, riverOnly);
+            if (found != null) {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    private static BlockPos scanWestEastEdges(ServerWorld world, BlockPos center, int radius, int edgeStep,
+            boolean riverOnly) {
+        boolean reverse = world.random.nextBoolean();
+        for (int i = edgeStep; i <= radius * 2 - edgeStep; i += edgeStep) {
+            int z = reverse ? radius - i : -radius + i;
+            BlockPos westAnchor = center.add(-radius, 0, z);
+            BlockPos eastAnchor = center.add(radius, 0, z);
+
+            BlockPos found = checkAnchorPair(world, westAnchor, eastAnchor, riverOnly);
+            if (found != null) {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    private static BlockPos checkAnchorPair(ServerWorld world, BlockPos firstAnchor, BlockPos secondAnchor,
+            boolean riverOnly) {
+        boolean firstDirectionFirst = world.random.nextBoolean();
+        if (firstDirectionFirst) {
+            BlockPos firstFound = findWaterNearAnchor(world, firstAnchor, riverOnly);
+            if (firstFound != null) {
+                return firstFound;
+            }
+
+            return findWaterNearAnchor(world, secondAnchor, riverOnly);
+        }
+
+        BlockPos secondFound = findWaterNearAnchor(world, secondAnchor, riverOnly);
+        if (secondFound != null) {
+            return secondFound;
+        }
+
+        return findWaterNearAnchor(world, firstAnchor, riverOnly);
+    }
+
+    private static int[] buildRadii(int minRadius, int maxRadius, int radiusStep) {
+        int count = ((maxRadius - minRadius) / radiusStep) + 1;
+        int[] radii = new int[count];
+        for (int i = 0; i < count; i++) {
+            radii[i] = minRadius + (i * radiusStep);
+        }
+        return radii;
+    }
+
+    private static void shuffleIntArray(int[] values, net.minecraft.util.math.random.Random random) {
+        for (int i = values.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            int tmp = values[i];
+            values[i] = values[j];
+            values[j] = tmp;
+        }
+    }
+
+    private static BlockPos findWaterNearAnchor(ServerWorld world, BlockPos anchor, boolean riverOnly) {
+        BlockPos surfacePos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, anchor);
+        if (riverOnly && !isRiverBiome(world, surfacePos)) {
+            return null;
+        }
+
+        return findStartWater(world, surfacePos, 10, 4);
+    }
+
+    private static boolean isRiverBiome(ServerWorld world, BlockPos pos) {
+        String biomeKey = world.getBiome(pos)
+                .getKey()
+                .map(key -> key.getValue().toString())
+                .orElse("");
+        return biomeKey.contains("river");
     }
 
     private static boolean isShoreWater(ServerWorld world, BlockPos waterPos) {
