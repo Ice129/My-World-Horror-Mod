@@ -32,15 +32,7 @@ public class ConfigManager {
                 if (instance == null) {
                     instance = ModConfig.createDefault();
                 }
-
-                if (!json.contains("\"disableGammaCap\"") ) {
-                    Matcher matcher = LEGACY_REDUCED_GAMMA_CAP_PATTERN.matcher(json);
-                    if (matcher.find()) {
-                        boolean legacyReducedGammaCap = Boolean.parseBoolean(matcher.group(1));
-                        instance.disableGammaCap = !legacyReducedGammaCap;
-                    }
-                }
-
+                instance.applySafetyDefaults();
                 HorrorMod129.LOGGER.info("Loaded config from ENGRAM.json");
             } else {
                 HorrorMod129.LOGGER.info("Config file not found, creating default ENGRAM.json");

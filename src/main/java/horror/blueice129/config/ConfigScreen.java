@@ -70,6 +70,18 @@ public class ConfigScreen {
                 .setTooltip(Text.literal("Locks music volume to minimum 50%"))
                 .setSaveConsumer(newValue -> config.enableMusicVolumeLocking = newValue)
                 .build());
+
+        ConfigCategory multiplayerCategory = builder.getOrCreateCategory(Text.literal("Multiplayer"));
+
+        multiplayerCategory.addEntry(entryBuilder.startIntField(
+                        Text.literal("Auto LAN Port (change this to make LAN multiplayer work)"),
+                        config.autoLanPort)
+                .setDefaultValue(ModConfig.DEFAULT_AUTO_LAN_PORT)
+                .setMin(ModConfig.MIN_AUTO_LAN_PORT)
+                .setMax(ModConfig.MAX_AUTO_LAN_PORT)
+                .setTooltip(Text.literal("Port used when auto-opening singleplayer to LAN"))
+                .setSaveConsumer(newValue -> config.autoLanPort = newValue)
+                .build());
         
         ConfigCategory speedCategory = builder.getOrCreateCategory(Text.literal("Progression"));
         // multiple string options: slowest, slower, normal, faster, fastest
