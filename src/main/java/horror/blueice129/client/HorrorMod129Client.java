@@ -2,6 +2,7 @@ package horror.blueice129.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.client.sound.LilyRainSoundManager;
 import horror.blueice129.feature.PlayerStateHud;
 import horror.blueice129.feature.VersionHud;
 import horror.blueice129.network.ClientPacketHandler;
@@ -38,6 +39,7 @@ public class HorrorMod129Client implements ClientModInitializer {
         PlayerStateHud.initialize();
         ScreenshotFromEntity.initialize();
         FullbrightKiller.initialize();
+        LilyRainSoundManager.initialize();
 
         // entity rendering needed to do on client side, as its visual and the server side logic are separate
         

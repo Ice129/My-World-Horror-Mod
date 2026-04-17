@@ -5,6 +5,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import horror.blueice129.network.ModNetworking;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.minecraft.block.Blocks;
 
 public class LilyDamageScheduler {
 
@@ -13,6 +16,11 @@ public class LilyDamageScheduler {
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(LilyDamageScheduler::onServerTick);
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+            if (state.isOf(Blocks.LILY_OF_THE_VALLEY) && world instanceof ServerWorld serverWorld) {
+                ModNetworking.sendLilyRainStop(serverWorld, pos);
+            }
+        });
     }
 
     private static void onServerTick(MinecraftServer server) {

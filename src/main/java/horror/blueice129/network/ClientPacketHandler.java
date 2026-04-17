@@ -1,6 +1,7 @@
 package horror.blueice129.network;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.client.sound.LilyRainSoundManager;
 import horror.blueice129.config.ConfigManager;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
@@ -9,6 +10,7 @@ import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.utils.ScreenshotFromEntity;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 // import net.minecraft.network.PacketByteBuf;
 // import net.minecraft.util.Identifier;
@@ -51,6 +53,18 @@ public class ClientPacketHandler {
                         HorrorMod129.LOGGER.info("ClientPacketHandler: Scheduling screenshot from entity: " + entity.getName().getString());
                         ScreenshotFromEntity.scheduleScreenshot(entity);
                     });
+                });
+
+        ClientPlayNetworking.registerGlobalReceiver(ModNetworking.LILY_RAIN_START_ID,
+                (client, handler, buf, responseSender) -> {
+                    final BlockPos pos = buf.readBlockPos();
+                    client.execute(() -> LilyRainSoundManager.start(pos));
+                });
+
+        ClientPlayNetworking.registerGlobalReceiver(ModNetworking.LILY_RAIN_STOP_ID,
+                (client, handler, buf, responseSender) -> {
+                    final BlockPos pos = buf.readBlockPos();
+                    client.execute(() -> LilyRainSoundManager.stop(pos));
                 });
 
         HorrorMod129.LOGGER.info("Registered client packet receivers");

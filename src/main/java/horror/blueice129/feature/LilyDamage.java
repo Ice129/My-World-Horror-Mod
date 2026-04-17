@@ -1,11 +1,17 @@
 package horror.blueice129.feature;
 
+import horror.blueice129.network.ModNetworking;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LilyDamage {
 
@@ -14,10 +20,14 @@ public class LilyDamage {
     private static final int DURABILITY_DRAIN_PER_FLOWER = 2;
 
     public static void applyToPlayer(ServerWorld world, ServerPlayerEntity player) {
-        int flowers = countNearbyFlowers(world, player.getBlockPos());
-        if (flowers == 0) return;
+        List<BlockPos> flowers = findNearbyFlowers(world, player.getBlockPos());
+        if (flowers.isEmpty()) return;
 
-        int drain = flowers * DURABILITY_DRAIN_PER_FLOWER;
+        for (BlockPos flowerPos : flowers) {
+            ModNetworking.sendLilyRainStart(player, flowerPos);
+        }
+
+        int drain = flowers.size() * DURABILITY_DRAIN_PER_FLOWER;
         PlayerInventory inventory = player.getInventory();
         ItemStack[] candidates = new ItemStack[inventory.size()];
         int candidateCount = 0;
@@ -33,19 +43,34 @@ public class LilyDamage {
 
         ItemStack chosenStack = candidates[world.getRandom().nextInt(candidateCount)];
         chosenStack.damage(drain, world.getRandom(), player);
+
+        if (chosenStack.getDamage() >= chosenStack.getMaxDamage()) {
+            world.playSound(
+                    null,
+                    player.getX(),
+                    player.getY(),
+                    player.getZ(),
+                    SoundEvents.ENTITY_ITEM_BREAK,
+                    SoundCategory.PLAYERS,
+                    0.8F,
+                    0.8F + world.getRandom().nextFloat() * 0.4F
+            );
+            chosenStack.decrement(1);
+        }
     }
 
-    private static int countNearbyFlowers(ServerWorld world, BlockPos center) {
-        int count = 0;
+    private static List<BlockPos> findNearbyFlowers(ServerWorld world, BlockPos center) {
+        List<BlockPos> flowers = new ArrayList<>();
         for (int x = -H_RADIUS; x <= H_RADIUS; x++) {
             for (int z = -H_RADIUS; z <= H_RADIUS; z++) {
                 for (int y = -V_RADIUS; y <= V_RADIUS; y++) {
-                    if (world.getBlockState(center.add(x, y, z)).isOf(Blocks.LILY_OF_THE_VALLEY)) {
-                        count++;
+                    BlockPos flowerPos = center.add(x, y, z);
+                    if (world.getBlockState(flowerPos).isOf(Blocks.LILY_OF_THE_VALLEY)) {
+                        flowers.add(flowerPos.toImmutable());
                     }
                 }
             }
         }
-        return count;
+        return flowers;
     }
 }
