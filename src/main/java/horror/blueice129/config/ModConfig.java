@@ -28,6 +28,7 @@ public class ModConfig {
     public boolean enableSettingsModifications = true;
     public boolean enableRenderDistanceChange = true;
     public boolean enableBrightnessChange = true;
+    public boolean disableGammaCap = false;
     public boolean enableFpsChange = true;
     public boolean enableMouseSensitivityChange = true;
     public boolean enableSmoothLightingChange = true;

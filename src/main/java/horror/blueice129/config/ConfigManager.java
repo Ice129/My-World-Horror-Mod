@@ -8,10 +8,13 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("ENGRAM.json");
+    private static final Pattern LEGACY_REDUCED_GAMMA_CAP_PATTERN = Pattern.compile("\\\"enableReducedGammaCap\\\"\\s*:\\s*(true|false)");
     private static ModConfig instance = null;
 
     public static ModConfig getConfig() {
@@ -26,6 +29,18 @@ public class ConfigManager {
             if (Files.exists(CONFIG_PATH)) {
                 String json = Files.readString(CONFIG_PATH);
                 instance = GSON.fromJson(json, ModConfig.class);
+                if (instance == null) {
+                    instance = ModConfig.createDefault();
+                }
+
+                if (!json.contains("\"disableGammaCap\"") ) {
+                    Matcher matcher = LEGACY_REDUCED_GAMMA_CAP_PATTERN.matcher(json);
+                    if (matcher.find()) {
+                        boolean legacyReducedGammaCap = Boolean.parseBoolean(matcher.group(1));
+                        instance.disableGammaCap = !legacyReducedGammaCap;
+                    }
+                }
+
                 HorrorMod129.LOGGER.info("Loaded config from ENGRAM.json");
             } else {
                 HorrorMod129.LOGGER.info("Config file not found, creating default ENGRAM.json");
