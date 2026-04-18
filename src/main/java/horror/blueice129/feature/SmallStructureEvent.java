@@ -2,7 +2,7 @@ package horror.blueice129.feature;
 
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
-import horror.blueice129.feature.BridgeOverWater;
+// import horror.blueice129.feature.BridgeOverWater;
 import horror.blueice129.utils.SurfaceFinder;
 import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.LineOfSightUtils;
@@ -29,15 +29,15 @@ public class SmallStructureEvent {
     private static final Random RANDOM = Random.create();
     // 2d list of a structure id and its weight
     public static String[][] STRUCTURE_LIST = { // not final, agro meter will change weights
-            { "crafting_table", "10" },
+            { "crafting_table", "11" },
             { "furnace", "5" },
             { "cobblestone_pillar", "7" },
-            { "single_torch", "10" },
-            { "torched_area", "5" },
-            { "tree_mined", "15" },
+            { "single_torch", "15" },
+            { "torched_area", "6" },
+            { "tree_mined", "12" },
             { "bridge_over_water", "15" },
             { "deforestation", "5" },
-            { "flower_patch", "13" },
+            { "flower_patch", "10" },
             { "chunk_deletion", "0" },
             { "burning_forest", "2" }
     };
