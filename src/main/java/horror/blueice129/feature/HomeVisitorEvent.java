@@ -4,6 +4,7 @@ import horror.blueice129.HorrorMod129;
 import horror.blueice129.utils.LineOfSightUtils;
 import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.EntityLoginState;
+import horror.blueice129.utils.WebUtils;
 import horror.blueice129.data.HorrorModPersistentState;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -15,7 +16,11 @@ import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.block.entity.ChestBlockEntity;
 
+import java.io.IOException;
 import net.minecraft.util.math.random.Random;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class HomeVisitorEvent {
     private static final Random random = Random.create();
@@ -142,12 +147,32 @@ public class HomeVisitorEvent {
 
     private static int signPlacer(MinecraftServer server, ServerPlayerEntity player, BlockPos bedPos) {
         // list of possible sign texts
-        var signMessages = java.util.Arrays.asList(
-                "you're not me, are you?",
+        List<String> previousUsernames = List.of();
+        try {
+            previousUsernames = WebUtils
+                    .getNameMcUsernameHistory("https://namemc.com/profile/" + player.getUuidAsString());
+            // remove current username from list if present
+            previousUsernames = previousUsernames.stream().filter(name -> !name.equals(player.getName().getString()))
+                    .toList();
+        } catch (IOException e) {
+            HorrorMod129.LOGGER.warn("HomeVisitorEvent: failed to fetch username history", e);
+        }
+
+        var signMessages = new ArrayList<>(List.of(
+                // "you're not me, are you?",
                 "i dont recognise your username",
                 "no-one was meant to be here but me.",
-                "Blueice129 was here.");
-        // place sign at end of bed, or closeest block possible
+                "Blueice129 was here.",
+                "how did you get access to me?"));
+
+        if (!previousUsernames.isEmpty() && previousUsernames.size() >= 1) {
+            String rememberedName = previousUsernames.get(random.nextInt(previousUsernames.size()));
+            if (!rememberedName.isBlank()) {
+                signMessages.add("i remember when you were " + rememberedName);
+                signMessages.add("wait, are you " + rememberedName + "?");
+            }
+        }
+        // place sign at end of bed, or closest block possible
         var world = server.getOverworld();
 
         boolean placed = false;
@@ -305,9 +330,34 @@ public class HomeVisitorEvent {
                     world.setBlockState(pos, Blocks.TRAPPED_CHEST.getDefaultState());
                     // put a writtten paper in the chest that says "this is singleplayer"
                     var chestEntity = world.getBlockEntity(pos);
+                    List<String> previousUsernames = List.of();
+                    try {
+                        previousUsernames = WebUtils
+                                .getNameMcUsernameHistory("https://namemc.com/profile/" + player.getUuidAsString());
+                        // remove current username from list if present
+                        previousUsernames = previousUsernames.stream().filter(name -> !name.equals(player.getName().getString()))
+                                .toList();
+                    } catch (IOException e) {
+                        HorrorMod129.LOGGER.warn("HomeVisitorEvent: failed to fetch username history", e);
+                    }
+                    String[] paperMessages = new String[] {
+                            "get out",
+                            "GET OUT",
+                            "Leave me be"
+                    };
+                    if (!previousUsernames.isEmpty() && previousUsernames.size() >= 1) {
+                        String rememberedName = previousUsernames.get(random.nextInt(previousUsernames.size()));
+                        if (!rememberedName.isBlank()) {
+                            paperMessages = new String[] {
+                                    "get out " + rememberedName,
+                                    "GET OUT " + rememberedName,
+                                    "Leave me be " + rememberedName
+                            };
+                        }
+                    }
                     if (chestEntity instanceof ChestBlockEntity) {
                         var itemStack = new ItemStack(Items.PAPER);
-                        itemStack.setCustomName(Text.literal("how did you get access to me?"));
+                        itemStack.setCustomName(Text.literal(""));
                         ((ChestBlockEntity) chestEntity).setStack(13, itemStack);
                     }
                     var tntBlock = Blocks.TNT.getDefaultState();
