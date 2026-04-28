@@ -46,6 +46,7 @@ import net.minecraft.block.Blocks;
 import com.mojang.brigadier.Command;
 import horror.blueice129.network.ModNetworking;
 import horror.blueice129.utils.SurfaceFinder;
+import horror.blueice129.utils.WebUtils;
 import net.minecraft.server.MinecraftServer;
 
 public class DebugCommands {
@@ -239,6 +240,17 @@ public class DebugCommands {
                                 .executes(context -> pushPlayer(context.getSource())))
                             .then(literal("spawn_fleeing")
                                 .executes(context -> spawnFleeingEntity(context.getSource()))))
+                        .then(literal("web")
+                            .then(literal("dump")
+                                .then(argument("url", StringArgumentType.greedyString())
+                                    .executes(context -> dumpWebPageHtml(
+                                        context.getSource(),
+                                        StringArgumentType.getString(context, "url")))))
+                            .then(literal("usernames")
+                                .then(argument("url", StringArgumentType.greedyString())
+                                    .executes(context -> fetchUsernameHistory(
+                                        context.getSource(),
+                                        StringArgumentType.getString(context, "url"))))))
                         .then(literal("cave")
                             .then(literal("premine")
                                 .executes(context -> premineCave(context.getSource(), 1))
@@ -418,6 +430,36 @@ public class DebugCommands {
             return Command.SINGLE_SUCCESS;
         } catch (Exception e) {
             source.sendError(Text.of("An error occurred while placing diamond pillars."));
+            return 0;
+        }
+    }
+
+    private static int dumpWebPageHtml(ServerCommandSource source, String url) {
+        try {
+            java.nio.file.Path outputFile = WebUtils.savePageHtmlToLog(url);
+            source.sendFeedback(() -> Text.literal("Saved HTML dump to " + outputFile.toAbsolutePath()), false);
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to save HTML dump: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    private static int fetchUsernameHistory(ServerCommandSource source, String url) {
+        try {
+            java.util.List<String> usernames = WebUtils.getNameMcUsernameHistory(url);
+            if (usernames.isEmpty()) {
+                source.sendFeedback(() -> Text.literal("No username history found for that profile."), false);
+                return 0;
+            }
+
+            source.sendFeedback(() -> Text.literal("Username history for " + url + ":"), false);
+            for (String username : usernames) {
+                source.sendFeedback(() -> Text.literal("  - " + username), false);
+            }
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("Failed to fetch username history: " + e.getMessage()));
             return 0;
         }
     }
