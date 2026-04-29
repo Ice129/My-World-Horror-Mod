@@ -12,6 +12,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.DoorBlock;
+import net.minecraft.state.property.Properties;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.block.entity.ChestBlockEntity;
@@ -193,7 +194,8 @@ public class HomeVisitorEvent {
             }
 
             if (world.getBlockState(signPos).isAir() && !world.getBlockState(signPos.down()).isAir()) {
-                world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState());
+                int randomRotation = random.nextInt(16);
+                world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState().with(Properties.ROTATION, randomRotation));
                 var signEntity = world.getBlockEntity(signPos);
                 if (signEntity instanceof net.minecraft.block.entity.SignBlockEntity sign) {
                     String message = signMessages.get(random.nextInt(signMessages.size()));
@@ -361,7 +363,7 @@ public class HomeVisitorEvent {
                     }
                     if (chestEntity instanceof ChestBlockEntity) {
                         var itemStack = new ItemStack(Items.PAPER);
-                        itemStack.setCustomName(Text.literal(""));
+                        itemStack.setCustomName(Text.literal(paperMessages[random.nextInt(paperMessages.length)]));
                         ((ChestBlockEntity) chestEntity).setStack(13, itemStack);
                     }
                     var tntBlock = Blocks.TNT.getDefaultState();
