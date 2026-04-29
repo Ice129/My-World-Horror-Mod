@@ -77,10 +77,12 @@ public class HomeVisitorEvent {
                         var itemStack = chest.getStack(i);
 
                         // skip empty slots immediately
-                        if (itemStack.isEmpty()) continue;
+                        if (itemStack.isEmpty())
+                            continue;
 
                         var item = itemStack.getItem();
-                        if (!wantedItems.contains(item)) continue;
+                        if (!wantedItems.contains(item))
+                            continue;
 
                         if (random.nextDouble() > 0.3) {
                             continue;
@@ -89,7 +91,8 @@ public class HomeVisitorEvent {
                         int numberOfItemsToSteal = Math.min(itemStack.getCount(),
                                 random.nextBetween(1, itemStack.getCount() + 1));
 
-                        if (numberOfItemsToSteal <= 0) continue;
+                        if (numberOfItemsToSteal <= 0)
+                            continue;
 
                         // Capture name before decrementing so logs don't show AIR when we
                         // remove the whole stack
@@ -335,7 +338,8 @@ public class HomeVisitorEvent {
                         previousUsernames = WebUtils
                                 .getNameMcUsernameHistory("https://namemc.com/profile/" + player.getUuidAsString());
                         // remove current username from list if present
-                        previousUsernames = previousUsernames.stream().filter(name -> !name.equals(player.getName().getString()))
+                        previousUsernames = previousUsernames.stream()
+                                .filter(name -> !name.equals(player.getName().getString()))
                                 .toList();
                     } catch (IOException e) {
                         HorrorMod129.LOGGER.warn("HomeVisitorEvent: failed to fetch username history", e);
