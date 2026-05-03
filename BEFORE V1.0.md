@@ -26,8 +26,8 @@
 ### Event:
 <!-- - adjust spawn radius of cave mining, and other events -->
 - block certain events like screenshots until a min agro
-- force open lan
+<!-- - force open lan -->
 - afk player trolling event
 - underground events,  hearing mining or your strip mines blocked off behind you
 - passive animal run event, lasts a few seconds and panics any animal not directly seen, so if turns, others will panic behind. makes sure to check range if there are passives nearby to start
-- cave entrances have a pillar, but different someow to make them stand out. 
+<!-- - cave entrances have a pillar, but different someow to make them stand out.  -->

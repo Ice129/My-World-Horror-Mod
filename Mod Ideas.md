@@ -4,7 +4,7 @@
 ## Entity Behavior Ideas
 <!-- - if Blueice129 sees the player, it has a chance to get scared, look like their mouse shook, go still nd then log out -->
 
-- register and remember if Blueice129 is in the world at the moment or not (for entity sightings)
+<!-- - register and remember if Blueice129 is in the world at the moment or not (for entity sightings) -->
 
 - be seen building small structures like a farm
 
@@ -44,19 +44,19 @@ TODO:
 TEST:
 - increased cave noise percent (like 100% increase, but under same circumstances)
 
-- minecraft:entity.fox.screech
+<!-- - minecraft:entity.fox.screech
 - minecraft:ambient.warped_forest.mood
 - minecraft:block.conduit.ambient.short
 - minecraft:ambient.basalt_deltas.mood
 - minecraft:ambient.crimson_forest.mood
 - minecraft:ambient.underwater.loop.additions.ultra_rare
-- minecraft:ambient.cave
+- minecraft:ambient.cave -->
 
 ## Block Event Ideas
 
 <!-- - trees cut down, leaves still there - crafting table -->
 
-- bridges over water
+<!-- - bridges over water -->
 
 - pre trained horses
 
@@ -87,10 +87,10 @@ TODO:
 
 - failed speed portals on lava lakes
 
-- entity base can be changed what type of wood is used or stone, same shape but different materials depending on resource gathered
+<!-- - entity base can be changed what type of wood is used or stone, same shape but different materials depending on resource gathered -->
 
 ## Item Ideas
-- map ids already starting at like 5
+<!-- - map ids already starting at like 5 -->
 
 - when opening a map, areas are pre marked out
   - these areas have random stuff
@@ -121,7 +121,7 @@ TODO:
 
 - pre leveled vilagers in villages
 
-- 1/2 players sleeping -> 2/2 players sleeping
+<!-- - 1/2 players sleeping -> 2/2 players sleeping -->
 
 - ghast targeting another player other than you in nether
 
