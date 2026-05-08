@@ -1,9 +1,9 @@
 package horror.blueice129.feature.house;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
+// import net.minecraft.block.BlockState;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructurePlacementData;
+// import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -40,8 +40,8 @@ public class EntityHouseInteractionTracker {
         for (int x = 0; x < size.getX(); x++) {
             for (int y = 0; y < size.getY(); y++) {
                 for (int z = 0; z < size.getZ(); z++) {
-                    BlockPos worldPos = housePos.add(x, y, z);
-                    BlockState worldState = world.getBlockState(worldPos);
+                    // BlockPos worldPos = housePos.add(x, y, z);
+                    // BlockState worldState = world.getBlockState(worldPos);
 
                     // TODO: get templateState at BlockPos(x, y, z) from the template
                     // BlockState templateState = ...;
