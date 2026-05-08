@@ -172,15 +172,15 @@ public class PlayerUtils {
             return false; // No roof found above player, likely not inside a structure
         }
 
-        boolean hasWall = false;
+        boolean hasWall[] = {false, false, false, false};
         if (hasRoof) {
-            // Check for walls in cardinal directions
+            // Check for walls in cardinal directions, needs walls on all 4 sides
             String[] cardinalDirections = { "N", "E", "S", "W" };
             for (String direction : cardinalDirections) {
                 BlockPos checkPos = getRelativeBlockPos(playerPos, direction);
                 for (int distance = 1; distance <= wallSearchDistance; distance++) {
                     if (!player.getWorld().isAir(checkPos)) {
-                        hasWall = true;
+                        
                         break;
                     }
                     checkPos = getRelativeBlockPos(checkPos, direction);
