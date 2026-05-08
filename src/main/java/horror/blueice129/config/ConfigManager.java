@@ -8,13 +8,13 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+// import java.util.regex.Matcher;
+// import java.util.regex.Pattern;
 
 public class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("ENGRAM.json");
-    private static final Pattern LEGACY_REDUCED_GAMMA_CAP_PATTERN = Pattern.compile("\\\"enableReducedGammaCap\\\"\\s*:\\s*(true|false)");
+    // private static final Pattern LEGACY_REDUCED_GAMMA_CAP_PATTERN = Pattern.compile("\\\"enableReducedGammaCap\\\"\\s*:\\s*(true|false)");
     private static ModConfig instance = null;
 
     public static ModConfig getConfig() {

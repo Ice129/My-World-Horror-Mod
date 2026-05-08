@@ -141,4 +141,55 @@ public class PlayerUtils {
                 return new double[] { 0, 0 }; // Invalid direction input
         }
     }
+
+    public static boolean isPlayerInUI(PlayerEntity player) {
+        return player.currentScreenHandler != null;
+    }
+
+    public static boolean isPlayerInsideHouseOrStructure(PlayerEntity player) {
+        // Implementation for checking if player is inside a house or structure
+        // check if player has a roof over them, check up a defined distance until roof block
+        // check player cardinal directions for walls
+        // if under roof and walls are found, return true, else return false
+        int minYLevel = 60; // Minimum Y level to consider for being inside a structure
+        int roofMaxHight = 7;
+        int wallSearchDistance = 10;
+        BlockPos playerPos = player.getBlockPos();
+        if (playerPos.getY() < minYLevel) {
+            return false; // Player is below the minimum Y level, likely not inside a structure
+        }
+
+        // Check for roof above player
+        boolean hasRoof = false;
+        for (int y = 1; y <= roofMaxHight; y++) {
+            BlockPos checkPos = playerPos.up(y);
+            if (!player.getWorld().isAir(checkPos)) {
+                hasRoof = true;
+                break;
+            }
+        }
+        if (!hasRoof) {
+            return false; // No roof found above player, likely not inside a structure
+        }
+
+        boolean hasWall = false;
+        if (hasRoof) {
+            // Check for walls in cardinal directions
+            String[] cardinalDirections = { "N", "E", "S", "W" };
+            for (String direction : cardinalDirections) {
+                BlockPos checkPos = getRelativeBlockPos(playerPos, direction);
+                for (int distance = 1; distance <= wallSearchDistance; distance++) {
+                    if (!player.getWorld().isAir(checkPos)) {
+                        hasWall = true;
+                        break;
+                    }
+                    checkPos = getRelativeBlockPos(checkPos, direction);
+                }
+                if (hasWall) {
+                    break; // Found a wall, no need to check further
+                }
+            }
+        }
+        return hasWall; // Player is considered inside a structure if they have a roof and at
+    }
 }
