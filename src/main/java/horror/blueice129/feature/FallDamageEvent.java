@@ -13,8 +13,11 @@ public class FallDamageEvent {
         BlockPos suitableFallSpot = findSuitableFallSpot(player);
         if( isInsideHouse && isInUI && suitableFallSpot != null){
             // play fall sound
+            playFallSound(suitableFallSpot);
+            return true;
             
         }
+        return false;
     }
 
     private static BlockPos findSuitableFallSpot(PlayerEntity player) {
@@ -28,5 +31,9 @@ public class FallDamageEvent {
         return null;
     }
 
+    private static void playFallSound(BlockPos pos){ {
+        // play a sound effect of falling at the given position
+        
+    }
 
 }
