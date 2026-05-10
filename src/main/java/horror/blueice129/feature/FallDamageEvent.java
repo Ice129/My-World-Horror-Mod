@@ -31,7 +31,7 @@ public class FallDamageEvent {
         return null;
     }
 
-    private static void playFallSound(BlockPos pos){ {
+    private static void playFallSound(BlockPos pos){
         // play a sound effect of falling at the given position
         
     }

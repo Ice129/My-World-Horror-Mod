@@ -46,6 +46,7 @@ import net.minecraft.block.Blocks;
 import com.mojang.brigadier.Command;
 import horror.blueice129.network.ModNetworking;
 import horror.blueice129.utils.SurfaceFinder;
+import horror.blueice129.utils.PlayerUtils;
 import net.minecraft.server.MinecraftServer;
 
 public class DebugCommands {
@@ -260,6 +261,8 @@ public class DebugCommands {
                                 .executes(context -> screenshotFromCam(context.getSource())))
                             .then(literal("trigger")
                                 .executes(context -> triggerScreenshot(context.getSource())))))
+                        .then(literal("inbuilding")
+                            .executes(context -> checkIfInBuilding(context.getSource())))
                     
                     // === PERSISTENT STATE ===
                     .then(literal("state")
@@ -418,6 +421,25 @@ public class DebugCommands {
             return Command.SINGLE_SUCCESS;
         } catch (Exception e) {
             source.sendError(Text.of("An error occurred while placing diamond pillars."));
+            return 0;
+        }
+    }
+
+    private static int checkIfInBuilding(ServerCommandSource source) {
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendFeedback(() -> Text.literal("This command can only be run by a player."), false);
+            return 0;
+        }
+
+        boolean inside = PlayerUtils.isPlayerInsideHouseOrStructure(player);
+        if (inside) {
+            source.sendFeedback(() -> Text.literal("Player is inside a building/structure."), false);
+            return 1;
+        } else {
+            source.sendFeedback(() -> Text.literal("Player is NOT inside a building/structure."), false);
             return 0;
         }
     }
