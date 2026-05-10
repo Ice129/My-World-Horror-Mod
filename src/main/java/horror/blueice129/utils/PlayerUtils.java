@@ -144,9 +144,10 @@ public class PlayerUtils {
     }
 
     public static boolean isPlayerInUI(PlayerEntity player) {
-        return player.currentScreenHandler != null;
+        return true; // DEBUG: ////////////////////////////////////////////////////////////////////////////////
+        // return player.currentScreenHandler != null;
     }
-    
+
     /**
      * Determine whether the player is inside a simple enclosed structure.
      * Strategy:
