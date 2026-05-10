@@ -16,6 +16,8 @@ public class FallDamageEvent {
         if (isInsideHouse && isInUI && suitableFallSpot != null) {
             // play fall sound
             playFallSound(player, suitableFallSpot);
+            // place water block and make sure its updated so it flows
+            player.getWorld().setBlockState(suitableFallSpot, net.minecraft.block.Blocks.WATER.getDefaultState());
             return true;
 
         }
