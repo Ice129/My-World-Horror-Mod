@@ -144,8 +144,7 @@ public class PlayerUtils {
     }
 
     public static boolean isPlayerInUI(PlayerEntity player) {
-        return true; // DEBUG: ////////////////////////////////////////////////////////////////////////////////
-        // return player.currentScreenHandler != null;
+        return player.currentScreenHandler != null;
     }
 
     /**
