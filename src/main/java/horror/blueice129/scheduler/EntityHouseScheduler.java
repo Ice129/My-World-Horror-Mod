@@ -187,6 +187,8 @@ public class EntityHouseScheduler {
         int nextStage = currentStage + 1;
 
         InteractionRecord diff = EntityHouseInteractionTracker.buildDiff(world, housePos, currentStage);
+        EntityHouseInteractionTracker.saveInteractionsForStage(world.getServer(), currentStage, diff);
+        
         HouseModificationPlanner.applyModifications(world, HouseModificationPlanner.planModifications(diff));
         HousePlacer.killPreviousPhaseCreatures(housePos, world);
         HousePlacer.placeHouse(nextStage, housePos, world);

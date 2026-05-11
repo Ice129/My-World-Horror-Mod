@@ -3,7 +3,8 @@
 	"package": "horror.blueice129.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"ExampleMixin"
+		"ExampleMixin",
+		"StructureTemplateAccessorMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

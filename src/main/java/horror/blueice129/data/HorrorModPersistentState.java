@@ -42,6 +42,9 @@ public class HorrorModPersistentState extends PersistentState {
     
     // Map to store 2D arrays of integers with string keys
     private Map<String, int[][]> int2DArrays;
+    
+    // Map to store NBT compounds with string keys
+    private Map<String, NbtCompound> nbtCompounds;
 
     // Constructor with default values
     public HorrorModPersistentState() {
@@ -51,6 +54,7 @@ public class HorrorModPersistentState extends PersistentState {
         this.longValues = new HashMap<>();
         this.positionLists = new HashMap<>();
         this.int2DArrays = new HashMap<>();
+        this.nbtCompounds = new HashMap<>();
     }
     
     /**
@@ -60,6 +64,8 @@ public class HorrorModPersistentState extends PersistentState {
      * @param intValues The saved integer values map
      * @param longValues The saved long values map
      * @param positionLists The saved position lists map
+     * @param int2DArrays The saved 2D integer arrays map
+     * @param nbtCompounds The saved NBT compounds map
      */
     public HorrorModPersistentState(
             Map<String, Integer> timers, 
@@ -67,13 +73,15 @@ public class HorrorModPersistentState extends PersistentState {
             Map<String, Integer> intValues,
             Map<String, Long> longValues,
             Map<String, List<BlockPos>> positionLists,
-            Map<String, int[][]> int2DArrays) {
+            Map<String, int[][]> int2DArrays,
+            Map<String, NbtCompound> nbtCompounds) {
         this.timers = timers;
         this.positions = positions;
         this.intValues = intValues;
         this.longValues = longValues;
         this.positionLists = positionLists;
         this.int2DArrays = int2DArrays;
+        this.nbtCompounds = nbtCompounds;
     }
     
     /**
@@ -165,6 +173,13 @@ public class HorrorModPersistentState extends PersistentState {
         }
         nbt.put("int2DArrays", int2DArraysNbt);
 
+        // Save NBT compounds
+        NbtCompound nbtCompoundsWrapper = new NbtCompound();
+        for (Map.Entry<String, NbtCompound> entry : nbtCompounds.entrySet()) {
+            nbtCompoundsWrapper.put(entry.getKey(), entry.getValue());
+        }
+        nbt.put("nbtCompounds", nbtCompoundsWrapper);
+
         return nbt;
     }
     
@@ -180,6 +195,7 @@ public class HorrorModPersistentState extends PersistentState {
         Map<String, Long> loadedLongValues = new HashMap<>();
         Map<String, List<BlockPos>> loadedPositionLists = new HashMap<>();
         Map<String, int[][]> loadedInt2DArrays = new HashMap<>();
+        Map<String, NbtCompound> loadedNbtCompounds = new HashMap<>();
         
         // Read timers
         if (nbt.contains("timers")) {
@@ -254,7 +270,15 @@ public class HorrorModPersistentState extends PersistentState {
             }
         }
         
-        return new HorrorModPersistentState(loadedTimers, loadedPositions, loadedIntValues, loadedLongValues, loadedPositionLists, loadedInt2DArrays);
+        // Read NBT compounds
+        if (nbt.contains("nbtCompounds")) {
+            NbtCompound nbtCompoundsWrapper = nbt.getCompound("nbtCompounds");
+            for (String key : nbtCompoundsWrapper.getKeys()) {
+                loadedNbtCompounds.put(key, nbtCompoundsWrapper.getCompound(key));
+            }
+        }
+        
+        return new HorrorModPersistentState(loadedTimers, loadedPositions, loadedIntValues, loadedLongValues, loadedPositionLists, loadedInt2DArrays, loadedNbtCompounds);
     }
     
     /**
@@ -598,5 +622,54 @@ public class HorrorModPersistentState extends PersistentState {
      */
     public Set<String> getInt2DArrayIds() {
         return int2DArrays.keySet();
+    }
+
+    // === NBT COMPOUND METHODS ===
+
+    /**
+     * Gets an NBT compound by its ID
+     * @param id The ID of the compound to retrieve
+     * @return The NBT compound, or an empty compound if not found
+     */
+    public NbtCompound getNbtCompound(String id) {
+        return nbtCompounds.getOrDefault(id, new NbtCompound());
+    }
+
+    /**
+     * Sets an NBT compound by its ID
+     * @param id The ID of the compound to set
+     * @param compound The NBT compound value
+     */
+    public void setNbtCompound(String id, NbtCompound compound) {
+        nbtCompounds.put(id, compound);
+        this.markDirty();
+    }
+
+    /**
+     * Removes an NBT compound
+     * @param id The ID of the compound to remove
+     */
+    public void removeNbtCompound(String id) {
+        if (nbtCompounds.containsKey(id)) {
+            nbtCompounds.remove(id);
+            this.markDirty();
+        }
+    }
+
+    /**
+     * Checks if an NBT compound exists
+     * @param id The ID to check
+     * @return True if the NBT compound exists
+     */
+    public boolean hasNbtCompound(String id) {
+        return nbtCompounds.containsKey(id);
+    }
+
+    /**
+     * Gets all NBT compound IDs
+     * @return Set of all NBT compound IDs
+     */
+    public Set<String> getNbtCompoundIds() {
+        return nbtCompounds.keySet();
     }
 }

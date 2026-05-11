@@ -1,8 +1,8 @@
 package horror.blueice129.feature.house;
 
-import horror.blueice129.feature.house.EntityHouseInteractionTracker.ChangedBlock;
-import horror.blueice129.feature.house.EntityHouseInteractionTracker.ChangedContainer;
+import horror.blueice129.feature.house.EntityHouseInteractionTracker.Interaction;
 import horror.blueice129.feature.house.EntityHouseInteractionTracker.InteractionRecord;
+import horror.blueice129.feature.house.EntityHouseInteractionTracker.InteractionType;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.world.ServerWorld;
@@ -25,18 +25,20 @@ public class HouseModificationPlanner {
     public static List<HouseModification> planModifications(InteractionRecord diff) {
         List<HouseModification> mods = new ArrayList<>();
 
-        for (ChangedBlock change : diff.brokenBlocks) {
-            if (change.expected().getTranslationKey().contains("door")) {
-                mods.add(new HouseModification(ModificationType.REINFORCE_DOOR, change.pos(), Blocks.IRON_DOOR));
+        // Process broken blocks
+        for (Interaction interaction : diff.getInteractionsByType(InteractionType.BLOCK_BROKEN)) {
+            if (interaction.expectedState.toLowerCase().contains("door")) {
+                mods.add(new HouseModification(ModificationType.REINFORCE_DOOR, interaction.pos, Blocks.IRON_DOOR));
             }
             // TODO: add responses for other broken block types
         }
 
-        for (ChangedContainer container : diff.changedContainers) {
-            mods.add(new HouseModification(ModificationType.ADD_HIDDEN_CHEST, container.pos(), Blocks.CHEST));
+        // Process container changes
+        for (Interaction interaction : diff.getInteractionsByType(InteractionType.CONTAINER_CHANGED)) {
+            mods.add(new HouseModification(ModificationType.ADD_HIDDEN_CHEST, interaction.pos, Blocks.CHEST));
         }
 
-        // TODO: handle replacedBlocks, playerPlacedBlocks, signTexts
+        // TODO: handle BLOCK_REPLACED, ENTITY_CHANGED, SIGN_TEXT_CHANGED
 
         return mods;
     }

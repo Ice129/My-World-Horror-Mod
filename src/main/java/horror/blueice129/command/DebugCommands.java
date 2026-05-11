@@ -20,6 +20,7 @@ import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.feature.house.AreaClearer;
 import horror.blueice129.feature.house.EntityHouse;
+import horror.blueice129.feature.house.EntityHouseInteractionTracker;
 import horror.blueice129.feature.house.EntityHousePhase;
 import horror.blueice129.feature.house.HousePlacer;
 import horror.blueice129.debug.LineOfSightChecker;
@@ -1179,6 +1180,8 @@ public class DebugCommands {
     private static int resetHouseState(ServerCommandSource source) {
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(source.getServer());
         int cleared = 0;
+
+        EntityHouseInteractionTracker.clearAllInteractions(source.getServer());
 
         if (state.hasTimer(ENTITY_HOUSE_TIMER_KEY)) {
             state.removeTimer(ENTITY_HOUSE_TIMER_KEY);
