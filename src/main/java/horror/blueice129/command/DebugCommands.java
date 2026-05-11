@@ -1119,12 +1119,25 @@ public class DebugCommands {
         state.setIntValue(ENTITY_HOUSE_PHASE_KEY, EntityHousePhase.STAGE_ACTIVE.ordinal());
 
         final BlockPos finalHousePos = housePos;
+        final int tpX = finalHousePos.getX();
+        final int tpY = finalHousePos.getY() + 10;
+        final int tpZ = finalHousePos.getZ();
+        final String tpCommand = "/tp @s " + tpX + " " + tpY + " " + tpZ;
         final int finalBestFlatness = best.flatness;
-        source.sendFeedback(() -> Text.literal(
-            "House setup complete at " + finalHousePos.toShortString() +
-            " with flatness " + finalBestFlatness +
-            ". Cleared area + placed stage " + ENTITY_HOUSE_MIN_STAGE + "."
-        ), true);
+        source.sendFeedback(() -> {
+            MutableText prefix = Text.literal(
+                "House setup complete at " + finalHousePos.toShortString()
+                + " with flatness " + finalBestFlatness
+                + ". Cleared area + placed stage " + ENTITY_HOUSE_MIN_STAGE + ". "
+            );
+
+            MutableText tpLink = Text.literal("[TP 10 blocks above house]")
+                .styled(style -> style
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, tpCommand))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to teleport above the house"))));
+
+            return prefix.append(tpLink);
+        }, true);
         return Command.SINGLE_SUCCESS;
     }
 

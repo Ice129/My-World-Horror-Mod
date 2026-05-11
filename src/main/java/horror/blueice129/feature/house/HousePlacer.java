@@ -20,8 +20,10 @@ public class HousePlacer {
                 startPos.toShortString());
 
         Identifier structureId = new Identifier("horror-mod-129", "entitybase/house" + stage);
-        // Always place house 1 block up
-        startPos = startPos.up();
+        BlockPos stageOffset = getStageOffset(stage);
+        BlockPos placementPos = startPos.add(stageOffset);
+        HorrorMod129.LOGGER.info("[HousePlacer] Stage {} offset {} -> placement at {}",
+            stage, stageOffset.toShortString(), placementPos.toShortString());
 
         StructureTemplate template = world.getStructureTemplateManager().getTemplateOrBlank(structureId);
         HorrorMod129.LOGGER.info("[HousePlacer] Template size: {}", template.getSize());
@@ -32,7 +34,16 @@ public class HousePlacer {
                 .setIgnoreEntities(false)
                 .addProcessor(new WoodTypeProcessor(woodType));
 
-        template.place(world, startPos, startPos, placementData, Random.create(), Block.NOTIFY_ALL);
+        template.place(world, placementPos, placementPos, placementData, Random.create(), Block.NOTIFY_ALL);
+    }
+
+    private static BlockPos getStageOffset(int stage) {
+        return switch (stage) {
+            case 1 -> new BlockPos(0, 1, 0);
+            case 2 -> new BlockPos(-1, 0, -1);
+            case 3 -> new BlockPos(-6, -4, 0);
+            default -> BlockPos.ORIGIN;
+        };
     }
 
     private static String getWoodType(ServerWorld world, BlockPos pos) {
@@ -45,10 +56,23 @@ public class HousePlacer {
         java.util.Map<String, Integer> woodTypeCounts = new java.util.HashMap<>();
         for (BlockPos treePos : trees) {
             String block = world.getBlockState(treePos).getBlock().getTranslationKey();
+            if ("block.minecraft.air".equals(block)) {
+                continue;
+            }
             String type = block.replace("block.minecraft.", "").replace("_log", "");
             woodTypeCounts.put(type, woodTypeCounts.getOrDefault(type, 0) + 1);
         }
         HorrorMod129.LOGGER.info("[HousePlacer] Wood type counts: {}", woodTypeCounts);
-        return woodTypeCounts.entrySet().stream().max(java.util.Map.Entry.comparingByValue()).get().getKey();
+        if (woodTypeCounts.isEmpty()) {
+            return "oak";
+        }
+
+        int highestCount = woodTypeCounts.values().stream().max(Integer::compareTo).orElse(0);
+        java.util.List<String> tiedTypes = woodTypeCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() == highestCount)
+                .map(java.util.Map.Entry::getKey)
+                .toList();
+
+        return tiedTypes.get(world.getRandom().nextInt(tiedTypes.size()));
     }
 }
