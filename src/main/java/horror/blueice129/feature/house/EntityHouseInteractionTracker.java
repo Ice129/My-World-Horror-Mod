@@ -15,6 +15,8 @@ import net.minecraft.nbt.NbtString;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.structure.StructureTemplate;
+import net.minecraft.structure.StructurePlacementData;
+import horror.blueice129.feature.house.WoodTypeProcessor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -167,15 +169,39 @@ public class EntityHouseInteractionTracker {
     }
 
     /**
+     * Gets the normalized block ID. For wood-type variants (logs, planks, etc),
+     * returns the actual wood type from the world. For template expectations,
+     * uses the actual world state to determine the correct wood type.
+     */
+    private static String getNormalizedBlockId(BlockState state) {
+        return Registries.BLOCK.getId(state.getBlock()).toString();
+    }
+
+    /**
+     * Builds a diff of all interactions between the template structure (with reactions applied)
+     * and the current world state. Only records unexpected changes (deviations from the template).
+     * If in updating phase, use isUpdatingPhase=true to skip recording interactions.
+     *
+     * @param world The server world
+     * @param housePos The base position of the house
+     * @param currentStage The stage that was just completed (to compare against)
+     * @return InteractionRecord with all detected unexpected interactions
+     */
+    public static InteractionRecord buildDiff(ServerWorld world, BlockPos housePos, int currentStage) {
+        return buildDiff(world, housePos, currentStage, false);
+    }
+
+    /**
      * Builds a diff of all interactions between the template structure (with reactions applied)
      * and the current world state. Detects broken blocks, replacements, container changes, etc.
      *
      * @param world The server world
      * @param housePos The base position of the house
      * @param currentStage The stage that was just completed (to compare against)
-     * @return InteractionRecord with all detected interactions
+     * @param isUpdatingPhase If true, skips recording interactions (changes are expected during update)
+     * @return InteractionRecord with all detected unexpected interactions
      */
-    public static InteractionRecord buildDiff(ServerWorld world, BlockPos housePos, int currentStage) {
+    public static InteractionRecord buildDiff(ServerWorld world, BlockPos housePos, int currentStage, boolean isUpdatingPhase) {
         InteractionRecord record = new InteractionRecord();
 
         Identifier stageId = new Identifier("horror-mod-129", "entitybase/house" + currentStage);
@@ -184,18 +210,39 @@ public class EntityHouseInteractionTracker {
         List<StructureTemplate.PalettedBlockInfoList> blockInfoLists = ((StructureTemplateAccessorMixin) (Object) template).horror$getBlockInfoLists();
         List<StructureTemplate.StructureEntityInfo> entityInfos = ((StructureTemplateAccessorMixin) (Object) template).horror$getEntities();
 
+        // load wood type used during placement for this stage so we can apply same processor
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
+        String woodKey = "houseWood_stage_" + currentStage;
+        String woodType = "birch"; // default (no-op in WoodTypeProcessor)
+        if (state.hasNbtCompound(woodKey)) {
+            try {
+                woodType = state.getNbtCompound(woodKey).getString("woodType");
+            } catch (Exception ignored) {}
+        }
+        WoodTypeProcessor woodProcessor = new WoodTypeProcessor(woodType);
+        StructurePlacementData placementData = new StructurePlacementData().addProcessor(woodProcessor);
+
         HorrorMod129.LOGGER.info("Building interaction diff for stage {}: template size {}", currentStage, size);
+
+        if (isUpdatingPhase) {
+            return record;
+        }
+
+        BlockPos placementPos = housePos.add(HousePlacer.getStageOffset(currentStage));
 
         for (StructureTemplate.PalettedBlockInfoList palettedBlockInfoList : blockInfoLists) {
             for (StructureTemplate.StructureBlockInfo info : palettedBlockInfoList.getAll()) {
-                BlockPos worldPos = housePos.add(info.pos());
-                BlockState expectedState = info.state();
+                BlockPos worldPos = placementPos.add(info.pos());
+                // compute expected state after same placement processors applied
+                StructureTemplate.StructureBlockInfo processed = woodProcessor.process(world,
+                    worldPos, BlockPos.ORIGIN, info, info, placementData);
+                BlockState expectedState = processed.state();
                 BlockState actualState = world.getBlockState(worldPos);
 
                 if (expectedState.isAir() && !actualState.isAir()) {
                     recordBlockInteraction(record, worldPos,
                             "minecraft:air",
-                            Registries.BLOCK.getId(actualState.getBlock()).toString(),
+                            getNormalizedBlockId(actualState),
                             currentStage,
                             InteractionType.BLOCK_REPLACED);
                     continue;
@@ -203,7 +250,7 @@ public class EntityHouseInteractionTracker {
 
                 if (!expectedState.isAir() && actualState.isAir()) {
                     recordBlockInteraction(record, worldPos,
-                            Registries.BLOCK.getId(expectedState.getBlock()).toString(),
+                            getNormalizedBlockId(expectedState),
                             "minecraft:air",
                             currentStage,
                             InteractionType.BLOCK_BROKEN);
@@ -212,25 +259,25 @@ public class EntityHouseInteractionTracker {
 
                 if (!expectedState.isAir() && expectedState.getBlock() != actualState.getBlock()) {
                     recordBlockInteraction(record, worldPos,
-                            Registries.BLOCK.getId(expectedState.getBlock()).toString(),
-                            Registries.BLOCK.getId(actualState.getBlock()).toString(),
+                            getNormalizedBlockId(expectedState),
+                            getNormalizedBlockId(actualState),
                             currentStage,
                             InteractionType.BLOCK_REPLACED);
                 }
 
                 BlockEntity blockEntity = world.getBlockEntity(worldPos);
                 if (info.nbt() != null && blockEntity instanceof Inventory inventory) {
-                    List<ItemStack> actualItems = new ArrayList<>();
-                    for (int slot = 0; slot < inventory.size(); slot++) {
-                        actualItems.add(inventory.getStack(slot).copy());
+                    List<ItemStack> expectedItems = extractItemsFromNbt(info.nbt());
+                    List<ItemStack> actualItems = extractItemsFromInventory(inventory);
+                    if (!itemsMatch(expectedItems, actualItems)) {
+                        recordContainerInteraction(record, worldPos, currentStage, expectedItems, actualItems);
                     }
-                    recordContainerInteraction(record, worldPos, currentStage, List.of(), actualItems);
                 }
             }
         }
 
         for (StructureTemplate.StructureEntityInfo entityInfo : entityInfos) {
-            BlockPos entityPos = housePos.add(entityInfo.blockPos);
+            BlockPos entityPos = placementPos.add(entityInfo.blockPos);
             if (world.getEntitiesByClass(net.minecraft.entity.decoration.ArmorStandEntity.class,
                     Box.of(Vec3d.ofCenter(entityPos), 1.0, 1.0, 1.0), entity -> true).isEmpty()) {
                 recordEntityInteraction(record, entityPos, currentStage, "armor_stand", "missing", "template entity not present");
@@ -316,6 +363,50 @@ public class EntityHouseInteractionTracker {
         Interaction interaction = new Interaction(pos, InteractionType.SIGN_TEXT_CHANGED, stage,
                                                    "sign", "text_modified", extra);
         record.addInteraction(interaction);
+    }
+
+    private static List<ItemStack> extractItemsFromNbt(NbtCompound nbt) {
+        List<ItemStack> items = new ArrayList<>();
+        if (nbt == null || !nbt.contains("Items")) {
+            return items;
+        }
+
+        NbtList itemsList = nbt.getList("Items", 10);
+        for (int i = 0; i < itemsList.size(); i++) {
+            NbtCompound itemNbt = itemsList.getCompound(i);
+            items.add(ItemStack.fromNbt(itemNbt));
+        }
+
+        return items;
+    }
+
+    private static List<ItemStack> extractItemsFromInventory(Inventory inventory) {
+        List<ItemStack> items = new ArrayList<>();
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            items.add(inventory.getStack(slot).copy());
+        }
+        return items;
+    }
+
+    private static boolean itemsMatch(List<ItemStack> expectedItems, List<ItemStack> actualItems) {
+        if (expectedItems.size() != actualItems.size()) {
+            return false;
+        }
+
+        for (int slot = 0; slot < expectedItems.size(); slot++) {
+            ItemStack expected = expectedItems.get(slot);
+            ItemStack actual = actualItems.get(slot);
+
+            if (expected.isEmpty() != actual.isEmpty()) {
+                return false;
+            }
+
+            if (!expected.isEmpty() && !ItemStack.areEqual(expected, actual)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // === PERSISTENCE METHODS ===

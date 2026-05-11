@@ -1172,8 +1172,26 @@ public class DebugCommands {
         ServerWorld world = (ServerWorld) player.getWorld();
         
         EntityHouseScheduler.advanceToNextStage(world, housePos, state);
-
+        
+        EntityHouseInteractionTracker.InteractionRecord interactions = 
+            EntityHouseInteractionTracker.loadInteractionsForStage(source.getServer(), currentStage);
+        
         source.sendFeedback(() -> Text.literal("Placed stage " + nextStage + " at " + housePos.toShortString()), true);
+        
+        if (!interactions.getAllInteractions().isEmpty()) {
+            source.sendFeedback(() -> Text.literal("§6Detected " + interactions.getAllInteractions().size() + " player interactions:"), false);
+            for (EntityHouseInteractionTracker.Interaction interaction : interactions.getAllInteractions()) {
+                String message = String.format("  §e%s§r at %s: %s → %s",
+                    interaction.type.id,
+                    interaction.pos.toShortString(),
+                    interaction.expectedState,
+                    interaction.actualState);
+                source.sendFeedback(() -> Text.literal(message), false);
+            }
+        } else {
+            source.sendFeedback(() -> Text.literal("§7No player interactions detected."), false);
+        }
+        
         return Command.SINGLE_SUCCESS;
     }
 

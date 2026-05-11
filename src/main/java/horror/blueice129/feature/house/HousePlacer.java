@@ -38,6 +38,16 @@ public class HousePlacer {
         HorrorMod129.LOGGER.info("[HousePlacer] Detected wood type: '{}', placing stage {} at {}", woodType, stage,
                 startPos.toShortString());
 
+        // persist wood type used for this stage so diff/tracker can apply same processors
+        try {
+            horror.blueice129.data.HorrorModPersistentState state = horror.blueice129.data.HorrorModPersistentState.getServerState(world.getServer());
+            net.minecraft.nbt.NbtCompound nbt = new net.minecraft.nbt.NbtCompound();
+            nbt.putString("woodType", woodType);
+            state.setNbtCompound("houseWood_stage_" + stage, nbt);
+        } catch (Exception e) {
+            HorrorMod129.LOGGER.warn("[HousePlacer] Failed to persist wood type for stage {}: {}", stage, e.getMessage());
+        }
+
         Identifier structureId = new Identifier("horror-mod-129", "entitybase/house" + stage);
         BlockPos stageOffset = getStageOffset(stage);
         BlockPos placementPos = startPos.add(stageOffset);
@@ -90,7 +100,7 @@ public class HousePlacer {
         }
     }
 
-    private static BlockPos getStageOffset(int stage) {
+    public static BlockPos getStageOffset(int stage) {
         return switch (stage) {
             case 1 -> new BlockPos(0, 1, 0);
             case 2 -> new BlockPos(-1, 0, -1);
