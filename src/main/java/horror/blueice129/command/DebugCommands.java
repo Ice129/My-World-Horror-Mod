@@ -27,6 +27,7 @@ import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.sounds.FakeFootsteps;
 import horror.blueice129.sounds.StalkingFootsteps;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
+import horror.blueice129.scheduler.EntityHouseScheduler;
 import horror.blueice129.utils.PlayerBaseLocator;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.entity.Entity;
@@ -1168,14 +1169,8 @@ public class DebugCommands {
 
         int nextStage = currentStage + 1;
         ServerWorld world = (ServerWorld) player.getWorld();
-        HousePlacer.placeHouse(nextStage, housePos, world);
-
-        state.setIntValue(ENTITY_HOUSE_STAGE_KEY, nextStage);
-        if (nextStage >= ENTITY_HOUSE_MAX_STAGE) {
-            state.setIntValue(ENTITY_HOUSE_PHASE_KEY, EntityHousePhase.COMPLETE.ordinal());
-        } else {
-            state.setIntValue(ENTITY_HOUSE_PHASE_KEY, EntityHousePhase.STAGE_ACTIVE.ordinal());
-        }
+        
+        EntityHouseScheduler.advanceToNextStage(world, housePos, state);
 
         source.sendFeedback(() -> Text.literal("Placed stage " + nextStage + " at " + housePos.toShortString()), true);
         return Command.SINGLE_SUCCESS;

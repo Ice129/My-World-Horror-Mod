@@ -170,20 +170,34 @@ public class EntityHouseScheduler {
 
         if (!isPlacementWindowOpen(player, housePos)) return;
 
-        InteractionRecord diff = EntityHouseInteractionTracker.buildDiff(world, housePos, currentStage);
-        HouseModificationPlanner.applyModifications(world, HouseModificationPlanner.planModifications(diff));
-        HousePlacer.placeHouse(nextStage, housePos, world);
-        state.setIntValue(STAGE_KEY, nextStage);
+        advanceToNextStage(world, housePos, state);
 
-        if (nextStage == MAX_STAGE) {
-            setPhase(state, EntityHousePhase.COMPLETE);
+        int stageAfterAdvance = state.getIntValue(STAGE_KEY, 0);
+        if (stageAfterAdvance == MAX_STAGE) {
             HorrorMod129.LOGGER.info("EntityHouseScheduler: placed final stage {} at {}", MAX_STAGE, housePos.toShortString());
         } else {
-            HorrorMod129.LOGGER.info("EntityHouseScheduler: placed stage {} at {}", nextStage, housePos.toShortString());
+            HorrorMod129.LOGGER.info("EntityHouseScheduler: placed stage {} at {}", stageAfterAdvance, housePos.toShortString());
         }
     }
 
     // --- helpers ---
+
+    public static void advanceToNextStage(ServerWorld world, BlockPos housePos, HorrorModPersistentState state) {
+        int currentStage = state.getIntValue(STAGE_KEY, 0);
+        int nextStage = currentStage + 1;
+
+        InteractionRecord diff = EntityHouseInteractionTracker.buildDiff(world, housePos, currentStage);
+        HouseModificationPlanner.applyModifications(world, HouseModificationPlanner.planModifications(diff));
+        HousePlacer.killPreviousPhaseCreatures(housePos, world);
+        HousePlacer.placeHouse(nextStage, housePos, world);
+
+        state.setIntValue(STAGE_KEY, nextStage);
+        if (nextStage >= MAX_STAGE) {
+            setPhase(state, EntityHousePhase.COMPLETE);
+        } else {
+            setPhase(state, EntityHousePhase.STAGE_ACTIVE);
+        }
+    }
 
     private static EntityHousePhase getPhase(HorrorModPersistentState state) {
         int ordinal = state.getIntValue(PHASE_KEY, 0);

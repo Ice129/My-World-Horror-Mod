@@ -3,16 +3,27 @@ package horror.blueice129.feature.house;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.block.Block;
+import net.minecraft.entity.passive.SheepEntity;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.BlockMirror;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.server.world.ServerWorld;
 
 public class HousePlacer {
+
+    public static void killPreviousPhaseCreatures(BlockPos housePos, ServerWorld world) {
+        Box searchBox = new Box(housePos.getX() - 40, housePos.getY() - 40, housePos.getZ() - 40,
+                               housePos.getX() + 40, housePos.getY() + 40, housePos.getZ() + 40);
+        world.getEntitiesByClass(SheepEntity.class, searchBox, sheep -> true).forEach(sheep -> {
+            sheep.discard();
+            HorrorMod129.LOGGER.info("[HousePlacer] Removed sheep at {} before next phase", sheep.getBlockPos().toShortString());
+        });
+    }
 
     public static void placeHouse(int stage, BlockPos startPos, ServerWorld world) {
         String woodType = getWoodType(world, startPos);
