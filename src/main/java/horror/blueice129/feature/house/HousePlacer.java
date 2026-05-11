@@ -3,7 +3,10 @@ package horror.blueice129.feature.house;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.block.Block;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.passive.SheepEntity;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.BlockMirror;
@@ -11,6 +14,7 @@ import net.minecraft.util.BlockRotation;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.server.world.ServerWorld;
 
@@ -22,6 +26,10 @@ public class HousePlacer {
         world.getEntitiesByClass(SheepEntity.class, searchBox, sheep -> true).forEach(sheep -> {
             sheep.discard();
             HorrorMod129.LOGGER.info("[HousePlacer] Removed sheep at {} before next phase", sheep.getBlockPos().toShortString());
+        });
+        world.getEntitiesByClass(ArmorStandEntity.class, searchBox, armorStand -> true).forEach(armorStand -> {
+            armorStand.discard();
+            HorrorMod129.LOGGER.info("[HousePlacer] Removed armor stand at {} before next phase", armorStand.getBlockPos().toShortString());
         });
     }
 
@@ -39,6 +47,8 @@ public class HousePlacer {
         StructureTemplate template = world.getStructureTemplateManager().getTemplateOrBlank(structureId);
         HorrorMod129.LOGGER.info("[HousePlacer] Template size: {}", template.getSize());
 
+        clearInventoriesInPlacementArea(world, placementPos, template.getSize());
+
         StructurePlacementData placementData = new StructurePlacementData()
                 .setMirror(BlockMirror.NONE)
                 .setRotation(BlockRotation.NONE)
@@ -46,6 +56,38 @@ public class HousePlacer {
                 .addProcessor(new WoodTypeProcessor(woodType));
 
         template.place(world, placementPos, placementPos, placementData, Random.create(), Block.NOTIFY_ALL);
+    }
+
+    private static void clearInventoriesInPlacementArea(ServerWorld world, BlockPos origin, Vec3i size) {
+        int clearedContainers = 0;
+        for (int x = 0; x < size.getX(); x++) {
+            for (int y = 0; y < size.getY(); y++) {
+                for (int z = 0; z < size.getZ(); z++) {
+                    BlockPos pos = origin.add(x, y, z);
+                    BlockEntity blockEntity = world.getBlockEntity(pos);
+                    if (!(blockEntity instanceof Inventory inventory)) {
+                        continue;
+                    }
+
+                    boolean hadItems = false;
+                    for (int slot = 0; slot < inventory.size(); slot++) {
+                        if (!inventory.getStack(slot).isEmpty()) {
+                            hadItems = true;
+                            inventory.removeStack(slot);
+                        }
+                    }
+
+                    if (hadItems) {
+                        blockEntity.markDirty();
+                        clearedContainers++;
+                    }
+                }
+            }
+        }
+
+        if (clearedContainers > 0) {
+            HorrorMod129.LOGGER.info("[HousePlacer] Cleared {} container inventories before template placement", clearedContainers);
+        }
     }
 
     private static BlockPos getStageOffset(int stage) {
