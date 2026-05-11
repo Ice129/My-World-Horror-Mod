@@ -41,7 +41,7 @@ public class HousePlacer {
         return switch (stage) {
             case 1 -> new BlockPos(0, 1, 0);
             case 2 -> new BlockPos(-1, 0, -1);
-            case 3 -> new BlockPos(-6, -4, 0);
+            case 3 -> new BlockPos(-7, -3, -1);
             default -> BlockPos.ORIGIN;
         };
     }
