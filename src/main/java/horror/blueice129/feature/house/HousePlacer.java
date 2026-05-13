@@ -1,12 +1,14 @@
 package horror.blueice129.feature.house;
 
 import horror.blueice129.HorrorMod129;
+import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.utils.SurfaceFinder;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.passive.SheepEntity;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.BlockMirror;
@@ -19,6 +21,8 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.server.world.ServerWorld;
 
 public class HousePlacer {
+
+    private static final String HOUSE_WOOD_KEY = "houseWood";
 
     public static void killPreviousPhaseCreatures(BlockPos housePos, ServerWorld world) {
         Box searchBox = new Box(housePos.getX() - 40, housePos.getY() - 40, housePos.getZ() - 40,
@@ -34,14 +38,14 @@ public class HousePlacer {
     }
 
     public static void placeHouse(int stage, BlockPos startPos, ServerWorld world) {
-        String woodType = getWoodType(world, startPos);
+        String woodType = getOrCreateStoredWoodType(world, startPos);
         HorrorMod129.LOGGER.info("[HousePlacer] Detected wood type: '{}', placing stage {} at {}", woodType, stage,
                 startPos.toShortString());
 
-        // persist wood type used for this stage so diff/tracker can apply same processors
+        // Persist stage key for diff/tracker compatibility.
         try {
-            horror.blueice129.data.HorrorModPersistentState state = horror.blueice129.data.HorrorModPersistentState.getServerState(world.getServer());
-            net.minecraft.nbt.NbtCompound nbt = new net.minecraft.nbt.NbtCompound();
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
+            NbtCompound nbt = new NbtCompound();
             nbt.putString("woodType", woodType);
             state.setNbtCompound("houseWood_stage_" + stage, nbt);
         } catch (Exception e) {
@@ -107,6 +111,29 @@ public class HousePlacer {
             case 3 -> new BlockPos(-7, -3, -1);
             default -> BlockPos.ORIGIN;
         };
+    }
+
+    private static String getOrCreateStoredWoodType(ServerWorld world, BlockPos pos) {
+        try {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
+            if (state.hasNbtCompound(HOUSE_WOOD_KEY)) {
+                String storedWood = state.getNbtCompound(HOUSE_WOOD_KEY).getString("woodType");
+                if (!storedWood.isBlank()) {
+                    HorrorMod129.LOGGER.info("[HousePlacer] Using stored wood type '{}'", storedWood);
+                    return storedWood;
+                }
+            }
+
+            String detectedWood = getWoodType(world, pos);
+            NbtCompound nbt = new NbtCompound();
+            nbt.putString("woodType", detectedWood);
+            state.setNbtCompound(HOUSE_WOOD_KEY, nbt);
+            HorrorMod129.LOGGER.info("[HousePlacer] Stored initial wood type '{}'", detectedWood);
+            return detectedWood;
+        } catch (Exception e) {
+            HorrorMod129.LOGGER.warn("[HousePlacer] Failed to read/store persistent wood type: {}", e.getMessage());
+            return getWoodType(world, pos);
+        }
     }
 
     private static String getWoodType(ServerWorld world, BlockPos pos) {

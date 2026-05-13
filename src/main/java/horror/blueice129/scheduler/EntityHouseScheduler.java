@@ -7,6 +7,7 @@ import horror.blueice129.feature.house.EntityHouse;
 import horror.blueice129.feature.house.EntityHouse.FlatnessResult;
 import horror.blueice129.feature.house.EntityHouseInteractionTracker;
 import horror.blueice129.feature.house.EntityHouseInteractionTracker.InteractionRecord;
+import horror.blueice129.feature.house.EntityHouseInteractionTracker.StructureSnapshot;
 import horror.blueice129.feature.house.EntityHousePhase;
 import horror.blueice129.feature.house.HouseModificationPlanner;
 import horror.blueice129.feature.house.HousePlacer;
@@ -76,7 +77,7 @@ public class EntityHouseScheduler {
         ServerWorld world = server.getOverworld();
 
         switch (getPhase(state)) {
-            case FINDING_BASE      -> handleFindingBase(world, player, state); //--DONE--
+            case FINDING_BASE      -> handleFindingBase(world, player, state);
             case PREPARING         -> handlePreparing(world, player, state);
             case AWAITING_PLACEMENT -> handleAwaitingPlacement(world, player, state);
             case STAGE_ACTIVE      -> handleStageActive(world, player, state);
@@ -138,11 +139,14 @@ public class EntityHouseScheduler {
 
         if (!isPlacementWindowOpen(player, housePos)) return;
 
-        // stage 1 is always the first structure placement in the progression.
+        // Place stage 1 and capture initial snapshot
         HousePlacer.placeHouse(1, housePos, world);
+        StructureSnapshot snapshot = EntityHouseInteractionTracker.captureStructureSnapshot(world, housePos, 1);
+        EntityHouseInteractionTracker.saveStructureSnapshot(world.getServer(), 1, snapshot);
+        
         state.setIntValue(STAGE_KEY, 1);
         setPhase(state, EntityHousePhase.STAGE_ACTIVE);
-        HorrorMod129.LOGGER.info("EntityHouseScheduler: placed stage 1 at {}", housePos.toShortString());
+        HorrorMod129.LOGGER.info("EntityHouseScheduler: placed stage 1 at {}, captured snapshot", housePos.toShortString());
     }
 
     private static void handleStageActive(ServerWorld world, PlayerEntity player, HorrorModPersistentState state) {
@@ -182,17 +186,40 @@ public class EntityHouseScheduler {
 
     // --- helpers ---
 
+    /**
+     * Main advancement logic: detect interactions from previous stage,
+     * apply dynamic modifications, place next stage, and capture new snapshot.
+     */
     public static void advanceToNextStage(ServerWorld world, BlockPos housePos, HorrorModPersistentState state) {
         int currentStage = state.getIntValue(STAGE_KEY, 0);
         int nextStage = currentStage + 1;
 
-        InteractionRecord diff = EntityHouseInteractionTracker.buildDiff(world, housePos, currentStage);
-        EntityHouseInteractionTracker.saveInteractionsForStage(world.getServer(), currentStage, diff);
-        
-        HouseModificationPlanner.applyModifications(world, HouseModificationPlanner.planModifications(diff));
+        // Step 1: Load snapshot from current stage to detect player interactions
+        StructureSnapshot snapshot = EntityHouseInteractionTracker.loadStructureSnapshot(world.getServer(), currentStage);
+        if (snapshot == null) {
+            HorrorMod129.LOGGER.warn("EntityHouseScheduler: no snapshot found for stage {}, skipping interaction detection", currentStage);
+        } else {
+            // Step 2: Build diff comparing snapshot to current world state
+            InteractionRecord diff = EntityHouseInteractionTracker.buildDiffFromSnapshot(world, snapshot);
+            EntityHouseInteractionTracker.saveInteractionsForStage(world.getServer(), currentStage, diff);
+            
+            // Step 3: Plan and apply modifications based on interactions
+            HouseModificationPlanner.applyModifications(world, HouseModificationPlanner.planModifications(diff));
+            HorrorMod129.LOGGER.info("EntityHouseScheduler: applied {} modifications based on player interactions",
+                    HouseModificationPlanner.planModifications(diff).size());
+        }
+
+        // Step 4: Prepare for next stage - kill old creatures
         HousePlacer.killPreviousPhaseCreatures(housePos, world);
+
+        // Step 5: Place next stage structure
         HousePlacer.placeHouse(nextStage, housePos, world);
 
+        // Step 6: Capture snapshot of newly placed structure (with modifications applied)
+        StructureSnapshot newSnapshot = EntityHouseInteractionTracker.captureStructureSnapshot(world, housePos, nextStage);
+        EntityHouseInteractionTracker.saveStructureSnapshot(world.getServer(), nextStage, newSnapshot);
+
+        // Step 7: Update phase state
         state.setIntValue(STAGE_KEY, nextStage);
         if (nextStage >= MAX_STAGE) {
             setPhase(state, EntityHousePhase.COMPLETE);

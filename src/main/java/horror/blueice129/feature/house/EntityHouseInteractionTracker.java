@@ -3,10 +3,10 @@ package horror.blueice129.feature.house;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.mixin.StructureTemplateAccessorMixin;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.LeavesBlock;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -16,7 +16,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.structure.StructurePlacementData;
-import horror.blueice129.feature.house.WoodTypeProcessor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -177,114 +176,239 @@ public class EntityHouseInteractionTracker {
         return Registries.BLOCK.getId(state.getBlock()).toString();
     }
 
-    /**
-     * Builds a diff of all interactions between the template structure (with reactions applied)
-     * and the current world state. Only records unexpected changes (deviations from the template).
-     * If in updating phase, use isUpdatingPhase=true to skip recording interactions.
-     *
-     * @param world The server world
-     * @param housePos The base position of the house
-     * @param currentStage The stage that was just completed (to compare against)
-     * @return InteractionRecord with all detected unexpected interactions
-     */
-    public static InteractionRecord buildDiff(ServerWorld world, BlockPos housePos, int currentStage) {
-        return buildDiff(world, housePos, currentStage, false);
+    private static boolean isLeafBlock(BlockState state) {
+        return state.getBlock() instanceof LeavesBlock;
     }
 
     /**
-     * Builds a diff of all interactions between the template structure (with reactions applied)
-     * and the current world state. Detects broken blocks, replacements, container changes, etc.
+     * Snapshot of structure state at a specific moment (blocks, entities, containers).
+     * Stored to compare against later world state to detect player interactions.
+     */
+    public static class StructureSnapshot {
+        public final BlockPos basePos;
+        public final int stage;
+        public final Vec3i size;
+        // Map of BlockPos to (blockId, nbt)
+        public final java.util.Map<BlockPos, BlockStateSnapshot> blockSnapshots;
+        // List of entity snapshots
+        public final List<EntitySnapshot> entitySnapshots;
+
+        public StructureSnapshot(BlockPos basePos, int stage, Vec3i size) {
+            this.basePos = basePos;
+            this.stage = stage;
+            this.size = size;
+            this.blockSnapshots = new java.util.HashMap<>();
+            this.entitySnapshots = new ArrayList<>();
+        }
+
+        public NbtCompound writeNbt() {
+            NbtCompound nbt = new NbtCompound();
+            nbt.putInt("baseX", basePos.getX());
+            nbt.putInt("baseY", basePos.getY());
+            nbt.putInt("baseZ", basePos.getZ());
+            nbt.putInt("stage", stage);
+            nbt.putInt("sizeX", size.getX());
+            nbt.putInt("sizeY", size.getY());
+            nbt.putInt("sizeZ", size.getZ());
+            
+            NbtList blocksList = new NbtList();
+            for (var entry : blockSnapshots.entrySet()) {
+                NbtCompound blockNbt = new NbtCompound();
+                blockNbt.putInt("x", entry.getKey().getX());
+                blockNbt.putInt("y", entry.getKey().getY());
+                blockNbt.putInt("z", entry.getKey().getZ());
+                blockNbt.putString("blockId", entry.getValue().blockId);
+                if (entry.getValue().containerNbt != null) {
+                    blockNbt.put("containerData", entry.getValue().containerNbt);
+                }
+                blocksList.add(blockNbt);
+            }
+            nbt.put("blocks", blocksList);
+            
+            NbtList entitiesList = new NbtList();
+            for (EntitySnapshot entity : entitySnapshots) {
+                NbtCompound entityNbt = new NbtCompound();
+                entityNbt.putInt("x", entity.pos.getX());
+                entityNbt.putInt("y", entity.pos.getY());
+                entityNbt.putInt("z", entity.pos.getZ());
+                entityNbt.putString("type", entity.entityType);
+                entitiesList.add(entityNbt);
+            }
+            nbt.put("entities", entitiesList);
+            
+            return nbt;
+        }
+
+        public static StructureSnapshot readNbt(NbtCompound nbt) {
+            BlockPos basePos = new BlockPos(nbt.getInt("baseX"), nbt.getInt("baseY"), nbt.getInt("baseZ"));
+            int stage = nbt.getInt("stage");
+            Vec3i size = new Vec3i(nbt.getInt("sizeX"), nbt.getInt("sizeY"), nbt.getInt("sizeZ"));
+            StructureSnapshot snapshot = new StructureSnapshot(basePos, stage, size);
+            
+            NbtList blocksList = nbt.getList("blocks", 10);
+            for (int i = 0; i < blocksList.size(); i++) {
+                NbtCompound blockNbt = blocksList.getCompound(i);
+                BlockPos pos = new BlockPos(blockNbt.getInt("x"), blockNbt.getInt("y"), blockNbt.getInt("z"));
+                String blockId = blockNbt.getString("blockId");
+                NbtCompound containerData = blockNbt.contains("containerData", 10) ? blockNbt.getCompound("containerData") : null;
+                snapshot.blockSnapshots.put(pos, new BlockStateSnapshot(blockId, containerData));
+            }
+            
+            NbtList entitiesList = nbt.getList("entities", 10);
+            for (int i = 0; i < entitiesList.size(); i++) {
+                NbtCompound entityNbt = entitiesList.getCompound(i);
+                BlockPos pos = new BlockPos(entityNbt.getInt("x"), entityNbt.getInt("y"), entityNbt.getInt("z"));
+                String entityType = entityNbt.getString("type");
+                snapshot.entitySnapshots.add(new EntitySnapshot(pos, entityType));
+            }
+            
+            return snapshot;
+        }
+    }
+
+    public static class BlockStateSnapshot {
+        public final String blockId;
+        public final NbtCompound containerNbt;
+
+        public BlockStateSnapshot(String blockId, NbtCompound containerNbt) {
+            this.blockId = blockId;
+            this.containerNbt = containerNbt;
+        }
+    }
+
+    public static class EntitySnapshot {
+        public final BlockPos pos;
+        public final String entityType;
+
+        public EntitySnapshot(BlockPos pos, String entityType) {
+            this.pos = pos;
+            this.entityType = entityType;
+        }
+    }
+
+    /**
+     * Captures a snapshot of the structure state after placement.
+     * Stores all blocks, entities, and container contents for later comparison.
      *
      * @param world The server world
      * @param housePos The base position of the house
-     * @param currentStage The stage that was just completed (to compare against)
-     * @param isUpdatingPhase If true, skips recording interactions (changes are expected during update)
-     * @return InteractionRecord with all detected unexpected interactions
+     * @param stage The stage being placed
+     * @return StructureSnapshot with current state of the structure
      */
-    public static InteractionRecord buildDiff(ServerWorld world, BlockPos housePos, int currentStage, boolean isUpdatingPhase) {
-        InteractionRecord record = new InteractionRecord();
-
-        Identifier stageId = new Identifier("horror-mod-129", "entitybase/house" + currentStage);
+    public static StructureSnapshot captureStructureSnapshot(ServerWorld world, BlockPos housePos, int stage) {
+        Identifier stageId = new Identifier("horror-mod-129", "entitybase/house" + stage);
         StructureTemplate template = world.getStructureTemplateManager().getTemplateOrBlank(stageId);
         Vec3i size = template.getSize();
         List<StructureTemplate.PalettedBlockInfoList> blockInfoLists = ((StructureTemplateAccessorMixin) (Object) template).horror$getBlockInfoLists();
         List<StructureTemplate.StructureEntityInfo> entityInfos = ((StructureTemplateAccessorMixin) (Object) template).horror$getEntities();
 
-        // load wood type used during placement for this stage so we can apply same processor
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
-        String woodKey = "houseWood_stage_" + currentStage;
-        String woodType = "birch"; // default (no-op in WoodTypeProcessor)
-        if (state.hasNbtCompound(woodKey)) {
-            try {
-                woodType = state.getNbtCompound(woodKey).getString("woodType");
-            } catch (Exception ignored) {}
-        }
-        WoodTypeProcessor woodProcessor = new WoodTypeProcessor(woodType);
-        StructurePlacementData placementData = new StructurePlacementData().addProcessor(woodProcessor);
+        BlockPos placementPos = housePos.add(HousePlacer.getStageOffset(stage));
+        StructureSnapshot snapshot = new StructureSnapshot(housePos, stage, size);
 
-        HorrorMod129.LOGGER.info("Building interaction diff for stage {}: template size {}", currentStage, size);
-
-        if (isUpdatingPhase) {
-            return record;
-        }
-
-        BlockPos placementPos = housePos.add(HousePlacer.getStageOffset(currentStage));
-
+        // Capture blocks
         for (StructureTemplate.PalettedBlockInfoList palettedBlockInfoList : blockInfoLists) {
             for (StructureTemplate.StructureBlockInfo info : palettedBlockInfoList.getAll()) {
                 BlockPos worldPos = placementPos.add(info.pos());
-                // compute expected state after same placement processors applied
-                StructureTemplate.StructureBlockInfo processed = woodProcessor.process(world,
-                    worldPos, BlockPos.ORIGIN, info, info, placementData);
-                BlockState expectedState = processed.state();
-                BlockState actualState = world.getBlockState(worldPos);
-
-                if (expectedState.isAir() && !actualState.isAir()) {
-                    recordBlockInteraction(record, worldPos,
-                            "minecraft:air",
-                            getNormalizedBlockId(actualState),
-                            currentStage,
-                            InteractionType.BLOCK_REPLACED);
+                BlockState blockState = world.getBlockState(worldPos);
+                if (isLeafBlock(blockState)) {
                     continue;
                 }
-
-                if (!expectedState.isAir() && actualState.isAir()) {
-                    recordBlockInteraction(record, worldPos,
-                            getNormalizedBlockId(expectedState),
-                            "minecraft:air",
-                            currentStage,
-                            InteractionType.BLOCK_BROKEN);
-                    continue;
-                }
-
-                if (!expectedState.isAir() && expectedState.getBlock() != actualState.getBlock()) {
-                    recordBlockInteraction(record, worldPos,
-                            getNormalizedBlockId(expectedState),
-                            getNormalizedBlockId(actualState),
-                            currentStage,
-                            InteractionType.BLOCK_REPLACED);
-                }
-
+                String blockId = getNormalizedBlockId(blockState);
+                
+                NbtCompound containerData = null;
                 BlockEntity blockEntity = world.getBlockEntity(worldPos);
-                if (info.nbt() != null && blockEntity instanceof Inventory inventory) {
-                    List<ItemStack> expectedItems = extractItemsFromNbt(info.nbt());
+                if (blockEntity instanceof Inventory && shouldCompareContainerContents(blockEntity.createNbt())) {
+                    containerData = blockEntity.createNbt();
+                }
+                
+                snapshot.blockSnapshots.put(worldPos, new BlockStateSnapshot(blockId, containerData));
+            }
+        }
+
+        // Capture entities
+        for (StructureTemplate.StructureEntityInfo entityInfo : entityInfos) {
+            BlockPos entityPos = placementPos.add(entityInfo.blockPos);
+            if (hasMatchingArmorStand(world, placementPos, entityInfo)) {
+                snapshot.entitySnapshots.add(new EntitySnapshot(entityPos, "armor_stand"));
+            }
+        }
+
+        HorrorMod129.LOGGER.info("Captured structure snapshot for stage {}: {} blocks, {} entities",
+                stage, snapshot.blockSnapshots.size(), snapshot.entitySnapshots.size());
+
+        return snapshot;
+    }
+
+    /**
+     * Builds a diff between a stored snapshot and current world state.
+     * Detects all changes: broken blocks, replacements, container changes, missing entities.
+     *
+     * @param world The server world
+     * @param snapshot The previously captured structure snapshot
+     * @return InteractionRecord with all detected interactions
+     */
+    public static InteractionRecord buildDiffFromSnapshot(ServerWorld world, StructureSnapshot snapshot) {
+        InteractionRecord record = new InteractionRecord();
+
+        HorrorMod129.LOGGER.info("Building diff from snapshot for stage {}: comparing {} block positions",
+                snapshot.stage, snapshot.blockSnapshots.size());
+
+        // Compare blocks
+        for (var entry : snapshot.blockSnapshots.entrySet()) {
+            BlockPos worldPos = entry.getKey();
+            BlockStateSnapshot expected = entry.getValue();
+            BlockState actualState = world.getBlockState(worldPos);
+            if (isLeafBlock(actualState) || expected.blockId.contains("leaves") || expected.blockId.contains("leaf")) {
+                continue;
+            }
+            String actualId = getNormalizedBlockId(actualState);
+
+            // Detect broken blocks (expected non-air, actual air)
+            if (!expected.blockId.equals("minecraft:air") && actualState.isAir()) {
+                recordBlockInteraction(record, worldPos,
+                        expected.blockId,
+                        "minecraft:air",
+                        snapshot.stage,
+                        InteractionType.BLOCK_BROKEN);
+                continue;
+            }
+
+            // Detect replacements
+            if (!expected.blockId.equals(actualId)) {
+                recordBlockInteraction(record, worldPos,
+                        expected.blockId,
+                        actualId,
+                        snapshot.stage,
+                        InteractionType.BLOCK_REPLACED);
+            }
+
+            // Detect container changes
+            if (expected.containerNbt != null) {
+                BlockEntity blockEntity = world.getBlockEntity(worldPos);
+                if (blockEntity instanceof Inventory inventory) {
+                    List<ItemStack> expectedItems = extractItemsFromNbt(expected.containerNbt, inventory.size());
                     List<ItemStack> actualItems = extractItemsFromInventory(inventory);
                     if (!itemsMatch(expectedItems, actualItems)) {
-                        recordContainerInteraction(record, worldPos, currentStage, expectedItems, actualItems);
+                        recordContainerInteraction(record, worldPos, snapshot.stage, expectedItems, actualItems);
                     }
                 }
             }
         }
 
-        for (StructureTemplate.StructureEntityInfo entityInfo : entityInfos) {
-            BlockPos entityPos = placementPos.add(entityInfo.blockPos);
-            if (world.getEntitiesByClass(net.minecraft.entity.decoration.ArmorStandEntity.class,
-                    Box.of(Vec3d.ofCenter(entityPos), 1.0, 1.0, 1.0), entity -> true).isEmpty()) {
-                recordEntityInteraction(record, entityPos, currentStage, "armor_stand", "missing", "template entity not present");
+        // Compare entities
+        for (EntitySnapshot expectedEntity : snapshot.entitySnapshots) {
+            if (!hasArmorStandAt(world, expectedEntity.pos)) {
+                recordEntityInteraction(record, expectedEntity.pos, snapshot.stage,
+                        "armor_stand", "missing", "entity was removed");
             }
         }
 
         return record;
+    }
+
+    private static boolean hasArmorStandAt(ServerWorld world, BlockPos pos) {
+        Box box = new Box(pos).expand(0.5);
+        return !world.getEntitiesByClass(ArmorStandEntity.class, box, e -> true).isEmpty();
     }
 
     /**
@@ -365,16 +489,32 @@ public class EntityHouseInteractionTracker {
         record.addInteraction(interaction);
     }
 
-    private static List<ItemStack> extractItemsFromNbt(NbtCompound nbt) {
-        List<ItemStack> items = new ArrayList<>();
-        if (nbt == null || !nbt.contains("Items")) {
+    private static boolean shouldCompareContainerContents(NbtCompound nbt) {
+        return nbt != null && nbt.contains("Items", 9) && !nbt.contains("LootTable");
+    }
+
+    private static List<ItemStack> extractItemsFromNbt(NbtCompound nbt, int inventorySize) {
+        List<ItemStack> items = new ArrayList<>(inventorySize);
+        for (int slot = 0; slot < inventorySize; slot++) {
+            items.add(ItemStack.EMPTY);
+        }
+
+        if (nbt == null || !nbt.contains("Items", 9)) {
             return items;
         }
 
         NbtList itemsList = nbt.getList("Items", 10);
         for (int i = 0; i < itemsList.size(); i++) {
             NbtCompound itemNbt = itemsList.getCompound(i);
-            items.add(ItemStack.fromNbt(itemNbt));
+            ItemStack stack = ItemStack.fromNbt(itemNbt);
+            if (stack.isEmpty()) {
+                continue;
+            }
+
+            int slot = itemNbt.contains("Slot", 99) ? itemNbt.getByte("Slot") & 255 : i;
+            if (slot >= 0 && slot < items.size()) {
+                items.set(slot, stack);
+            }
         }
 
         return items;
@@ -386,6 +526,27 @@ public class EntityHouseInteractionTracker {
             items.add(inventory.getStack(slot).copy());
         }
         return items;
+    }
+
+    private static boolean hasMatchingArmorStand(ServerWorld world, BlockPos placementPos,
+                                                 StructureTemplate.StructureEntityInfo entityInfo) {
+        Vec3d expectedPos = new Vec3d(placementPos.getX(), placementPos.getY(), placementPos.getZ()).add(entityInfo.pos);
+        BlockPos expectedBlockPos = placementPos.add(entityInfo.blockPos);
+        Box searchBox = new Box(
+                expectedPos.x - 1.0D, expectedPos.y - 1.0D, expectedPos.z - 1.0D,
+                expectedPos.x + 1.0D, expectedPos.y + 1.0D, expectedPos.z + 1.0D);
+
+        for (ArmorStandEntity armorStand : world.getEntitiesByClass(ArmorStandEntity.class, searchBox, entity -> true)) {
+            if (armorStand.getBlockPos().equals(expectedBlockPos)) {
+                return true;
+            }
+
+            if (armorStand.getPos().squaredDistanceTo(expectedPos) <= 1.0D) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static boolean itemsMatch(List<ItemStack> expectedItems, List<ItemStack> actualItems) {
@@ -412,6 +573,45 @@ public class EntityHouseInteractionTracker {
     // === PERSISTENCE METHODS ===
 
     private static final String INTERACTIONS_KEY_PREFIX = "houseInteractions_stage_";
+    private static final String SNAPSHOT_KEY_PREFIX = "houseSnapshot_stage_";
+
+    /**
+     * Saves structure snapshot to persistent state for a specific stage.
+     * @param server The Minecraft server
+     * @param stage The stage number
+     * @param snapshot The snapshot to save
+     */
+    public static void saveStructureSnapshot(MinecraftServer server, int stage, StructureSnapshot snapshot) {
+        try {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            state.setNbtCompound(SNAPSHOT_KEY_PREFIX + stage, snapshot.writeNbt());
+            HorrorMod129.LOGGER.info("Saved structure snapshot for stage {}", stage);
+        } catch (Exception e) {
+            HorrorMod129.LOGGER.warn("Failed to save snapshot for stage {}: {}", stage, e.getMessage());
+        }
+    }
+
+    /**
+     * Loads structure snapshot from persistent state for a specific stage.
+     * @param server The Minecraft server
+     * @param stage The stage number
+     * @return The snapshot, or null if not found
+     */
+    public static StructureSnapshot loadStructureSnapshot(MinecraftServer server, int stage) {
+        try {
+            HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+            String key = SNAPSHOT_KEY_PREFIX + stage;
+            if (state.hasNbtCompound(key)) {
+                StructureSnapshot snapshot = StructureSnapshot.readNbt(state.getNbtCompound(key));
+                HorrorMod129.LOGGER.info("Loaded structure snapshot for stage {}: {} blocks, {} entities",
+                        stage, snapshot.blockSnapshots.size(), snapshot.entitySnapshots.size());
+                return snapshot;
+            }
+        } catch (Exception e) {
+            HorrorMod129.LOGGER.warn("Failed to load snapshot for stage {}: {}", stage, e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * Saves interaction record to persistent state for a specific house stage.
