@@ -1,14 +1,17 @@
 package horror.blueice129.feature.house;
 
+import horror.blueice129.HorrorMod129;
 import horror.blueice129.feature.house.EntityHouseInteractionTracker.Interaction;
 import horror.blueice129.feature.house.EntityHouseInteractionTracker.InteractionRecord;
 import horror.blueice129.feature.house.EntityHouseInteractionTracker.InteractionType;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.DoorBlock;
+import net.minecraft.util.math.Direction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +73,7 @@ public class HouseModificationPlanner {
         }
 
         // Response to sign changes: would indicate player discovered something
-        for (Interaction interaction : diff.getInteractionsByType(InteractionType.SIGN_TEXT_CHANGED)) {
+        if (!diff.getInteractionsByType(InteractionType.SIGN_TEXT_CHANGED).isEmpty()) {
             // Player read the signs - house could escalate haunting
             // TODO: add escalation logic
         }
@@ -87,32 +90,66 @@ public class HouseModificationPlanner {
      */
     public static void applyModifications(ServerWorld world, List<HouseModification> mods) {
         for (HouseModification mod : mods) {
-            switch (mod.type()) {
-                case REINFORCE_DOOR -> {
-                    // Change door type to iron door, but keep original orientation
-                    BlockState originalState = world.getBlockState(mod.targetPos());
-                    BlockState newState = mod.newBlock().getDefaultState()
-                            .with(DoorBlock.FACING, originalState.get(DoorBlock.FACING))
-                            .with(DoorBlock.HALF, originalState.get(DoorBlock.HALF))
-                            .with(DoorBlock.OPEN, false);
-                    world.setBlockState(mod.targetPos(), newState);
+            try {
+                switch (mod.type()) {
+                    case REINFORCE_DOOR -> reinforceDoor(world, mod.targetPos(), mod.newBlock());
+                    case SEAL_OPENING -> {
+                        // Place obsidian to seal breaches
+                        world.setBlockState(mod.targetPos(), mod.newBlock().getDefaultState());
+                    }
+                    case REPLACE_CONTAINER -> {
+                        // Replace container with new one
+                        world.setBlockState(mod.targetPos(), mod.newBlock().getDefaultState());
+                    }
+                    case HIDE_VALUABLES -> {
+                        // TODO: find hidden location nearby and relocate valuable items
+                        // For now, just mark the position
+                    }
+                    case TRIGGER_TRAP -> {
+                        // TODO: activate or spawn trap mechanism
+                    }
                 }
-                case SEAL_OPENING -> {
-                    // Place obsidian to seal breaches
-                    world.setBlockState(mod.targetPos(), mod.newBlock().getDefaultState());
-                }
-                case REPLACE_CONTAINER -> {
-                    // Replace container with new one
-                    world.setBlockState(mod.targetPos(), mod.newBlock().getDefaultState());
-                }
-                case HIDE_VALUABLES -> {
-                    // TODO: find hidden location nearby and relocate valuable items
-                    // For now, just mark the position
-                }
-                case TRIGGER_TRAP -> {
-                    // TODO: activate or spawn trap mechanism
+            } catch (Exception e) {
+                HorrorMod129.LOGGER.warn("[HouseModificationPlanner] Failed to apply {} at {}: {}",
+                        mod.type(), mod.targetPos().toShortString(), e.getMessage());
+            }
+        }
+    }
+
+    private static void reinforceDoor(ServerWorld world, BlockPos pos, Block newBlock) {
+        BlockPos basePos = pos;
+        BlockState originalState = world.getBlockState(pos);
+
+        if (originalState.getBlock() instanceof DoorBlock) {
+            if (originalState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
+                basePos = pos.down();
+            }
+        } else {
+            BlockState lowerState = world.getBlockState(pos.down());
+            if (lowerState.getBlock() instanceof DoorBlock && lowerState.get(DoorBlock.HALF) == DoubleBlockHalf.LOWER) {
+                basePos = pos.down();
+                originalState = lowerState;
+            } else {
+                BlockState upperState = world.getBlockState(pos.up());
+                if (upperState.getBlock() instanceof DoorBlock && upperState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
+                    originalState = upperState;
                 }
             }
         }
+
+        Direction facing = originalState.getBlock() instanceof DoorBlock
+                ? originalState.get(DoorBlock.FACING)
+                : Direction.NORTH;
+
+        BlockState lowerState = newBlock.getDefaultState()
+                .with(DoorBlock.FACING, facing)
+                .with(DoorBlock.HALF, DoubleBlockHalf.LOWER)
+                .with(DoorBlock.OPEN, false);
+        BlockState upperState = newBlock.getDefaultState()
+                .with(DoorBlock.FACING, facing)
+                .with(DoorBlock.HALF, DoubleBlockHalf.UPPER)
+                .with(DoorBlock.OPEN, false);
+        world.setBlockState(basePos, lowerState);
+        world.setBlockState(basePos.up(), upperState);
     }
 }

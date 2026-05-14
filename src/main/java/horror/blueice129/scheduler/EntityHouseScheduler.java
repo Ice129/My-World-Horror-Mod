@@ -204,9 +204,10 @@ public class EntityHouseScheduler {
             EntityHouseInteractionTracker.saveInteractionsForStage(world.getServer(), currentStage, diff);
             
             // Step 3: Plan and apply modifications based on interactions
-            HouseModificationPlanner.applyModifications(world, HouseModificationPlanner.planModifications(diff));
+            var modifications = HouseModificationPlanner.planModifications(diff);
+            HouseModificationPlanner.applyModifications(world, modifications);
             HorrorMod129.LOGGER.info("EntityHouseScheduler: applied {} modifications based on player interactions",
-                    HouseModificationPlanner.planModifications(diff).size());
+                    modifications.size());
         }
 
         // Step 4: Prepare for next stage - kill old creatures
