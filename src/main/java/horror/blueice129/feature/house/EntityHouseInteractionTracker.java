@@ -5,6 +5,7 @@ import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.mixin.StructureTemplateAccessorMixin;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeavesBlock;
+import net.minecraft.block.DoorBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.inventory.Inventory;
@@ -14,6 +15,7 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.structure.StructureTemplate;
 // import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.util.Identifier;
@@ -311,6 +313,9 @@ public class EntityHouseInteractionTracker {
                 BlockPos worldPos = placementPos.add(info.pos());
                 BlockState blockState = world.getBlockState(worldPos);
                 if (isLeafBlock(blockState)) {
+                    continue;
+                }
+                if (blockState.getBlock() instanceof DoorBlock && blockState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
                     continue;
                 }
                 String blockId = getNormalizedBlockId(blockState);
