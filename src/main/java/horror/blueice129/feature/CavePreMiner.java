@@ -1098,6 +1098,7 @@ public class CavePreMiner {
             }
             HorrorMod129.LOGGER.info("Successfully pre-mined a cave!");
         });
+        preMineThread.setName("Pre-mine Thread for "+player.getName());
         preMineThread.start();
     }
 
