@@ -104,7 +104,7 @@ public class CavePreMiner {
      * 
      * @param world         The world to check in
      * @param pos           The position to check
-     * @param caveAirBlocks list of cave air blocks to check against
+     * @param caveAirSet list of cave air blocks to check against
      * @param player        The player to check line of sight against
      * @return True if the block is suitable, false otherwise
      */
