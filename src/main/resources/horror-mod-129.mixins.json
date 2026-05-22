@@ -1,22 +1,23 @@
 {
-	"required": true,
-	"package": "horror.blueice129.mixin",
-	"compatibilityLevel": "JAVA_17",
-	"mixins": [
-		"ExampleMixin",
-		"ServerWorldSleepStatusMixin",
-		"SleepManagerMixin"
-	],
-	"client": [
-		"client.GameRendererAccessor",
-		"client.GameRendererMixin",
-		"client.MinecraftClientAccessor",
-		"client.PlayerEntityAccessor"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
+  "required": true,
+  "package": "horror.blueice129.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "BodyControlMixin",
+    "ExampleMixin",
+    "ServerWorldSleepStatusMixin",
+    "SleepManagerMixin"
+  ],
+  "client": [
+    "client.GameRendererAccessor",
+    "client.GameRendererMixin",
+    "client.MinecraftClientAccessor",
+    "client.PlayerEntityAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
 	}
 }
