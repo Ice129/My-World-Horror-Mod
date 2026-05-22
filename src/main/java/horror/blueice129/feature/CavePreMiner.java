@@ -1056,10 +1056,16 @@ public class CavePreMiner {
     public static void preMineCave(World world, BlockPos playerPos, PlayerEntity player) {
         Thread preMineThread = new Thread(() -> {
             boolean isFinished = false;
+            mainLoop:
             while (!isFinished) {
+                //check if player is spectator, dead or offline
+                if (player == null || (!player.isPartOfGame())) {
+                    break;
+                }
+
                 BlockPos starterPos = findStarterBlock(world, playerPos);
                 if (starterPos == null) {
-                    break;
+                    continue;
                 }
 
                 // Check if too close to existing pre-mined caves
@@ -1070,7 +1076,7 @@ public class CavePreMiner {
                 final int MIN_CAVE_DISTANCE_SQUARED = 100 * 100;
                 for (BlockPos existingCave : existingCaves) {
                     if (starterPos.getSquaredDistance(existingCave) < MIN_CAVE_DISTANCE_SQUARED) {
-                        break;
+                        continue mainLoop;
                     }
                 }
 
@@ -1082,7 +1088,7 @@ public class CavePreMiner {
                 int oresMined = result.oresMined;
 
                 if (caveAirBlocks.size() < 50) {
-                    break; // Not enough cave air blocks to consider this a cave
+                    continue; // Not enough cave air blocks to consider this a cave
                 }
 
                 int torchesPlaced = populateTorches(world, caveAirBlocks, player);
@@ -1098,7 +1104,7 @@ public class CavePreMiner {
             }
             HorrorMod129.LOGGER.info("Successfully pre-mined a cave!");
         });
-        preMineThread.setName("Pre-mine Thread for "+player.getName());
+        preMineThread.setName("Pre-mine Thread for "+player.getName().getString());
         preMineThread.start();
     }
 
