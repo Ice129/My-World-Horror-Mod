@@ -73,14 +73,7 @@ public class CaveMinerScheduler {
             // If the timer has reached zero
             if (currentTimer <= 0) {
                 // Trigger the cave miner event
-                while (!CavePreMiner.preMineCave(player.getWorld(), player.getBlockPos(), player)) {
-                    // If unsuccessful, set a short retry delay
-                    int retryDelay = 1200; // 1 minute
-                    state.setTimer(TIMER_ID, retryDelay);
-                    HorrorMod129.LOGGER.info("CavePreMiner attempt failed, retrying in 1 minute.");
-                    return;
-                }
-                HorrorMod129.LOGGER.info("CavePreMiner event executed successfully.");
+                CavePreMiner.preMineCave(player.getWorld(), player.getBlockPos(), player);
 
                 // Reset the timer with a new random delay
                 state.setTimer(TIMER_ID, getRandomDelay());
