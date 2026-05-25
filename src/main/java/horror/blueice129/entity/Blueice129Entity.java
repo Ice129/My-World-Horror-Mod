@@ -16,18 +16,16 @@ import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.stat.Stats;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.GlobalPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Blueice129 Entity - A custom PathAwareEntity that takes the form of a player
@@ -101,7 +99,15 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
 
     @Override
     public void onDeath(DamageSource damageSource) {
+        if (!this.isRemoved() && !this.dead) {
+            if (!getWorld().isClient && this.getWorld().getGameRules().getBoolean(GameRules.SHOW_DEATH_MESSAGES)) {
+                MutableText text = MutableText.of(this.getDamageTracker().getDeathMessage().getContent());
+                getWorld().getServer().getPlayerManager().broadcast(text.styled(style -> style.withColor(0xFFFF55)), false);
+            }
+        }
+
         super.onDeath(damageSource);
+
         this.refreshPosition();
         if (!this.isSpectator()) {
             this.drop(damageSource);
