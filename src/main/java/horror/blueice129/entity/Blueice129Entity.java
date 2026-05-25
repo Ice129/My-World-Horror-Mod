@@ -7,10 +7,7 @@ import horror.blueice129.mixin.ItemEntityAccessor;
 import horror.blueice129.utils.EntityLoginState;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.InventoryOwner;
-import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.*;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
@@ -387,9 +384,31 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         }
     }
 
+    @Override
+    public ItemStack getEquippedStack(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.MAINHAND) {
+            return this.inventory.getStack(0);
+        } else if (slot == EquipmentSlot.OFFHAND) {
+            return this.inventory.getStack(40);
+        } else {
+            return ItemStack.EMPTY;
+        }
+    }
+
+    @Override
+    public void equipStack(EquipmentSlot slot, ItemStack stack) {
+        this.processEquippedStack(stack);
+        if (slot == EquipmentSlot.MAINHAND) {
+            this.onEquipStack(slot, this.inventory.getStack(0), stack);
+            this.inventory.setStack(0, stack);
+        } else if (slot == EquipmentSlot.OFFHAND) {
+            this.onEquipStack(slot, this.inventory.getStack(40), stack);
+            this.inventory.setStack(40, stack);
+        }
+    }
+
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
-
         this.inventory = new SimpleInventory(41);
 
         // Set custom name to display "Blueice129" like a player

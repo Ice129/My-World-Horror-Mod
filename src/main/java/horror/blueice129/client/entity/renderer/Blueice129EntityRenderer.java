@@ -2,6 +2,7 @@ package horror.blueice129.client.entity.renderer;
 
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.client.entity.model.Blueice129EntityModel;
+import net.minecraft.client.render.entity.BipedEntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.MobEntityRenderer;
 import net.minecraft.util.Identifier;
@@ -10,7 +11,7 @@ import net.minecraft.util.Identifier;
  * Renderer for the Blueice129 entity.
  * Provides the model and texture for rendering the entity in the world.
  */
-public class Blueice129EntityRenderer extends MobEntityRenderer<Blueice129Entity, Blueice129EntityModel> {
+public class Blueice129EntityRenderer extends BipedEntityRenderer<Blueice129Entity, Blueice129EntityModel> {
 
     /**
      * Constructor for the Blueice129EntityRenderer.
