@@ -9,21 +9,25 @@ import horror.blueice129.data.HorrorModPersistentState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.GlobalPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Blueice129 Entity - A custom PathAwareEntity that takes the form of a player
@@ -93,6 +97,28 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         if (goalRegistry != null) {
             goalRegistry.applyCurrentProfile();
         }
+    }
+
+    @Override
+    public void onDeath(DamageSource damageSource) {
+        super.onDeath(damageSource);
+        this.refreshPosition();
+        if (!this.isSpectator()) {
+            this.drop(damageSource);
+        }
+
+        if (damageSource != null) {
+            this.setVelocity(
+                    -MathHelper.cos((this.getDamageTiltYaw() + this.getYaw()) * (float) (Math.PI / 180.0)) * 0.1F,
+                    0.1F,
+                    -MathHelper.sin((this.getDamageTiltYaw() + this.getYaw()) * (float) (Math.PI / 180.0)) * 0.1F
+            );
+        } else {
+            this.setVelocity(0.0, 0.1, 0.0);
+        }
+
+        this.extinguish();
+        this.setOnFire(false);
     }
 
     @Nullable
