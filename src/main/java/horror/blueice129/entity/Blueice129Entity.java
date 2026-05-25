@@ -1,6 +1,5 @@
 package horror.blueice129.entity;
 
-import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import horror.blueice129.entity.goals.GoalProfileRegistry;
 import horror.blueice129.mixin.ItemEntityAccessor;
@@ -12,15 +11,11 @@ import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
-import net.minecraft.util.Util;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
@@ -50,7 +45,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
     private final GoalProfileRegistry goalRegistry;
     private EntityState previousState = null;
     private int ticksInUnloadedChunk = 0;
-    private final SimpleInventory inventory;
+    private SimpleInventory inventory;
 
     @Override
     public SimpleInventory getInventory() {
@@ -353,6 +348,14 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
     }
 
     @Override
+    public void remove(RemovalReason reason) {
+        super.remove(reason);
+        if (!getWorld().isClient) {
+            HorrorModPersistentState.getServerState(getWorld().getServer()).setGlobalInventory(inventory);
+        }
+    }
+
+    @Override
     public void tickMovement() {
         super.tickMovement();
 
@@ -409,6 +412,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
 
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
+
         this.inventory = new SimpleInventory(41);
 
         // Set custom name to display "Blueice129" like a player
@@ -418,9 +422,10 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         // Initialize the goal profile registry
         this.goalRegistry = new GoalProfileRegistry(this);
 
-        // Set initial state based on agro meter
+        // Set initial state
         if (!world.isClient && world.getServer() != null) {
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
+            this.inventory = state.getGlobalInventory();
             int agroMeter = state.getIntValue("agroMeter", 0);
 
             if (agroMeter > 5) {

@@ -1,7 +1,9 @@
 package horror.blueice129.data;
 
 import horror.blueice129.HorrorMod129;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtInt;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.server.MinecraftServer;
@@ -43,6 +45,8 @@ public class HorrorModPersistentState extends PersistentState {
     // Map to store 2D arrays of integers with string keys
     private Map<String, int[][]> int2DArrays;
 
+    private SimpleInventory globalInventory;
+
     // Constructor with default values
     public HorrorModPersistentState() {
         this.timers = new HashMap<>();
@@ -51,6 +55,7 @@ public class HorrorModPersistentState extends PersistentState {
         this.longValues = new HashMap<>();
         this.positionLists = new HashMap<>();
         this.int2DArrays = new HashMap<>();
+        this.globalInventory = new SimpleInventory(41);
     }
     
     /**
@@ -67,13 +72,15 @@ public class HorrorModPersistentState extends PersistentState {
             Map<String, Integer> intValues,
             Map<String, Long> longValues,
             Map<String, List<BlockPos>> positionLists,
-            Map<String, int[][]> int2DArrays) {
+            Map<String, int[][]> int2DArrays,
+            SimpleInventory globalInventory) {
         this.timers = timers;
         this.positions = positions;
         this.intValues = intValues;
         this.longValues = longValues;
         this.positionLists = positionLists;
         this.int2DArrays = int2DArrays;
+        this.globalInventory = globalInventory;
     }
     
     /**
@@ -165,6 +172,8 @@ public class HorrorModPersistentState extends PersistentState {
         }
         nbt.put("int2DArrays", int2DArraysNbt);
 
+        nbt.put("globalInventory", globalInventory.toNbtList());
+
         return nbt;
     }
     
@@ -180,6 +189,7 @@ public class HorrorModPersistentState extends PersistentState {
         Map<String, Long> loadedLongValues = new HashMap<>();
         Map<String, List<BlockPos>> loadedPositionLists = new HashMap<>();
         Map<String, int[][]> loadedInt2DArrays = new HashMap<>();
+        SimpleInventory loadedGlobalInventory = new SimpleInventory(41);
         
         // Read timers
         if (nbt.contains("timers")) {
@@ -253,8 +263,13 @@ public class HorrorModPersistentState extends PersistentState {
                 loadedInt2DArrays.put(key, array);
             }
         }
+
+        if (nbt.contains("globalInventory")) {
+            NbtList globalInventoryNbt = nbt.getList("globalInventory", NbtElement.COMPOUND_TYPE);
+            loadedGlobalInventory.readNbtList(globalInventoryNbt);
+        }
         
-        return new HorrorModPersistentState(loadedTimers, loadedPositions, loadedIntValues, loadedLongValues, loadedPositionLists, loadedInt2DArrays);
+        return new HorrorModPersistentState(loadedTimers, loadedPositions, loadedIntValues, loadedLongValues, loadedPositionLists, loadedInt2DArrays, loadedGlobalInventory);
     }
     
     /**
@@ -598,5 +613,13 @@ public class HorrorModPersistentState extends PersistentState {
      */
     public Set<String> getInt2DArrayIds() {
         return int2DArrays.keySet();
+    }
+
+    public void setGlobalInventory(SimpleInventory globalInventory) {
+        this.globalInventory = globalInventory;
+    }
+
+    public SimpleInventory getGlobalInventory() {
+        return globalInventory;
     }
 }
