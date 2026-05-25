@@ -371,7 +371,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
                     ItemEntity itemEntity = (ItemEntity) entity;
                     ItemStack itemStack = itemEntity.getStack();
                     int count = itemStack.getCount();
-                    if (((ItemEntityAccessor) itemEntity).getPickupDelay() == 0) {
+                    if (((ItemEntityAccessor) itemEntity).getPickupDelay() == 0 && inventory.canInsert(itemStack)) {
                         loot(itemEntity);
                         this.sendPickup(itemEntity, count);
                         if (itemStack.isEmpty()) {
