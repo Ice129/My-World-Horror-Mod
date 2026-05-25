@@ -5,6 +5,7 @@
   "mixins": [
     "BodyControlMixin",
     "ExampleMixin",
+    "HostileEntitiesMixin",
     "ItemEntityAccessor",
     "ServerWorldSleepStatusMixin",
     "SleepManagerMixin"
