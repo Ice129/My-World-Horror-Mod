@@ -1,18 +1,33 @@
 package horror.blueice129.entity;
 
+import com.google.common.collect.Lists;
+import com.mojang.authlib.GameProfile;
 import horror.blueice129.entity.goals.GoalProfileRegistry;
+import horror.blueice129.mixin.ItemEntityAccessor;
 import horror.blueice129.utils.EntityLoginState;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.InventoryOwner;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
+import net.minecraft.util.Util;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 /**
  * Blueice129 Entity - A custom PathAwareEntity that takes the form of a player
@@ -26,14 +41,24 @@ import net.minecraft.world.World;
  * This entity uses a state-based goal profile system where different behaviors
  * are activated based on the current EntityState.
  */
-public class Blueice129Entity extends PathAwareEntity {
+public class Blueice129Entity extends PathAwareEntity implements InventoryOwner {
+
+    public final static String NAME = "Blueice129";
+    public final static GameProfile GAME_PROFILE = new GameProfile(java.util.UUID.nameUUIDFromBytes(NAME.getBytes()),
+            NAME);
 
     private EntityState currentState;
     private int ticksInCurrentState = 0;
     private boolean should_logout_after_menu = false;
-    private GoalProfileRegistry goalRegistry;
+    private final GoalProfileRegistry goalRegistry;
     private EntityState previousState = null;
     private int ticksInUnloadedChunk = 0;
+    private final SimpleInventory inventory;
+
+    @Override
+    public SimpleInventory getInventory() {
+        return this.inventory;
+    }
 
     public enum EntityState {
         PASSIVE, // Default state, does nothing really
@@ -330,11 +355,45 @@ public class Blueice129Entity extends PathAwareEntity {
         this.goalSelector.add(priority, goal);
     }
 
+    @Override
+    public void tickMovement() {
+        super.tickMovement();
+
+        if (this.getHealth() > 0.0F) {
+            Box box;
+            if (this.hasVehicle() && !this.getVehicle().isRemoved()) {
+                box = this.getBoundingBox().union(this.getVehicle().getBoundingBox()).expand(1.0, 0.0, 1.0);
+            } else {
+                box = this.getBoundingBox().expand(1.0, 0.5, 1.0);
+            }
+
+            List<Entity> list = this.getWorld().getOtherEntities(this, box);
+
+            for (Entity entity : list) {
+                if (entity.getType() == EntityType.ITEM && !getWorld().isClient) {
+                    ItemEntity itemEntity = (ItemEntity) entity;
+                    ItemStack itemStack = itemEntity.getStack();
+                    int count = itemStack.getCount();
+                    if (((ItemEntityAccessor) itemEntity).getPickupDelay() == 0) {
+                        loot(itemEntity);
+                        this.sendPickup(itemEntity, count);
+                        if (itemStack.isEmpty()) {
+                            itemEntity.discard();
+                            itemStack.setCount(count);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
 
+        this.inventory = new SimpleInventory(41);
+
         // Set custom name to display "Blueice129" like a player
-        this.setCustomName(Text.literal("Blueice129"));
+        this.setCustomName(Text.literal(NAME));
         this.setCustomNameVisible(true);
 
         // Initialize the goal profile registry
@@ -354,14 +413,16 @@ public class Blueice129Entity extends PathAwareEntity {
             // Default to PASSIVE on client or if server is unavailable
             this.currentState = EntityState.PASSIVE;
         }
+        initGoals();
+    }
 
-        // Apply initial goal profile now that goalRegistry is initialized
-        // This must be done after goalRegistry is created because initGoals()
-        // is called by the parent constructor before this point (when goalRegistry was
-        // null)
-        if (goalRegistry != null) {
-            goalRegistry.applyCurrentProfile();
-        }
+    @Override
+    public void loot(ItemEntity item) {
+        InventoryOwner.pickUpItem(this, this, item);
+    }
+
+    public boolean canPickupItem(ItemStack stack) {
+        return true;
     }
 
     /**
@@ -397,6 +458,17 @@ public class Blueice129Entity extends PathAwareEntity {
         if (goalRegistry != null) {
             goalRegistry.applyCurrentProfile();
         }
+
+    }
+
+    public void writeCustomDataToNbt(NbtCompound nbt) {
+        super.writeCustomDataToNbt(nbt);
+        this.writeInventory(nbt);
+    }
+
+    public void readCustomDataFromNbt(NbtCompound nbt) {
+        super.readCustomDataFromNbt(nbt);
+        this.readInventory(nbt);
     }
 
     /**
