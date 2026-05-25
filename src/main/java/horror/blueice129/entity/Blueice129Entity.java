@@ -16,8 +16,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -88,6 +92,57 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
     private void updateGoals() {
         if (goalRegistry != null) {
             goalRegistry.applyCurrentProfile();
+        }
+    }
+
+    @Nullable
+    public ItemEntity dropItem(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
+        if (stack.isEmpty()) {
+            return null;
+        } else {
+            if (this.getWorld().isClient) {
+                this.swingHand(Hand.MAIN_HAND);
+            }
+
+            double d = this.getEyeY() - 0.3F;
+            ItemEntity itemEntity = new ItemEntity(this.getWorld(), this.getX(), d, this.getZ(), stack);
+            itemEntity.setPickupDelay(40);
+            if (retainOwnership) {
+                itemEntity.setThrower(this.getUuid());
+            }
+
+            if (throwRandomly) {
+                float f = this.random.nextFloat() * 0.5F;
+                float g = this.random.nextFloat() * (float) (Math.PI * 2);
+                itemEntity.setVelocity(-MathHelper.sin(g) * f, 0.2F, MathHelper.cos(g) * f);
+            } else {
+                float f = 0.3F;
+                float g = MathHelper.sin(this.getPitch() * (float) (Math.PI / 180.0));
+                float h = MathHelper.cos(this.getPitch() * (float) (Math.PI / 180.0));
+                float i = MathHelper.sin(this.getYaw() * (float) (Math.PI / 180.0));
+                float j = MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0));
+                float k = this.random.nextFloat() * (float) (Math.PI * 2);
+                float l = 0.02F * this.random.nextFloat();
+                itemEntity.setVelocity(
+                        -i * h * 0.3F + Math.cos(k) * l, -g * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F, j * h * 0.3F + Math.sin(k) * l
+                );
+            }
+
+            return itemEntity;
+        }
+    }
+
+    @Override
+    protected void dropInventory() {
+        super.dropInventory();
+        if (!this.getWorld().getGameRules().getBoolean(GameRules.KEEP_INVENTORY)) {
+                for (int i = 0; i < this.inventory.size(); i++) {
+                    ItemStack itemStack = this.inventory.getStack(i);
+                    if (!itemStack.isEmpty()) {
+                        getWorld().spawnEntity(this.dropItem(itemStack, true, false));
+                        this.inventory.setStack(i, ItemStack.EMPTY);
+                    }
+                }
         }
     }
 
