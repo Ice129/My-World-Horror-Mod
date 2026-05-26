@@ -28,9 +28,15 @@ fabricApi {
 
 loom {
 	runs {
+		configureEach {
+			vmArg "-Xmx4G"
+			vmArg "-XX:+UseZGC"
+		}
+
 		client {
 			programArg "--username"
 			programArg "DEV_ICE129"
+			vmArg "-Dsodium.checks.issue2561=false"
 		}
 	}
 }
