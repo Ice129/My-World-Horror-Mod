@@ -5,7 +5,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ItemEntity.class)
-public abstract interface ItemEntityAccessor {
+public interface ItemEntityAccessor {
     @Accessor("pickupDelay")
-    public abstract int getPickupDelay();
+    int getPickupDelay();
 }
