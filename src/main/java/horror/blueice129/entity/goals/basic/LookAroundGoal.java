@@ -1,5 +1,6 @@
 package horror.blueice129.entity.goals.basic;
 
+import horror.blueice129.HorrorMod129;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.entity.goals.BaseBlueice129Goal;
 import net.minecraft.entity.ai.goal.Goal;
@@ -13,6 +14,7 @@ public class LookAroundGoal extends BaseBlueice129Goal {
     private double targetY;
     private double targetZ;
     private int lookTicksRemaining = 0;
+    private int timesLooked;
     
     public LookAroundGoal(Blueice129Entity entity) {
         super(entity);
@@ -22,6 +24,17 @@ public class LookAroundGoal extends BaseBlueice129Goal {
     @Override
     protected boolean shouldStart() {
         return entity.getRandom().nextFloat() < 0.015F;
+    }
+
+    @Override
+    protected void onStart() {
+        this.timesLooked = 0;
+        this.lookTicksRemaining = 0;
+    }
+
+    @Override
+    public boolean shouldKeepRunning() {
+        return this.timesLooked < 5;
     }
     
     @Override
@@ -51,5 +64,6 @@ public class LookAroundGoal extends BaseBlueice129Goal {
         this.targetZ = z;
         this.lookTicksRemaining = 20; // maintain this look for 20 ticks (1 second)
         entity.getLookControl().lookAt(this.targetX, this.targetY, this.targetZ);
+        timesLooked++;
     }
 }

@@ -500,6 +500,11 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
 
+        if (this.getNavigation() instanceof net.minecraft.entity.ai.pathing.MobNavigation mobNav) {
+            mobNav.setCanPathThroughDoors(true);
+            mobNav.setCanEnterOpenDoors(true);
+        }
+
         this.inventory = new SimpleInventory(41);
 
         // Set custom name to display "Blueice129" like a player
