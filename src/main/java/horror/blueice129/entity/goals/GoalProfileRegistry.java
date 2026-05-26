@@ -134,11 +134,11 @@ public class GoalProfileRegistry {
         return GoalProfile.create()
             .addGoal(0, new SwimGoal(entity))
             //.addGoal(1, new OpenChestsGoal(entity))
-            .addGoal(2, new OpenDoorsGoal(entity))
+            .addGoal(1, new OpenDoorsGoal(entity))
             //.addGoal(3, new PressButtonsGoal(entity))
             //.addGoal(4, new FlipLeversGoal(entity))
-            .addGoal(5, new WanderGoal(entity, 1.0))
-            .addGoal(6, new LookAroundGoal(entity));
+            .addGoal(2, new WanderGoal(entity, 1.0))
+            .addGoal(3, new LookAroundGoal(entity));
     }
     
     /**

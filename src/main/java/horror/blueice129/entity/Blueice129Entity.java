@@ -1,7 +1,9 @@
 package horror.blueice129.entity;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.datafixers.util.Pair;
 import horror.blueice129.entity.goals.GoalProfileRegistry;
+import horror.blueice129.mixin.ArmorItemAccessor;
 import horror.blueice129.mixin.ItemEntityAccessor;
 import horror.blueice129.utils.EntityLoginState;
 import horror.blueice129.HorrorMod129;
@@ -13,8 +15,11 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ToolItem;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -25,6 +30,7 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -216,6 +222,9 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         if (this.getWorld().isClient) {
             return; // Client just renders, doesn't make decisions
         }
+
+        // Equip on any tool or armor
+        putOnEquipment();
         
         boolean seesPlayer = checkEntitySeesPlayer();
         int agroMeter = 0;
@@ -358,6 +367,38 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         EntityLoginState.setEntityLoggedOut(HorrorModPersistentState.getServerState(this.getWorld().getServer()));
     }
 
+    public void putOnEquipment() {
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            EquipmentSlot slot = null;
+            int num = 0;
+            if (stack.getItem() instanceof ToolItem && !(inventory.getStack(0).getItem() instanceof ToolItem)) {
+                slot = EquipmentSlot.MAINHAND;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(36).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.HELMET) {
+                slot = EquipmentSlot.HEAD;
+                num = 36;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(37).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.CHESTPLATE) {
+                slot = EquipmentSlot.CHEST;
+                num = 37;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(38).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.LEGGINGS) {
+                slot = EquipmentSlot.LEGS;
+                num = 38;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(39).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.BOOTS) {
+                slot = EquipmentSlot.FEET;
+                num = 39;
+            }
+            if (slot != null) {
+                ItemStack temp = inventory.getStack(num);
+                this.equipStack(slot, stack);
+                inventory.setStack(i, temp);
+            }
+        }
+    }
+
     /**
      * Get the current state of the entity
      */
@@ -485,6 +526,14 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
             return this.inventory.getStack(0);
         } else if (slot == EquipmentSlot.OFFHAND) {
             return this.inventory.getStack(40);
+        } else if (slot == EquipmentSlot.HEAD) {
+            return this.inventory.getStack(36);
+        } else if (slot == EquipmentSlot.CHEST) {
+            return this.inventory.getStack(37);
+        } else if (slot == EquipmentSlot.LEGS) {
+            return this.inventory.getStack(38);
+        } else if (slot == EquipmentSlot.FEET) {
+            return this.inventory.getStack(39);
         } else {
             return ItemStack.EMPTY;
         }
@@ -499,6 +548,25 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         } else if (slot == EquipmentSlot.OFFHAND) {
             this.onEquipStack(slot, this.inventory.getStack(40), stack);
             this.inventory.setStack(40, stack);
+        } else if (slot == EquipmentSlot.HEAD) {
+            this.onEquipStack(slot, this.inventory.getStack(36), stack);
+            this.inventory.setStack(36, stack);
+        }else if (slot == EquipmentSlot.CHEST) {
+            this.onEquipStack(slot, this.inventory.getStack(37), stack);
+            this.inventory.setStack(37, stack);
+        }else if (slot == EquipmentSlot.LEGS) {
+            this.onEquipStack(slot, this.inventory.getStack(38), stack);
+            this.inventory.setStack(38, stack);
+        }else if (slot == EquipmentSlot.FEET) {
+            this.onEquipStack(slot, this.inventory.getStack(39), stack);
+            this.inventory.setStack(39, stack);
+        }
+
+        // Sodium fix
+        if (this.getWorld() instanceof ServerWorld world) {
+            List<Pair<EquipmentSlot, ItemStack>> list = new ArrayList();
+            list.add(new Pair<>(slot, stack));
+            world.getChunkManager().sendToOtherNearbyPlayers(this, new EntityEquipmentUpdateS2CPacket(this.getId(), list));
         }
     }
 
