@@ -125,6 +125,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
 
         this.extinguish();
         this.setOnFire(false);
+        logout(false);
     }
 
     @Nullable
@@ -327,10 +328,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
                 if (ticksInCurrentState > 20 && should_logout_after_menu) {
                     // despawn this entity and send a logout message to the chat
                     // This only runs server-side due to the check at the start of tick()
-                    this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text
-                            .literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
-                    this.remove(RemovalReason.DISCARDED);
-                    EntityLoginState.setEntityLoggedOut(HorrorModPersistentState.getServerState(this.getWorld().getServer()));
+                    logout(true);
                     return; // Stop processing after despawn
                 }
                 
@@ -351,6 +349,13 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
                 // TODO: Implement transitions from UPGRADING_HOUSE to other states
                 break;
         }
+    }
+
+    public void logout(boolean remove) {
+        this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text
+                .literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
+        if (remove) this.remove(RemovalReason.DISCARDED);
+        EntityLoginState.setEntityLoggedOut(HorrorModPersistentState.getServerState(this.getWorld().getServer()));
     }
 
     /**
