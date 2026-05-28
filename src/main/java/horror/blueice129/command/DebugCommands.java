@@ -241,11 +241,7 @@ public class DebugCommands {
                                 .executes(context -> spawnFleeingEntity(context.getSource()))))
                         .then(literal("cave")
                             .then(literal("premine")
-                                .executes(context -> premineCave(context.getSource(), 1))
-                                .then(argument("attempts", IntegerArgumentType.integer(1, 10))
-                                    .executes(context -> premineCave(
-                                        context.getSource(),
-                                        IntegerArgumentType.getInteger(context, "attempts"))))))
+                                .executes(context -> premineCave(context.getSource()))))
                         .then(literal("visualize")
                             .then(literal("fov")
                                 .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
@@ -1001,61 +997,24 @@ public class DebugCommands {
     /**
      * Pre-mine a cave near the player
      * @param source Command source
-     * @param attempts Number of attempts to find a suitable cave
      * @return Command success value
      */
-    private static int premineCave(ServerCommandSource source, int attempts) {
+    private static int premineCave(ServerCommandSource source) {
         ServerPlayerEntity player = source.getPlayer();
         if (player == null) {
             source.sendError(Text.literal("This command must be run by a player"));
             return 0;
         }
-        
-        if (attempts == 1) {
-            source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave..."), false);
-            boolean success = CavePreMiner.preMineCave(
+
+        source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave..."), false);
+        CavePreMiner.preMineCave(
                 player.getWorld(),
                 player.getBlockPos(),
                 player
-            );
-            
-            if (success) {
-                source.sendFeedback(() -> Text.literal("Successfully pre-mined a cave!"), false);
-                return Command.SINGLE_SUCCESS;
-            } else {
-                source.sendError(Text.literal("Failed to find a suitable cave. Try a different location."));
-                return 0;
-            }
-        } else {
-            source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave with " + attempts + " attempts..."), false);
-            
-            // Use a mutable wrapper class
-            class MutableResult {
-                public boolean success = false;
-                public int attempts = 0;
-            }
-            final MutableResult result = new MutableResult();
-            
-            for (int i = 0; i < attempts && !result.success; i++) {
-                result.attempts++;
-                result.success = CavePreMiner.preMineCave(
-                    player.getWorld(),
-                    player.getBlockPos(),
-                    player
-                );
-            }
-            
-            if (result.success) {
-                final int finalAttempts = result.attempts;
-                source.sendFeedback(() -> Text.literal("Successfully pre-mined a cave after " + finalAttempts + " attempt(s)!"), false);
-                return Command.SINGLE_SUCCESS;
-            } else {
-                source.sendError(Text.literal("Failed to find a suitable cave after " + attempts + " attempts"));
-                return 0;
-            }
-        }
+        );
+        return Command.SINGLE_SUCCESS;
     }
-    
+
     /**
      * Get the current smooth lighting state
      * @param source Command source
