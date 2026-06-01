@@ -1,7 +1,6 @@
 <div align="center">
 
 # ENGRAM 
-##### (Previously My World.jar)
 ## A Vanilla-Style Slow-Burn Psychological Horror Mod
 #### *Version 0.8.0-beta*
 
