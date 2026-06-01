@@ -20,9 +20,32 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.server.world.ServerWorld;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class HousePlacer {
 
     private static final String HOUSE_WOOD_KEY = "houseWood";
+    private static final String HOUSE_WOOD_STAGE_PREFIX = "houseWood_stage_";
+
+    public static int clearPersistentState(HorrorModPersistentState state) {
+        int cleared = 0;
+
+        if (state.hasNbtCompound(HOUSE_WOOD_KEY)) {
+            state.removeNbtCompound(HOUSE_WOOD_KEY);
+            cleared++;
+        }
+
+        List<String> compoundIds = new ArrayList<>(state.getNbtCompoundIds());
+        for (String id : compoundIds) {
+            if (id.startsWith(HOUSE_WOOD_STAGE_PREFIX)) {
+                state.removeNbtCompound(id);
+                cleared++;
+            }
+        }
+
+        return cleared;
+    }
 
     public static void killPreviousPhaseCreatures(BlockPos housePos, ServerWorld world) {
         Box searchBox = new Box(housePos.getX() - 40, housePos.getY() - 40, housePos.getZ() - 40,
@@ -47,7 +70,7 @@ public class HousePlacer {
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
             NbtCompound nbt = new NbtCompound();
             nbt.putString("woodType", woodType);
-            state.setNbtCompound("houseWood_stage_" + stage, nbt);
+            state.setNbtCompound(HOUSE_WOOD_STAGE_PREFIX + stage, nbt);
         } catch (Exception e) {
             HorrorMod129.LOGGER.warn("[HousePlacer] Failed to persist wood type for stage {}: {}", stage, e.getMessage());
         }

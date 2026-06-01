@@ -26,3 +26,8 @@ detect:
 - crop harvesting
 - anvil stealing
 - armour stand stealing
+
+
+
+ensure ground beneth house on stage 1
+make sure leaves arent taken too much on area clear

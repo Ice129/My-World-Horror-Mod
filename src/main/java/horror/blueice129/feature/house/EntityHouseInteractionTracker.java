@@ -580,6 +580,21 @@ public class EntityHouseInteractionTracker {
     private static final String INTERACTIONS_KEY_PREFIX = "houseInteractions_stage_";
     private static final String SNAPSHOT_KEY_PREFIX = "houseSnapshot_stage_";
 
+    public static int clearPersistentState(MinecraftServer server) {
+        HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
+        int cleared = 0;
+
+        List<String> compoundIds = new ArrayList<>(state.getNbtCompoundIds());
+        for (String id : compoundIds) {
+            if (id.startsWith(INTERACTIONS_KEY_PREFIX) || id.startsWith(SNAPSHOT_KEY_PREFIX)) {
+                state.removeNbtCompound(id);
+                cleared++;
+            }
+        }
+
+        return cleared;
+    }
+
     /**
      * Saves structure snapshot to persistent state for a specific stage.
      * @param server The Minecraft server

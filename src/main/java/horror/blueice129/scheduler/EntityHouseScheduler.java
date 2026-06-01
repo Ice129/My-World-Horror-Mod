@@ -45,6 +45,37 @@ public class EntityHouseScheduler {
 
     private static final Random random = Random.create();
 
+    public static int clearPersistentState(HorrorModPersistentState state) {
+        int cleared = 0;
+
+        if (state.hasTimer(FLATNESS_CHECK_TIMER)) {
+            state.removeTimer(FLATNESS_CHECK_TIMER);
+            cleared++;
+        }
+        if (state.hasPosition(HOUSE_POS_KEY)) {
+            state.removePosition(HOUSE_POS_KEY);
+            cleared++;
+        }
+        if (state.hasIntValue(STAGE_KEY)) {
+            state.removeIntValue(STAGE_KEY);
+            cleared++;
+        }
+        if (state.hasIntValue(PHASE_KEY)) {
+            state.removeIntValue(PHASE_KEY);
+            cleared++;
+        }
+        if (state.hasInt2DArray(CANDIDATE_DATA_KEY)) {
+            state.removeInt2DArray(CANDIDATE_DATA_KEY);
+            cleared++;
+        }
+        if (state.hasInt2DArray(PlayerBaseLocator.PLAYER_SPAWNPOINT_HISTORY_TRACKER_ID)) {
+            state.removeInt2DArray(PlayerBaseLocator.PLAYER_SPAWNPOINT_HISTORY_TRACKER_ID);
+            cleared++;
+        }
+
+        return cleared;
+    }
+
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(EntityHouseScheduler::onServerTick);
 

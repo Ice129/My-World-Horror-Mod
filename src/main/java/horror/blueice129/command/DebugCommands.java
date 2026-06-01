@@ -29,7 +29,6 @@ import horror.blueice129.sounds.FakeFootsteps;
 import horror.blueice129.sounds.StalkingFootsteps;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import horror.blueice129.scheduler.EntityHouseScheduler;
-import horror.blueice129.utils.PlayerBaseLocator;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.entity.Entity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -55,8 +54,6 @@ import net.minecraft.server.MinecraftServer;
 
 public class DebugCommands {
 
-    private static final String ENTITY_HOUSE_TIMER_KEY = "flatnessCheckTimer";
-    private static final String ENTITY_HOUSE_CANDIDATES_KEY = "entityHouseCandidates";
     private static final String ENTITY_HOUSE_PHASE_KEY = "entityHousePhase";
     private static final String ENTITY_HOUSE_STAGE_KEY = "entityHouseStageNum";
     private static final String ENTITY_HOUSE_POS_KEY = "entityHousePos";
@@ -1199,32 +1196,9 @@ public class DebugCommands {
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(source.getServer());
         int cleared = 0;
 
-        EntityHouseInteractionTracker.clearAllInteractions(source.getServer());
-
-        if (state.hasTimer(ENTITY_HOUSE_TIMER_KEY)) {
-            state.removeTimer(ENTITY_HOUSE_TIMER_KEY);
-            cleared++;
-        }
-        if (state.hasPosition(ENTITY_HOUSE_POS_KEY)) {
-            state.removePosition(ENTITY_HOUSE_POS_KEY);
-            cleared++;
-        }
-        if (state.hasIntValue(ENTITY_HOUSE_STAGE_KEY)) {
-            state.removeIntValue(ENTITY_HOUSE_STAGE_KEY);
-            cleared++;
-        }
-        if (state.hasIntValue(ENTITY_HOUSE_PHASE_KEY)) {
-            state.removeIntValue(ENTITY_HOUSE_PHASE_KEY);
-            cleared++;
-        }
-        if (state.hasInt2DArray(ENTITY_HOUSE_CANDIDATES_KEY)) {
-            state.removeInt2DArray(ENTITY_HOUSE_CANDIDATES_KEY);
-            cleared++;
-        }
-        if (state.hasInt2DArray(PlayerBaseLocator.PLAYER_SPAWNPOINT_HISTORY_TRACKER_ID)) {
-            state.removeInt2DArray(PlayerBaseLocator.PLAYER_SPAWNPOINT_HISTORY_TRACKER_ID);
-            cleared++;
-        }
+        cleared += EntityHouseScheduler.clearPersistentState(state);
+        cleared += HousePlacer.clearPersistentState(state);
+        cleared += EntityHouseInteractionTracker.clearPersistentState(source.getServer());
 
         final int finalCleared = cleared;
         source.sendFeedback(() -> Text.literal("Cleared " + finalCleared + " entity-house persistent state entries."), true);

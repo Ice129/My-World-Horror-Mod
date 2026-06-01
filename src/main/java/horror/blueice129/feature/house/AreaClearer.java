@@ -20,12 +20,25 @@ public class AreaClearer {
         int y = SurfaceFinder.findPointSurfaceY(world, center.getX(), center.getZ(), true, true, true);
 
         BlockPos[] trees = SurfaceFinder.findTreePositions(world, center, CLEAR_RADIUS);
-
+        // BlockPos[] leaves = new BlockPos[0];
         for (BlockPos treeBase : trees) {
             for (BlockPos logPos : SurfaceFinder.getTreeLogPositions(world, treeBase)) {
                 world.setBlockState(logPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+                // look for leaves around the log
+                for (int dx = -4; dx <= 4; dx++) {
+                    for (int dy = -4; dy <= 4; dy++) {
+                        for (int dz = -4; dz <= 4; dz++) {
+                            BlockPos leafPos = new BlockPos(logPos.getX() + dx, logPos.getY() + dy, logPos.getZ() + dz);
+                            if (BlockTypes.isFoliage(world.getBlockState(leafPos).getBlock(), false)) {
+                                world.setBlockState(leafPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+                            }
+                        }
+                    }
+                }
             }
         }
+
+
 
         for (int x = -CLEAR_RADIUS; x <= CLEAR_RADIUS; x++) {
             for (int z = -CLEAR_RADIUS; z <= CLEAR_RADIUS; z++) {
@@ -35,6 +48,7 @@ public class AreaClearer {
                     if (BlockTypes.isFoliage(block, false)) {
                         world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
                     }
+                    // world.setBlockState(pos, Blocks.DIAMOND_BLOCK.getDefaultState(), Block.NOTIFY_ALL);
                 }
             }
         }
