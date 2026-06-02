@@ -27,6 +27,7 @@ public class HousePlacer {
 
     private static final String HOUSE_WOOD_KEY = "houseWood";
     private static final String HOUSE_WOOD_STAGE_PREFIX = "houseWood_stage_";
+    private static final int SILENT_REPLACEMENT_FLAGS = Block.NOTIFY_ALL | Block.SKIP_DROPS;
 
     public static int clearPersistentState(HorrorModPersistentState state) {
         int cleared = 0;
@@ -92,7 +93,7 @@ public class HousePlacer {
             .setIgnoreEntities(false)
             .addProcessor(new WoodTypeProcessor(woodType));
 
-        template.place(world, placementPos, placementPos, placementData, Random.create(), Block.NOTIFY_ALL);
+        template.place(world, placementPos, placementPos, placementData, Random.create(), SILENT_REPLACEMENT_FLAGS);
     }
 
     private static void clearInventoriesInPlacementArea(ServerWorld world, BlockPos origin, Vec3i size) {
@@ -118,6 +119,8 @@ public class HousePlacer {
                         blockEntity.markDirty();
                         clearedContainers++;
                     }
+
+                    blockEntity.markRemoved();
                 }
             }
         }

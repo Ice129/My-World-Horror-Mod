@@ -14,6 +14,7 @@ public class AreaClearer {
 
     private static final int CLEAR_RADIUS = 20;
     private static final int TORCH_RADIUS = 22;
+    private static final int SILENT_REPLACEMENT_FLAGS = Block.NOTIFY_ALL | Block.SKIP_DROPS;
     private static final Random random = Random.create();
 
     public static void clearArea(ServerWorld world, BlockPos center) {
@@ -23,14 +24,14 @@ public class AreaClearer {
         // BlockPos[] leaves = new BlockPos[0];
         for (BlockPos treeBase : trees) {
             for (BlockPos logPos : SurfaceFinder.getTreeLogPositions(world, treeBase)) {
-                world.setBlockState(logPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+                world.setBlockState(logPos, Blocks.AIR.getDefaultState(), SILENT_REPLACEMENT_FLAGS);
                 // look for leaves around the log
                 for (int dx = -4; dx <= 4; dx++) {
                     for (int dy = -4; dy <= 4; dy++) {
                         for (int dz = -4; dz <= 4; dz++) {
                             BlockPos leafPos = new BlockPos(logPos.getX() + dx, logPos.getY() + dy, logPos.getZ() + dz);
                             if (BlockTypes.isFoliage(world.getBlockState(leafPos).getBlock(), false)) {
-                                world.setBlockState(leafPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+                                world.setBlockState(leafPos, Blocks.AIR.getDefaultState(), SILENT_REPLACEMENT_FLAGS);
                             }
                         }
                     }
@@ -46,7 +47,7 @@ public class AreaClearer {
                     BlockPos pos = new BlockPos(center.getX() + x, y + dy, center.getZ() + z);
                     Block block = world.getBlockState(pos).getBlock();
                     if (BlockTypes.isFoliage(block, false)) {
-                        world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+                        world.setBlockState(pos, Blocks.AIR.getDefaultState(), SILENT_REPLACEMENT_FLAGS);
                     }
                     // world.setBlockState(pos, Blocks.DIAMOND_BLOCK.getDefaultState(), Block.NOTIFY_ALL);
                 }
