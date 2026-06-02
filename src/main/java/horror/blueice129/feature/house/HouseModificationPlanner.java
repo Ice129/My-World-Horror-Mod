@@ -149,6 +149,9 @@ public class HouseModificationPlanner {
                 .with(DoorBlock.FACING, facing)
                 .with(DoorBlock.HALF, DoubleBlockHalf.UPPER)
                 .with(DoorBlock.OPEN, false);
+
+        world.setBlockState(basePos, Blocks.AIR.getDefaultState());
+        world.setBlockState(basePos.up(), Blocks.AIR.getDefaultState());
         world.setBlockState(basePos, lowerState);
         world.setBlockState(basePos.up(), upperState);
     }

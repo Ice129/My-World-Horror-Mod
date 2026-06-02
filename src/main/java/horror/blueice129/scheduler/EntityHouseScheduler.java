@@ -23,6 +23,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.entity.player.PlayerEntity;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+
 public class EntityHouseScheduler {
 
     private static final String FLATNESS_CHECK_TIMER = "flatnessCheckTimer";
@@ -44,6 +48,7 @@ public class EntityHouseScheduler {
     private static final int[] STAGE_AGGRO_THRESHOLDS = { 2, 4, 6, 8, 10 };
 
     private static final Random random = Random.create();
+    private static final ArrayDeque<Runnable> nextTickTasks = new ArrayDeque<>();
 
     public static int clearPersistentState(HorrorModPersistentState state) {
         int cleared = 0;
@@ -92,6 +97,8 @@ public class EntityHouseScheduler {
     }
 
     private static void onServerTick(MinecraftServer server) {
+        runDeferredTasks();
+
         if (server.getPlayerManager().getPlayerList().isEmpty()) return;
 
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
@@ -113,6 +120,29 @@ public class EntityHouseScheduler {
             case AWAITING_PLACEMENT -> handleAwaitingPlacement(world, player, state);
             case STAGE_ACTIVE      -> handleStageActive(world, player, state);
             case COMPLETE          -> {}
+        }
+    }
+
+    private static void scheduleForNextTick(Runnable task) {
+        nextTickTasks.addLast(task);
+    }
+
+    private static void runDeferredTasks() {
+        if (nextTickTasks.isEmpty()) {
+            return;
+        }
+
+        List<Runnable> dueTasks = new ArrayList<>(nextTickTasks.size());
+        while (!nextTickTasks.isEmpty()) {
+            dueTasks.add(nextTickTasks.removeFirst());
+        }
+
+        for (Runnable task : dueTasks) {
+            try {
+                task.run();
+            } catch (Exception e) {
+                HorrorMod129.LOGGER.warn("EntityHouseScheduler: deferred task failed", e);
+            }
         }
     }
 
@@ -224,6 +254,7 @@ public class EntityHouseScheduler {
     public static void advanceToNextStage(ServerWorld world, BlockPos housePos, HorrorModPersistentState state) {
         int currentStage = state.getIntValue(STAGE_KEY, 0);
         int nextStage = currentStage + 1;
+        var plannedModifications = List.<HouseModificationPlanner.HouseModification>of();
 
         // Step 1: Load snapshot from current stage to detect player interactions
         StructureSnapshot snapshot = EntityHouseInteractionTracker.loadStructureSnapshot(world.getServer(), currentStage);
@@ -235,10 +266,7 @@ public class EntityHouseScheduler {
             EntityHouseInteractionTracker.saveInteractionsForStage(world.getServer(), currentStage, diff);
             
             // Step 3: Plan and apply modifications based on interactions
-            var modifications = HouseModificationPlanner.planModifications(diff);
-            HouseModificationPlanner.applyModifications(world, modifications);
-            HorrorMod129.LOGGER.info("EntityHouseScheduler: applied {} modifications based on player interactions",
-                    modifications.size());
+                plannedModifications = HouseModificationPlanner.planModifications(diff);
         }
 
         // Step 4: Prepare for next stage - kill old creatures
@@ -247,17 +275,26 @@ public class EntityHouseScheduler {
         // Step 5: Place next stage structure
         HousePlacer.placeHouse(nextStage, housePos, world);
 
-        // Step 6: Capture snapshot of newly placed structure (with modifications applied)
-        StructureSnapshot newSnapshot = EntityHouseInteractionTracker.captureStructureSnapshot(world, housePos, nextStage);
-        EntityHouseInteractionTracker.saveStructureSnapshot(world.getServer(), nextStage, newSnapshot);
-
-        // Step 7: Update phase state
+        // Step 6: Update phase state
         state.setIntValue(STAGE_KEY, nextStage);
         if (nextStage >= MAX_STAGE) {
             setPhase(state, EntityHousePhase.COMPLETE);
         } else {
             setPhase(state, EntityHousePhase.STAGE_ACTIVE);
         }
+
+        // Step 7: Apply modifications and capture snapshot one tick after placement.
+        var modificationsToApply = plannedModifications;
+        scheduleForNextTick(() -> {
+            if (!modificationsToApply.isEmpty()) {
+                HouseModificationPlanner.applyModifications(world, modificationsToApply);
+                HorrorMod129.LOGGER.info("EntityHouseScheduler: applied {} modifications one tick after stage {} placement",
+                        modificationsToApply.size(), nextStage);
+            }
+
+            StructureSnapshot newSnapshot = EntityHouseInteractionTracker.captureStructureSnapshot(world, housePos, nextStage);
+            EntityHouseInteractionTracker.saveStructureSnapshot(world.getServer(), nextStage, newSnapshot);
+        });
     }
 
     private static EntityHousePhase getPhase(HorrorModPersistentState state) {

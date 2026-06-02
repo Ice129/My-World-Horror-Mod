@@ -87,10 +87,10 @@ public class HousePlacer {
         clearInventoriesInPlacementArea(world, placementPos, template.getSize());
 
         StructurePlacementData placementData = new StructurePlacementData()
-                .setMirror(BlockMirror.NONE)
-                .setRotation(BlockRotation.NONE)
-                .setIgnoreEntities(false)
-                .addProcessor(new WoodTypeProcessor(woodType));
+            .setMirror(BlockMirror.NONE)
+            .setRotation(BlockRotation.NONE)
+            .setIgnoreEntities(false)
+            .addProcessor(new WoodTypeProcessor(woodType));
 
         template.place(world, placementPos, placementPos, placementData, Random.create(), Block.NOTIFY_ALL);
     }
