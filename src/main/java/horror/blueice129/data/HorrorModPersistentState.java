@@ -28,22 +28,22 @@ public class HorrorModPersistentState extends PersistentState {
     private static final String IDENTIFIER = HorrorMod129.MOD_ID + "_state";
     
     // Map to store multiple timers with their respective IDs
-    private Map<String, Integer> timers;
+    private final Map<String, Integer> timers;
     
     // Map to store block positions with string keys
-    private Map<String, BlockPos> positions;
+    private final Map<String, BlockPos> positions;
     
     // Map to store integer values with string keys
-    private Map<String, Integer> intValues;
+    private final Map<String, Integer> intValues;
     
     // Map to store long values with string keys
-    private Map<String, Long> longValues;
+    private final Map<String, Long> longValues;
     
     // Map to store lists of block positions with string keys
-    private Map<String, List<BlockPos>> positionLists;
+    private final Map<String, List<BlockPos>> positionLists;
     
     // Map to store 2D arrays of integers with string keys
-    private Map<String, int[][]> int2DArrays;
+    private final Map<String, int[][]> int2DArrays;
 
     private SimpleInventory globalInventory;
 

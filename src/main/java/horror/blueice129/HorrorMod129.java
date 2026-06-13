@@ -45,10 +45,10 @@ public class HorrorMod129 implements ModInitializer {
 	 */
 	public static final EntityType<Blueice129Entity> BLUEICE129_ENTITY = Registry.register(
 		Registries.ENTITY_TYPE,
-		new Identifier(MOD_ID, "blueice129"),
+		new Identifier(MOD_ID, Blueice129Entity.NAME.toLowerCase()),
 		EntityType.Builder.create(Blueice129Entity::new, SpawnGroup.CREATURE)
 			.setDimensions(0.6f, 1.8f) // Player dimensions
-			.build("blueice129")
+			.build(Blueice129Entity.NAME.toLowerCase())
 	);
 
 	@Override

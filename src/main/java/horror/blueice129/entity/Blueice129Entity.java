@@ -9,6 +9,8 @@ import horror.blueice129.utils.EntityLoginState;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
 import net.minecraft.entity.*;
+import net.minecraft.entity.ai.goal.Goal;
+import net.minecraft.entity.ai.pathing.MobNavigation;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
@@ -25,6 +27,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
@@ -32,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Blueice129 Entity - A custom PathAwareEntity that takes the form of a player
@@ -48,7 +52,7 @@ import java.util.List;
 public class Blueice129Entity extends PathAwareEntity implements InventoryOwner {
 
     public final static String NAME = "Blueice129";
-    public final static GameProfile GAME_PROFILE = new GameProfile(java.util.UUID.nameUUIDFromBytes(NAME.getBytes()),
+    public final static GameProfile GAME_PROFILE = new GameProfile(UUID.nameUUIDFromBytes(NAME.getBytes()),
             NAME);
 
     private EntityState currentState;
@@ -205,7 +209,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         
         // Check if entity is in an unloaded chunk and despawn silently after 5 seconds
         if (!this.getWorld().isClient) {
-            net.minecraft.util.math.ChunkPos chunkPos = new net.minecraft.util.math.ChunkPos(this.getBlockPos());
+            ChunkPos chunkPos = new ChunkPos(this.getBlockPos());
             if (!this.getWorld().isChunkLoaded(chunkPos.x, chunkPos.z)) {
                 ticksInUnloadedChunk++;
                 if (ticksInUnloadedChunk > 100) { // 5 seconds
@@ -361,7 +365,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
     }
 
     public void logout(boolean remove) {
-        this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text
+        this.getWorld().getServer().getPlayerManager().broadcast(Text
                 .literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
         if (remove) this.remove(RemovalReason.DISCARDED);
         EntityLoginState.setEntityLoggedOut(HorrorModPersistentState.getServerState(this.getWorld().getServer()));
@@ -476,7 +480,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
      * Add a goal to the goal selector
      * Helper method for the goal profile system
      */
-    public void addGoal(int priority, net.minecraft.entity.ai.goal.Goal goal) {
+    public void addGoal(int priority, Goal goal) {
         this.goalSelector.add(priority, goal);
     }
 
@@ -502,6 +506,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
 
             List<Entity> list = this.getWorld().getOtherEntities(this, box);
 
+            // Make Blueice129 pick up items
             for (Entity entity : list) {
                 if (entity.getType() == EntityType.ITEM && !getWorld().isClient) {
                     ItemEntity itemEntity = (ItemEntity) entity;
@@ -520,47 +525,41 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
         }
     }
 
+    // Declaring variables here might be a warcrime, but it looks cleaner
+    private static final int MAINHAND_SLOT = 0;
+    private static final int OFFHAND_SLOT = 40;
+    private static final int HEAD_SLOT = 36;
+    private static final int CHEST_SLOT = 37;
+    private static final int LEGS_SLOT = 38;
+    private static final int FEET_SLOT = 39;
+
     @Override
     public ItemStack getEquippedStack(EquipmentSlot slot) {
-        if (slot == EquipmentSlot.MAINHAND) {
-            return this.inventory.getStack(0);
-        } else if (slot == EquipmentSlot.OFFHAND) {
-            return this.inventory.getStack(40);
-        } else if (slot == EquipmentSlot.HEAD) {
-            return this.inventory.getStack(36);
-        } else if (slot == EquipmentSlot.CHEST) {
-            return this.inventory.getStack(37);
-        } else if (slot == EquipmentSlot.LEGS) {
-            return this.inventory.getStack(38);
-        } else if (slot == EquipmentSlot.FEET) {
-            return this.inventory.getStack(39);
-        } else {
-            return ItemStack.EMPTY;
-        }
+        int num = switch (slot) {
+            case MAINHAND -> MAINHAND_SLOT;
+            case OFFHAND -> OFFHAND_SLOT;
+            case HEAD -> HEAD_SLOT;
+            case CHEST -> CHEST_SLOT;
+            case LEGS -> LEGS_SLOT;
+            case FEET -> FEET_SLOT;
+        };
+        return this.inventory.getStack(num);
     }
 
     @Override
     public void equipStack(EquipmentSlot slot, ItemStack stack) {
         this.processEquippedStack(stack);
-        if (slot == EquipmentSlot.MAINHAND) {
-            this.onEquipStack(slot, this.inventory.getStack(0), stack);
-            this.inventory.setStack(0, stack);
-        } else if (slot == EquipmentSlot.OFFHAND) {
-            this.onEquipStack(slot, this.inventory.getStack(40), stack);
-            this.inventory.setStack(40, stack);
-        } else if (slot == EquipmentSlot.HEAD) {
-            this.onEquipStack(slot, this.inventory.getStack(36), stack);
-            this.inventory.setStack(36, stack);
-        }else if (slot == EquipmentSlot.CHEST) {
-            this.onEquipStack(slot, this.inventory.getStack(37), stack);
-            this.inventory.setStack(37, stack);
-        }else if (slot == EquipmentSlot.LEGS) {
-            this.onEquipStack(slot, this.inventory.getStack(38), stack);
-            this.inventory.setStack(38, stack);
-        }else if (slot == EquipmentSlot.FEET) {
-            this.onEquipStack(slot, this.inventory.getStack(39), stack);
-            this.inventory.setStack(39, stack);
-        }
+
+        int num = switch (slot) {
+            case MAINHAND -> MAINHAND_SLOT;
+            case OFFHAND -> OFFHAND_SLOT;
+            case HEAD -> HEAD_SLOT;
+            case CHEST -> CHEST_SLOT;
+            case LEGS -> LEGS_SLOT;
+            case FEET -> FEET_SLOT;
+        };
+        this.onEquipStack(slot, this.inventory.getStack(num), stack);
+        this.inventory.setStack(num, stack);
 
         // Sodium fix
         if (this.getWorld() instanceof ServerWorld world) {
@@ -573,7 +572,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
 
-        if (this.getNavigation() instanceof net.minecraft.entity.ai.pathing.MobNavigation mobNav) {
+        if (this.getNavigation() instanceof MobNavigation mobNav) {
             mobNav.setCanPathThroughDoors(true);
             mobNav.setCanEnterOpenDoors(true);
         }

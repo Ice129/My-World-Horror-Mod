@@ -1,5 +1,6 @@
 package horror.blueice129.client.entity.renderer;
 
+import horror.blueice129.HorrorMod129;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.client.entity.model.Blueice129EntityModel;
 import net.minecraft.client.render.entity.BipedEntityRenderer;
@@ -25,7 +26,7 @@ public class Blueice129EntityRenderer extends BipedEntityRenderer<Blueice129Enti
         super(context, new Blueice129EntityModel(context.getPart(Blueice129EntityModel.LAYER), false), 0.5f);
         this.addFeature(
                 new ArmorFeatureRenderer<>(
-                        this, new ArmorEntityModel(context.getPart(EntityModelLayers.ARMOR_STAND_INNER_ARMOR)), new ArmorEntityModel(context.getPart(EntityModelLayers.ARMOR_STAND_OUTER_ARMOR)), context.getModelManager()
+                        this, new ArmorEntityModel<>(context.getPart(EntityModelLayers.ARMOR_STAND_INNER_ARMOR)), new ArmorEntityModel<>(context.getPart(EntityModelLayers.ARMOR_STAND_OUTER_ARMOR)), context.getModelManager()
                 )
         );
     }
@@ -39,6 +40,6 @@ public class Blueice129EntityRenderer extends BipedEntityRenderer<Blueice129Enti
      */
     @Override
     public Identifier getTexture(Blueice129Entity entity) {
-        return new Identifier("horror-mod-129", "textures/entity/blueice129/blueice129.png");
+        return new Identifier(HorrorMod129.MOD_ID, "textures/entity/blueice129/blueice129.png");
     }
 }
