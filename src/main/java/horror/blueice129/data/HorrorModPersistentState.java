@@ -550,7 +550,7 @@ public class HorrorModPersistentState extends PersistentState {
         return positionLists.keySet();
     }
 
-    // === 2D INTEGER ARRAY METHODS === // TODO: make several arrays for the strip mine, with sub strip mine id's
+    // === 2D INTEGER ARRAY METHODS ===
 
 
     /**
@@ -599,4 +599,6 @@ public class HorrorModPersistentState extends PersistentState {
     public Set<String> getInt2DArrayIds() {
         return int2DArrays.keySet();
     }
+
+    
 }
