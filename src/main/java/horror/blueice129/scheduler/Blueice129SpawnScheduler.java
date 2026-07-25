@@ -6,6 +6,7 @@ import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.utils.EntityLoginState;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
