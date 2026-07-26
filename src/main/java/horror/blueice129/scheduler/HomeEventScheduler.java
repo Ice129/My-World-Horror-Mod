@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 
 import net.minecraft.util.math.random.Random;
@@ -25,10 +26,11 @@ public class HomeEventScheduler {
     private static final String HOME_CHUNK_UNLOAD_TIME = "homeChunkUnloadTime_";
     private static final String HOME_CHUNK_WAS_LOADED = "homeChunkWasLoaded_";
     private static final String HOME_TRIGGER_COUNTDOWN = "homeTriggerCountdown_";
+    private static final int HOME_DISTANCE_LIMIT_CHUNKS = 10;
     private static final int MIN_ABSENCE_TIME = 600; // 10 minutes in seconds
     private static final int MIN_HOME_UNLOAD_TIME = 600; // 10 minutes in seconds
     private static final int TRIGGER_DELAY_TICKS = 20 * 3; // 3 seconds in ticks
-    private static final int CHECK_INTERVAL_TICKS = 20*30; // Check every 30 seconds
+    private static final int CHECK_INTERVAL_TICKS = 20 * 30; // Check every 30 seconds
 
     /**
      * Registers the tick event to handle the home event scheduling.
@@ -185,6 +187,13 @@ public class HomeEventScheduler {
                     
                     boolean isChunkLoaded = ChunkLoadedUtils.isChunkLoadedAt(server.getWorld(World.OVERWORLD), bedPos);
                     boolean wasLoaded = state.getIntValue(wasLoadedKey, 1) == 1; // Default to loaded
+                    boolean isOverTenChunksAway = isPlayerOverHomeDistance(player, bedPos);
+
+                    if (eventReady && isOverTenChunksAway && !state.hasTimer(countdownKey)) {
+                        state.setTimer(countdownKey, TRIGGER_DELAY_TICKS);
+                        HorrorMod129.LOGGER.info("Player " + player.getName().getString() +
+                            " moved more than 10 chunks from home. Starting 3 second countdown.");
+                    }
                     
                     if (!isChunkLoaded && wasLoaded) {
                         // Chunk just became unloaded, record timestamp
@@ -226,10 +235,13 @@ public class HomeEventScheduler {
     }
     
     /**
-     * Triggers a home event for the player who just reconnected after being away.
+     * Triggers a home event for a player when the scheduler determines their home conditions
+     * have been met, such as after reconnecting, when their home chunk reloads, or when
+     * distance-based checks cause the event to fire.
      * 
      * @param server The Minecraft server instance
-     * @param player The player who reconnected
+     * @param player The player for whom the home event is being triggered
+     * @param bedPos The player's bed or home position used for the event
      */
     private static void triggerHomeEvent(MinecraftServer server, ServerPlayerEntity player, BlockPos bedPos) {
         HorrorModPersistentState state = HorrorModPersistentState.getServerState(server);
@@ -257,5 +269,13 @@ public class HomeEventScheduler {
             // For subsequent events, use every 1-2 days
             return (1 + random.nextInt(2)) * 24000; // 1 to 2 days in ticks
         }
+    }
+
+    private static boolean isPlayerOverHomeDistance(ServerPlayerEntity player, BlockPos bedPos) {
+        ChunkPos playerChunkPos = new ChunkPos(player.getBlockPos());
+        ChunkPos bedChunkPos = new ChunkPos(bedPos);
+        long chunkDeltaX = (long) playerChunkPos.x - bedChunkPos.x;
+        long chunkDeltaZ = (long) playerChunkPos.z - bedChunkPos.z;
+        return chunkDeltaX * chunkDeltaX + chunkDeltaZ * chunkDeltaZ > (long) HOME_DISTANCE_LIMIT_CHUNKS * HOME_DISTANCE_LIMIT_CHUNKS;
     }
 }
