@@ -2,7 +2,7 @@
 
 # ENGRAM 
 ## A Vanilla-Style Slow-Burn Psychological Horror Mod
-#### *Version 0.8.0-beta*
+#### *Version 0.9.0-beta*
 
 Horror lives in the familiar, and there is no game more familiar than Minecraft. Playing off your own paranoia, ENGRAM is designed to make you question even the most innocuous aspects of your world. 
 
