@@ -284,12 +284,14 @@ public class SmallStructureEvent {
         // use torchutil instead
         BlockPos torchPos = pos.up(height).down();
         // TorchPlacer.placeTorch(server.getOverworld(), torchPos.up(), RANDOM, player);
-        // place a random colour banner with the name of the returned block type on the pillar
-        // make the block type just be the block, not minecraft: or net.minecraft.block. just the name of the block
+        // place a random colour banner with the name of the returned block type on the
+        // pillar
+        // make the block type just be the block, not minecraft: or net.minecraft.block.
+        // just the name of the block
         String bannerText = (type == null ? "unknown" : type)
-            .replace("block.", "")
-            .replace("minecraft.", "")
-            .toUpperCase();
+                .replace("block.", "")
+                .replace("minecraft.", "")
+                .toUpperCase();
         DyeColor[] colors = DyeColor.values();
         DyeColor bannerColor = colors[RANDOM.nextInt(colors.length)];
         Block bannerBlock = getBannerForColor(bannerColor);
@@ -625,7 +627,9 @@ public class SmallStructureEvent {
                         return true;
                     }
 
+
                     Block block = world.getBlockState(blockPos).getBlock();
+                    String blockName = block.getTranslationKey();
                     if (block instanceof net.minecraft.block.ChestBlock ||
                             block instanceof net.minecraft.block.TrappedChestBlock ||
                             block instanceof net.minecraft.block.BarrelBlock ||
@@ -633,14 +637,21 @@ public class SmallStructureEvent {
                             block instanceof net.minecraft.block.EnderChestBlock ||
                             block instanceof net.minecraft.block.StairsBlock ||
                             block instanceof net.minecraft.block.DoorBlock ||
-                            block instanceof net.minecraft.block.GlassBlock ||
                             block instanceof net.minecraft.block.FenceBlock ||
                             block instanceof net.minecraft.block.PaneBlock ||
                             block instanceof net.minecraft.block.AnvilBlock ||
                             block instanceof net.minecraft.block.FurnaceBlock ||
                             block instanceof net.minecraft.block.LadderBlock ||
                             block instanceof net.minecraft.block.HopperBlock ||
-                            block instanceof net.minecraft.block.CraftingTableBlock) {
+                            block instanceof net.minecraft.block.CraftingTableBlock ||
+                            block instanceof net.minecraft.block.BellBlock ||
+                            block instanceof net.minecraft.block.TrapdoorBlock ||
+                            block instanceof net.minecraft.block.WallBlock ||
+                            block instanceof net.minecraft.block.SlabBlock ||
+                            blockName.contains("wool") ||
+                            blockName.contains("glass") ||
+                            blockName.contains("concrete") ||
+                            blockName.contains("terracotta")) {
                         return true;
                     }
                 }

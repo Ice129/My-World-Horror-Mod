@@ -152,18 +152,18 @@
             "minecraft:golden": 1
         },
         "goodGear": {
-            "minecraft:iron": 5,
+            "minecraft:iron": 7,
             "minecraft:golden": 2,
             "minecraft:diamond": 3
         },
         "greatGear": {
             "minecraft:diamond": 5,
-            "minecraft:iron": 1
+            "minecraft:iron": 13
         },
         "endGameGear": {
-            "minecraft:diamond": 5,
+            "minecraft:diamond": 50,
             "minecraft:netherite": 2,
-            "minecraft:iron": 2
+            "minecraft:iron": 20
         }
     },
     "Essentials": {
@@ -311,16 +311,16 @@
         "goodGear": {
             "minecraft:iron": 5,
             "minecraft:golden": 2,
-            "minecraft:diamond": 3
+            "minecraft:diamond": 2
         },
         "greatGear": {
             "minecraft:diamond": 5,
-            "minecraft:iron": 1
+            "minecraft:iron": 13
         },
         "endGameGear": {
-            "minecraft:diamond": 5,
+            "minecraft:diamond": 50,
             "minecraft:netherite": 2,
-            "minecraft:iron": 2
+            "minecraft:iron": 20
         }
     },
     "consumables": {
