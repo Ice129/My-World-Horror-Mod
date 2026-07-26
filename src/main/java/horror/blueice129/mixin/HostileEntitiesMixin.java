@@ -20,6 +20,6 @@ public abstract class HostileEntitiesMixin extends HostileEntity {
 
     @Inject(method = "initGoals", at = @At("TAIL"))
     private void injectCustomGoals(CallbackInfo ci) {
-        this.targetSelector.add(2, new ActiveTargetGoal(this, Blueice129Entity.class, true));
+        this.targetSelector.add(2, new ActiveTargetGoal<>(this, Blueice129Entity.class, true));
     }
 }
