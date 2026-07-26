@@ -159,7 +159,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
                 float g = this.random.nextFloat() * (float) (Math.PI * 2);
                 itemEntity.setVelocity(-MathHelper.sin(g) * f, 0.2F, MathHelper.cos(g) * f);
             } else {
-                float f = 0.3F;
+                // float f = 0.3F;
                 float g = MathHelper.sin(this.getPitch() * (float) (Math.PI / 180.0));
                 float h = MathHelper.cos(this.getPitch() * (float) (Math.PI / 180.0));
                 float i = MathHelper.sin(this.getYaw() * (float) (Math.PI / 180.0));
@@ -563,7 +563,7 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
 
         // Sodium fix
         if (this.getWorld() instanceof ServerWorld world) {
-            List<Pair<EquipmentSlot, ItemStack>> list = new ArrayList();
+            List<Pair<EquipmentSlot, ItemStack>> list = new ArrayList<>();
             list.add(new Pair<>(slot, stack));
             world.getChunkManager().sendToOtherNearbyPlayers(this, new EntityEquipmentUpdateS2CPacket(this.getId(), list));
         }
