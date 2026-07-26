@@ -11,6 +11,7 @@ import horror.blueice129.feature.HomeVisitorEvent;
 import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
+import horror.blueice129.feature.FallDamageEvent;
 import horror.blueice129.feature.CavePreMiner;
 import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.MusicVolumeLocker;
@@ -46,6 +47,7 @@ import net.minecraft.block.Blocks;
 import com.mojang.brigadier.Command;
 import horror.blueice129.network.ModNetworking;
 import horror.blueice129.utils.SurfaceFinder;
+import horror.blueice129.utils.PlayerUtils;
 import net.minecraft.server.MinecraftServer;
 
 public class DebugCommands {
@@ -116,7 +118,9 @@ public class DebugCommands {
                         .then(literal("stalkingfootsteps")
                             .executes(DebugCommands::triggerStalkingFootsteps)
                             .then(literal("stop")
-                                .executes(DebugCommands::stopStalkingFootsteps))))
+                                .executes(DebugCommands::stopStalkingFootsteps)))
+                        .then(literal("falldamage")
+                            .executes(DebugCommands::triggerFallDamageEvent)))
                     
                     // === TIMER MANAGEMENT ===
                     .then(literal("timer")
@@ -256,6 +260,8 @@ public class DebugCommands {
                                 .executes(context -> screenshotFromCam(context.getSource())))
                             .then(literal("trigger")
                                 .executes(context -> triggerScreenshot(context.getSource())))))
+                        .then(literal("inbuilding")
+                            .executes(context -> checkIfInBuilding(context.getSource())))
                     
                     // === PERSISTENT STATE ===
                     .then(literal("state")
@@ -418,6 +424,25 @@ public class DebugCommands {
         }
     }
 
+    private static int checkIfInBuilding(ServerCommandSource source) {
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendFeedback(() -> Text.literal("This command can only be run by a player."), false);
+            return 0;
+        }
+
+        boolean inside = PlayerUtils.isPlayerInsideHouseOrStructure(player);
+        if (inside) {
+            source.sendFeedback(() -> Text.literal("Player is inside a building/structure."), false);
+            return 1;
+        } else {
+            source.sendFeedback(() -> Text.literal("Player is NOT inside a building/structure."), false);
+            return 0;
+        }
+    }
+
     private static int executeEvent(ServerCommandSource source, String eventId) {
         MinecraftServer server = source.getServer();
         ServerPlayerEntity player = source.getPlayer();
@@ -428,6 +453,26 @@ public class DebugCommands {
             source.sendError(Text.literal("Failed to trigger event: " + eventId));
         }
         return success ? 1 : 0;
+    }
+
+    private static int triggerFallDamageEvent(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendFeedback(() -> Text.literal("This command can only be run by a player."), false);
+            return 0;
+        }
+
+        boolean triggered = FallDamageEvent.triggerEvent(player);
+        if (triggered) {
+            source.sendFeedback(() -> Text.literal("Fall damage event triggered successfully!"), false);
+            return 1;
+        } else {
+            source.sendFeedback(() -> Text.literal("Fall damage event could not trigger (not inside building or UI, or no suitable fall spot found)."), false);
+            return 0;
+        }
     }
 
     /**

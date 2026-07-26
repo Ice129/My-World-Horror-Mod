@@ -1,0 +1,11 @@
+look into SPI
+service provider interface
+impliment code for each loader and tell runtime where to find them
+
+java preprocessor, define different code for each version
+lots of effort for a hobby project 
+C or C++, it's like #ifdef [...] and #endif
+
+
+https://media.discordapp.net/attachments/1346559973257248789/1502456437434220685/image.png?ex=69ffc718&is=69fe7598&hm=c0a8e68c41867c3d901433d3a610c507686535e6cbdc0ca9f7e54d7a6d6c4bd2&=&format=webp&quality=lossless&width=1107&height=726
+

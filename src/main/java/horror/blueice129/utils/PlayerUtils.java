@@ -2,6 +2,7 @@ package horror.blueice129.utils;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class PlayerUtils {
     public static boolean isPlayerCrouching(PlayerEntity player) {
@@ -140,5 +141,66 @@ public class PlayerUtils {
             default:
                 return new double[] { 0, 0 }; // Invalid direction input
         }
+    }
+
+    public static boolean isPlayerInUI(PlayerEntity player) {
+        return player.currentScreenHandler != null;
+    }
+
+    /**
+     * Determine whether the player is inside a simple enclosed structure.
+     * Strategy:
+     * - require a non-air block somewhere within `roofMaxHeight` above the player (roof)
+     * - require at least one non-air block in each cardinal direction within
+     *   `wallSearchDistance`, checked across a small vertical span (`wallHeight`)
+     * This is a pragmatic, lightweight test (not perfect for all builds).
+     */
+    public static boolean isPlayerInsideHouseOrStructure(PlayerEntity player) {
+        if (player == null) return false;
+        World world = player.getWorld();
+        if (world == null) return false;
+
+        BlockPos pos = player.getBlockPos();
+        final int roofMaxHeight = 7;
+        final int wallSearchDistance = 10;
+        final int wallHeight = 2; // check up to two blocks high for walls
+
+        // quick roof check
+        if (!hasRoofAbove(world, pos, roofMaxHeight)) return false;
+
+        // require walls on all 4 sides (N,E,S,W) within search distance
+        return hasWallsAround(world, pos, wallSearchDistance, wallHeight);
+    }
+
+    private static boolean hasRoofAbove(World world, BlockPos pos, int maxHeight) {
+        for (int y = 1; y <= maxHeight; y++) {
+            BlockPos check = pos.up(y);
+            if (!world.isAir(check)) return true;
+        }
+        return false;
+    }
+
+    private static boolean hasWallsAround(World world, BlockPos pos, int searchDistance, int wallHeight) {
+        String[] cardinalDirections = { "N", "E", "S", "W" };
+        for (String dir : cardinalDirections) {
+            boolean foundWallInDirection = false;
+            for (int d = 1; d <= searchDistance; d++) {
+                BlockPos check = pos;
+                for (int step = 0; step < d; step++) {
+                    check = getRelativeBlockPos(check, dir);
+                }
+                // check a small vertical span (foot -> head) for a potential wall block
+                for (int h = 0; h <= wallHeight; h++) {
+                    BlockPos checkVert = check.up(h);
+                    if (!world.isAir(checkVert)) {
+                        foundWallInDirection = true;
+                        break;
+                    }
+                }
+                if (foundWallInDirection) break;
+            }
+            if (!foundWallInDirection) return false;
+        }
+        return true;
     }
 }

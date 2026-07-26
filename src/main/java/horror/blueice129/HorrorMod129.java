@@ -1,24 +1,22 @@
 package horror.blueice129;
 
 import horror.blueice129.command.DebugCommands;
+// import horror.blueice129.command.RtpCommand;
 import horror.blueice129.config.ConfigManager;
 import horror.blueice129.entity.Blueice129Entity;
 import horror.blueice129.network.ModNetworking;
 import horror.blueice129.scheduler.AgroMeterScheduler;
-import horror.blueice129.scheduler.AmbianceScheduler;
 import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import horror.blueice129.scheduler.CaveMinerScheduler;
 import horror.blueice129.scheduler.FakeFootstepScheduler;
 import horror.blueice129.scheduler.HomeEventScheduler;
+import horror.blueice129.scheduler.FallDamageScheduler;
 import horror.blueice129.scheduler.StalkingFootstepScheduler;
 import horror.blueice129.scheduler.PlayerDeathItemsScheduler;
-import horror.blueice129.scheduler.ScreenshotScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
 import horror.blueice129.scheduler.LedgePusherScheduler;
 import horror.blueice129.scheduler.SettingsScheduler;
-import horror.blueice129.scheduler.LilyDamageScheduler;
 import horror.blueice129.scheduler.OnWorldCreation;
-import horror.blueice129.scheduler.TwoPlayerSleepScheduler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -53,7 +51,7 @@ public class HorrorMod129 implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Initializing ENGRAM");
+		LOGGER.info("Initializing Horror Mod 129!");
 		
 		// Load config first before any feature registration
 		ConfigManager.loadConfig();
@@ -66,19 +64,16 @@ public class HorrorMod129 implements ModInitializer {
 		
 		// Register schedulers
 		OnWorldCreation.register();
-		AmbianceScheduler.register();
 		AgroMeterScheduler.register();
 		Blueice129SpawnScheduler.register();
 		CaveMinerScheduler.register();
 		FakeFootstepScheduler.register();
 		StalkingFootstepScheduler.register();
 		HomeEventScheduler.register();
+		FallDamageScheduler.register();
 		SmallStructureScheduler.register();
 		LedgePusherScheduler.register();
 		PlayerDeathItemsScheduler.register();
-		LilyDamageScheduler.register();
-		TwoPlayerSleepScheduler.register();
-		ScreenshotScheduler.register();
 		SettingsScheduler.register(); // Now server-side
 		
 		// Register fleeing entity tick handler
@@ -86,7 +81,10 @@ public class HorrorMod129 implements ModInitializer {
 		
 		// Register debug commands
 		DebugCommands.register();
+		
+		// Register RTP command
+		// RtpCommand.register();
 
-		LOGGER.info("ENGRAM initialization complete");
+		LOGGER.info("Horror Mod 129 initialization complete!");
 	}
 }
