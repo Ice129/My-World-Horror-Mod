@@ -11,6 +11,7 @@ import horror.blueice129.feature.HomeVisitorEvent;
 import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
+import horror.blueice129.feature.FallDamageEvent;
 import horror.blueice129.feature.CavePreMiner;
 import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.MusicVolumeLocker;
@@ -47,6 +48,7 @@ import com.mojang.brigadier.Command;
 import horror.blueice129.network.ModNetworking;
 import horror.blueice129.utils.SurfaceFinder;
 import horror.blueice129.utils.WebUtils;
+import horror.blueice129.utils.PlayerUtils;
 import net.minecraft.server.MinecraftServer;
 
 public class DebugCommands {
@@ -117,7 +119,9 @@ public class DebugCommands {
                         .then(literal("stalkingfootsteps")
                             .executes(DebugCommands::triggerStalkingFootsteps)
                             .then(literal("stop")
-                                .executes(DebugCommands::stopStalkingFootsteps))))
+                                .executes(DebugCommands::stopStalkingFootsteps)))
+                        .then(literal("falldamage")
+                            .executes(DebugCommands::triggerFallDamageEvent)))
                     
                     // === TIMER MANAGEMENT ===
                     .then(literal("timer")
@@ -253,11 +257,7 @@ public class DebugCommands {
                                         StringArgumentType.getString(context, "url"))))))
                         .then(literal("cave")
                             .then(literal("premine")
-                                .executes(context -> premineCave(context.getSource(), 1))
-                                .then(argument("attempts", IntegerArgumentType.integer(1, 10))
-                                    .executes(context -> premineCave(
-                                        context.getSource(),
-                                        IntegerArgumentType.getInteger(context, "attempts"))))))
+                                .executes(context -> premineCave(context.getSource()))))
                         .then(literal("visualize")
                             .then(literal("fov")
                                 .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
@@ -272,6 +272,8 @@ public class DebugCommands {
                                 .executes(context -> screenshotFromCam(context.getSource())))
                             .then(literal("trigger")
                                 .executes(context -> triggerScreenshot(context.getSource())))))
+                        .then(literal("inbuilding")
+                            .executes(context -> checkIfInBuilding(context.getSource())))
                     
                     // === PERSISTENT STATE ===
                     .then(literal("state")
@@ -463,6 +465,25 @@ public class DebugCommands {
             return 0;
         }
     }
+  
+    private static int checkIfInBuilding(ServerCommandSource source) {
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendFeedback(() -> Text.literal("This command can only be run by a player."), false);
+            return 0;
+        }
+
+        boolean inside = PlayerUtils.isPlayerInsideHouseOrStructure(player);
+        if (inside) {
+            source.sendFeedback(() -> Text.literal("Player is inside a building/structure."), false);
+            return 1;
+        } else {
+            source.sendFeedback(() -> Text.literal("Player is NOT inside a building/structure."), false);
+            return 0;
+        }
+    }
 
     private static int executeEvent(ServerCommandSource source, String eventId) {
         MinecraftServer server = source.getServer();
@@ -474,6 +495,26 @@ public class DebugCommands {
             source.sendError(Text.literal("Failed to trigger event: " + eventId));
         }
         return success ? 1 : 0;
+    }
+
+    private static int triggerFallDamageEvent(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendFeedback(() -> Text.literal("This command can only be run by a player."), false);
+            return 0;
+        }
+
+        boolean triggered = FallDamageEvent.triggerEvent(player);
+        if (triggered) {
+            source.sendFeedback(() -> Text.literal("Fall damage event triggered successfully!"), false);
+            return 1;
+        } else {
+            source.sendFeedback(() -> Text.literal("Fall damage event could not trigger (not inside building or UI, or no suitable fall spot found)."), false);
+            return 0;
+        }
     }
 
     /**
@@ -1043,61 +1084,24 @@ public class DebugCommands {
     /**
      * Pre-mine a cave near the player
      * @param source Command source
-     * @param attempts Number of attempts to find a suitable cave
      * @return Command success value
      */
-    private static int premineCave(ServerCommandSource source, int attempts) {
+    private static int premineCave(ServerCommandSource source) {
         ServerPlayerEntity player = source.getPlayer();
         if (player == null) {
             source.sendError(Text.literal("This command must be run by a player"));
             return 0;
         }
-        
-        if (attempts == 1) {
-            source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave..."), false);
-            boolean success = CavePreMiner.preMineCave(
+
+        source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave..."), false);
+        CavePreMiner.preMineCave(
                 player.getWorld(),
                 player.getBlockPos(),
                 player
-            );
-            
-            if (success) {
-                source.sendFeedback(() -> Text.literal("Successfully pre-mined a cave!"), false);
-                return Command.SINGLE_SUCCESS;
-            } else {
-                source.sendError(Text.literal("Failed to find a suitable cave. Try a different location."));
-                return 0;
-            }
-        } else {
-            source.sendFeedback(() -> Text.literal("Attempting to pre-mine a cave with " + attempts + " attempts..."), false);
-            
-            // Use a mutable wrapper class
-            class MutableResult {
-                public boolean success = false;
-                public int attempts = 0;
-            }
-            final MutableResult result = new MutableResult();
-            
-            for (int i = 0; i < attempts && !result.success; i++) {
-                result.attempts++;
-                result.success = CavePreMiner.preMineCave(
-                    player.getWorld(),
-                    player.getBlockPos(),
-                    player
-                );
-            }
-            
-            if (result.success) {
-                final int finalAttempts = result.attempts;
-                source.sendFeedback(() -> Text.literal("Successfully pre-mined a cave after " + finalAttempts + " attempt(s)!"), false);
-                return Command.SINGLE_SUCCESS;
-            } else {
-                source.sendError(Text.literal("Failed to find a suitable cave after " + attempts + " attempts"));
-                return 0;
-            }
-        }
+        );
+        return Command.SINGLE_SUCCESS;
     }
-    
+
     /**
      * Get the current smooth lighting state
      * @param source Command source

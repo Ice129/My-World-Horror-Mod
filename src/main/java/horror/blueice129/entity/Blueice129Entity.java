@@ -1,18 +1,41 @@
 package horror.blueice129.entity;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.datafixers.util.Pair;
 import horror.blueice129.entity.goals.GoalProfileRegistry;
+import horror.blueice129.mixin.ArmorItemAccessor;
+import horror.blueice129.mixin.ItemEntityAccessor;
 import horror.blueice129.utils.EntityLoginState;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
+import net.minecraft.entity.*;
+import net.minecraft.entity.ai.goal.Goal;
+import net.minecraft.entity.ai.pathing.MobNavigation;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ToolItem;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Blueice129 Entity - A custom PathAwareEntity that takes the form of a player
@@ -26,14 +49,24 @@ import net.minecraft.world.World;
  * This entity uses a state-based goal profile system where different behaviors
  * are activated based on the current EntityState.
  */
-public class Blueice129Entity extends PathAwareEntity {
+public class Blueice129Entity extends PathAwareEntity implements InventoryOwner {
+
+    public final static String NAME = "Blueice129";
+    public final static GameProfile GAME_PROFILE = new GameProfile(UUID.nameUUIDFromBytes(NAME.getBytes()),
+            NAME);
 
     private EntityState currentState;
     private int ticksInCurrentState = 0;
     private boolean should_logout_after_menu = false;
-    private GoalProfileRegistry goalRegistry;
+    private final GoalProfileRegistry goalRegistry;
     private EntityState previousState = null;
     private int ticksInUnloadedChunk = 0;
+    private SimpleInventory inventory;
+
+    @Override
+    public SimpleInventory getInventory() {
+        return this.inventory;
+    }
 
     public enum EntityState {
         PASSIVE, // Default state, does nothing really
@@ -74,6 +107,88 @@ public class Blueice129Entity extends PathAwareEntity {
         }
     }
 
+    @Override
+    public void onDeath(DamageSource damageSource) {
+        if (!this.isRemoved() && !this.dead) {
+            if (!getWorld().isClient && this.getWorld().getGameRules().getBoolean(GameRules.SHOW_DEATH_MESSAGES)) {
+                MutableText text = MutableText.of(this.getDamageTracker().getDeathMessage().getContent());
+                getWorld().getServer().getPlayerManager().broadcast(text.styled(style -> style.withColor(0xFFFF55)), false);
+            }
+        }
+
+        super.onDeath(damageSource);
+
+        this.refreshPosition();
+        if (!this.isSpectator()) {
+            this.drop(damageSource);
+        }
+
+        if (damageSource != null) {
+            this.setVelocity(
+                    -MathHelper.cos((this.getDamageTiltYaw() + this.getYaw()) * (float) (Math.PI / 180.0)) * 0.1F,
+                    0.1F,
+                    -MathHelper.sin((this.getDamageTiltYaw() + this.getYaw()) * (float) (Math.PI / 180.0)) * 0.1F
+            );
+        } else {
+            this.setVelocity(0.0, 0.1, 0.0);
+        }
+
+        this.extinguish();
+        this.setOnFire(false);
+        logout(false);
+    }
+
+    @Nullable
+    public ItemEntity dropItem(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
+        if (stack.isEmpty()) {
+            return null;
+        } else {
+            if (this.getWorld().isClient) {
+                this.swingHand(Hand.MAIN_HAND);
+            }
+
+            double d = this.getEyeY() - 0.3F;
+            ItemEntity itemEntity = new ItemEntity(this.getWorld(), this.getX(), d, this.getZ(), stack);
+            itemEntity.setPickupDelay(40);
+            if (retainOwnership) {
+                itemEntity.setThrower(this.getUuid());
+            }
+
+            if (throwRandomly) {
+                float f = this.random.nextFloat() * 0.5F;
+                float g = this.random.nextFloat() * (float) (Math.PI * 2);
+                itemEntity.setVelocity(-MathHelper.sin(g) * f, 0.2F, MathHelper.cos(g) * f);
+            } else {
+                // float f = 0.3F;
+                float g = MathHelper.sin(this.getPitch() * (float) (Math.PI / 180.0));
+                float h = MathHelper.cos(this.getPitch() * (float) (Math.PI / 180.0));
+                float i = MathHelper.sin(this.getYaw() * (float) (Math.PI / 180.0));
+                float j = MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0));
+                float k = this.random.nextFloat() * (float) (Math.PI * 2);
+                float l = 0.02F * this.random.nextFloat();
+                itemEntity.setVelocity(
+                        -i * h * 0.3F + Math.cos(k) * l, -g * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F, j * h * 0.3F + Math.sin(k) * l
+                );
+            }
+
+            return itemEntity;
+        }
+    }
+
+    @Override
+    protected void dropInventory() {
+        super.dropInventory();
+        if (!this.getWorld().getGameRules().getBoolean(GameRules.KEEP_INVENTORY)) {
+                for (int i = 0; i < this.inventory.size(); i++) {
+                    ItemStack itemStack = this.inventory.getStack(i);
+                    if (!itemStack.isEmpty()) {
+                        getWorld().spawnEntity(this.dropItem(itemStack, true, false));
+                        this.inventory.setStack(i, ItemStack.EMPTY);
+                    }
+                }
+        }
+    }
+
     /**
      * will handle automatic state transitions and per-tick behavior
      */
@@ -94,7 +209,7 @@ public class Blueice129Entity extends PathAwareEntity {
         
         // Check if entity is in an unloaded chunk and despawn silently after 5 seconds
         if (!this.getWorld().isClient) {
-            net.minecraft.util.math.ChunkPos chunkPos = new net.minecraft.util.math.ChunkPos(this.getBlockPos());
+            ChunkPos chunkPos = new ChunkPos(this.getBlockPos());
             if (!this.getWorld().isChunkLoaded(chunkPos.x, chunkPos.z)) {
                 ticksInUnloadedChunk++;
                 if (ticksInUnloadedChunk > 100) { // 5 seconds
@@ -111,6 +226,9 @@ public class Blueice129Entity extends PathAwareEntity {
         if (this.getWorld().isClient) {
             return; // Client just renders, doesn't make decisions
         }
+
+        // Equip on any tool or armor
+        putOnEquipment();
         
         boolean seesPlayer = checkEntitySeesPlayer();
         int agroMeter = 0;
@@ -223,10 +341,7 @@ public class Blueice129Entity extends PathAwareEntity {
                 if (ticksInCurrentState > 20 && should_logout_after_menu) {
                     // despawn this entity and send a logout message to the chat
                     // This only runs server-side due to the check at the start of tick()
-                    this.getWorld().getServer().getPlayerManager().broadcast(net.minecraft.text.Text
-                            .literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
-                    this.remove(RemovalReason.DISCARDED);
-                    EntityLoginState.setEntityLoggedOut(HorrorModPersistentState.getServerState(this.getWorld().getServer()));
+                    logout(true);
                     return; // Stop processing after despawn
                 }
                 
@@ -246,6 +361,45 @@ public class Blueice129Entity extends PathAwareEntity {
             case UPGRADING_HOUSE:
                 // TODO: Implement transitions from UPGRADING_HOUSE to other states
                 break;
+        }
+    }
+
+    public void logout(boolean remove) {
+        this.getWorld().getServer().getPlayerManager().broadcast(Text
+                .literal("Blueice129 left the game").styled(style -> style.withColor(0xFFFF55)), false);
+        if (remove) this.remove(RemovalReason.DISCARDED);
+        EntityLoginState.setEntityLoggedOut(HorrorModPersistentState.getServerState(this.getWorld().getServer()));
+    }
+
+    public void putOnEquipment() {
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            EquipmentSlot slot = null;
+            int num = 0;
+            if (stack.getItem() instanceof ToolItem && !(inventory.getStack(0).getItem() instanceof ToolItem)) {
+                slot = EquipmentSlot.MAINHAND;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(36).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.HELMET) {
+                slot = EquipmentSlot.HEAD;
+                num = 36;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(37).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.CHESTPLATE) {
+                slot = EquipmentSlot.CHEST;
+                num = 37;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(38).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.LEGGINGS) {
+                slot = EquipmentSlot.LEGS;
+                num = 38;
+            }
+            if (stack.getItem() instanceof ArmorItem e && !(inventory.getStack(39).getItem() instanceof ArmorItem) && ((ArmorItemAccessor)e).getArmorType() == ArmorItem.Type.BOOTS) {
+                slot = EquipmentSlot.FEET;
+                num = 39;
+            }
+            if (slot != null) {
+                ItemStack temp = inventory.getStack(num);
+                this.equipStack(slot, stack);
+                inventory.setStack(i, temp);
+            }
         }
     }
 
@@ -326,23 +480,116 @@ public class Blueice129Entity extends PathAwareEntity {
      * Add a goal to the goal selector
      * Helper method for the goal profile system
      */
-    public void addGoal(int priority, net.minecraft.entity.ai.goal.Goal goal) {
+    public void addGoal(int priority, Goal goal) {
         this.goalSelector.add(priority, goal);
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        super.remove(reason);
+        if (!getWorld().isClient) {
+            HorrorModPersistentState.getServerState(getWorld().getServer()).setGlobalInventory(inventory);
+        }
+    }
+
+    @Override
+    public void tickMovement() {
+        super.tickMovement();
+
+        if (this.getHealth() > 0.0F) {
+            Box box;
+            if (this.hasVehicle() && !this.getVehicle().isRemoved()) {
+                box = this.getBoundingBox().union(this.getVehicle().getBoundingBox()).expand(1.0, 0.0, 1.0);
+            } else {
+                box = this.getBoundingBox().expand(1.0, 0.5, 1.0);
+            }
+
+            List<Entity> list = this.getWorld().getOtherEntities(this, box);
+
+            // Make Blueice129 pick up items
+            for (Entity entity : list) {
+                if (entity.getType() == EntityType.ITEM && !getWorld().isClient) {
+                    ItemEntity itemEntity = (ItemEntity) entity;
+                    ItemStack itemStack = itemEntity.getStack();
+                    int count = itemStack.getCount();
+                    if (((ItemEntityAccessor) itemEntity).getPickupDelay() == 0 && inventory.canInsert(itemStack)) {
+                        loot(itemEntity);
+                        this.sendPickup(itemEntity, count);
+                        if (itemStack.isEmpty()) {
+                            itemEntity.discard();
+                            itemStack.setCount(count);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Declaring variables here might be a warcrime, but it looks cleaner
+    private static final int MAINHAND_SLOT = 0;
+    private static final int OFFHAND_SLOT = 40;
+    private static final int HEAD_SLOT = 36;
+    private static final int CHEST_SLOT = 37;
+    private static final int LEGS_SLOT = 38;
+    private static final int FEET_SLOT = 39;
+
+    @Override
+    public ItemStack getEquippedStack(EquipmentSlot slot) {
+        int num = switch (slot) {
+            case MAINHAND -> MAINHAND_SLOT;
+            case OFFHAND -> OFFHAND_SLOT;
+            case HEAD -> HEAD_SLOT;
+            case CHEST -> CHEST_SLOT;
+            case LEGS -> LEGS_SLOT;
+            case FEET -> FEET_SLOT;
+        };
+        return this.inventory.getStack(num);
+    }
+
+    @Override
+    public void equipStack(EquipmentSlot slot, ItemStack stack) {
+        this.processEquippedStack(stack);
+
+        int num = switch (slot) {
+            case MAINHAND -> MAINHAND_SLOT;
+            case OFFHAND -> OFFHAND_SLOT;
+            case HEAD -> HEAD_SLOT;
+            case CHEST -> CHEST_SLOT;
+            case LEGS -> LEGS_SLOT;
+            case FEET -> FEET_SLOT;
+        };
+        this.onEquipStack(slot, this.inventory.getStack(num), stack);
+        this.inventory.setStack(num, stack);
+
+        // Sodium fix
+        if (this.getWorld() instanceof ServerWorld world) {
+            List<Pair<EquipmentSlot, ItemStack>> list = new ArrayList<>();
+            list.add(new Pair<>(slot, stack));
+            world.getChunkManager().sendToOtherNearbyPlayers(this, new EntityEquipmentUpdateS2CPacket(this.getId(), list));
+        }
     }
 
     public Blueice129Entity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
 
+        if (this.getNavigation() instanceof MobNavigation mobNav) {
+            mobNav.setCanPathThroughDoors(true);
+            mobNav.setCanEnterOpenDoors(true);
+        }
+
+        this.inventory = new SimpleInventory(41);
+
         // Set custom name to display "Blueice129" like a player
-        this.setCustomName(Text.literal("Blueice129"));
+        this.setCustomName(Text.literal(NAME));
         this.setCustomNameVisible(true);
 
         // Initialize the goal profile registry
         this.goalRegistry = new GoalProfileRegistry(this);
 
-        // Set initial state based on agro meter
+        // Set initial state
         if (!world.isClient && world.getServer() != null) {
             HorrorModPersistentState state = HorrorModPersistentState.getServerState(world.getServer());
+            this.inventory = state.getGlobalInventory();
             int agroMeter = state.getIntValue("agroMeter", 0);
 
             if (agroMeter > 5) {
@@ -354,14 +601,16 @@ public class Blueice129Entity extends PathAwareEntity {
             // Default to PASSIVE on client or if server is unavailable
             this.currentState = EntityState.PASSIVE;
         }
+        initGoals();
+    }
 
-        // Apply initial goal profile now that goalRegistry is initialized
-        // This must be done after goalRegistry is created because initGoals()
-        // is called by the parent constructor before this point (when goalRegistry was
-        // null)
-        if (goalRegistry != null) {
-            goalRegistry.applyCurrentProfile();
-        }
+    @Override
+    public void loot(ItemEntity item) {
+        InventoryOwner.pickUpItem(this, this, item);
+    }
+
+    public boolean canPickupItem(ItemStack stack) {
+        return true;
     }
 
     /**
@@ -397,6 +646,17 @@ public class Blueice129Entity extends PathAwareEntity {
         if (goalRegistry != null) {
             goalRegistry.applyCurrentProfile();
         }
+
+    }
+
+    public void writeCustomDataToNbt(NbtCompound nbt) {
+        super.writeCustomDataToNbt(nbt);
+        this.writeInventory(nbt);
+    }
+
+    public void readCustomDataFromNbt(NbtCompound nbt) {
+        super.readCustomDataFromNbt(nbt);
+        this.readInventory(nbt);
     }
 
     /**

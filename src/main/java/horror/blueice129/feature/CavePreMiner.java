@@ -104,7 +104,7 @@ public class CavePreMiner {
      * 
      * @param world         The world to check in
      * @param pos           The position to check
-     * @param caveAirBlocks list of cave air blocks to check against
+     * @param caveAirSet list of cave air blocks to check against
      * @param player        The player to check line of sight against
      * @return True if the block is suitable, false otherwise
      */
@@ -1053,45 +1053,59 @@ public class CavePreMiner {
      * @param player    The player entity
      * @return True if a cave was successfully pre-mined, false otherwise
      */
-    public static boolean preMineCave(World world, BlockPos playerPos, PlayerEntity player) {
-        BlockPos starterPos = findStarterBlock(world, playerPos);
-        if (starterPos == null) {
-            return false;
-        }
+    public static void preMineCave(World world, BlockPos playerPos, PlayerEntity player) {
+        Thread preMineThread = new Thread(() -> {
+            boolean isFinished = false;
+            mainLoop:
+            while (!isFinished) {
+                //check if player is spectator, dead or offline
+                if (player == null || (!player.isPartOfGame())) {
+                    break;
+                }
 
-        // Check if too close to existing pre-mined caves
-        ServerWorld serverWorld = (ServerWorld) world;
-        HorrorModPersistentState state = HorrorModPersistentState.getServerState(serverWorld.getServer());
-        java.util.List<BlockPos> existingCaves = state.getPositionList("preminedCaveLocations");
+                BlockPos starterPos = findStarterBlock(world, playerPos);
+                if (starterPos == null) {
+                    continue;
+                }
 
-        final int MIN_CAVE_DISTANCE_SQUARED = 100 * 100;
-        for (BlockPos existingCave : existingCaves) {
-            if (starterPos.getSquaredDistance(existingCave) < MIN_CAVE_DISTANCE_SQUARED) {
-                return false;
+                // Check if too close to existing pre-mined caves
+                ServerWorld serverWorld = (ServerWorld) world;
+                HorrorModPersistentState state = HorrorModPersistentState.getServerState(serverWorld.getServer());
+                java.util.List<BlockPos> existingCaves = state.getPositionList("preminedCaveLocations");
+
+                final int MIN_CAVE_DISTANCE_SQUARED = 100 * 100;
+                for (BlockPos existingCave : existingCaves) {
+                    if (starterPos.getSquaredDistance(existingCave) < MIN_CAVE_DISTANCE_SQUARED) {
+                        continue mainLoop;
+                    }
+                }
+
+                horror.blueice129.HorrorMod129.LOGGER.info("Cave Pre-Miner: Found starter block at " + starterPos);
+
+                // Combined cave exploration and ore mining in a single pass
+                CaveExplorationResult result = findCaveAirAndMineOres(world, starterPos, player);
+                java.util.List<BlockPos> caveAirBlocks = result.caveAirBlocks;
+                int oresMined = result.oresMined;
+
+                if (caveAirBlocks.size() < 50) {
+                    continue; // Not enough cave air blocks to consider this a cave
+                }
+
+                int torchesPlaced = populateTorches(world, caveAirBlocks, player);
+                int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
+                int stairLength = mineStairs(world, starterPos, player);
+
+                // Store this cave location to prevent future caves from being too close
+                state.addPositionToList("preminedCaveLocations", starterPos);
+
+                HorrorMod129.LOGGER.info("Cave Pre-Miner: Mined " + oresMined + " ores, placed " + torchesPlaced
+                        + " torches, extra blocks placed: " + extraBlocksPlaced + ", stair length: " + stairLength);
+                isFinished = true;
             }
-        }
-
-        horror.blueice129.HorrorMod129.LOGGER.info("Cave Pre-Miner: Found starter block at " + starterPos);
-
-        // Combined cave exploration and ore mining in a single pass
-        CaveExplorationResult result = findCaveAirAndMineOres(world, starterPos, player);
-        java.util.List<BlockPos> caveAirBlocks = result.caveAirBlocks;
-        int oresMined = result.oresMined;
-
-        if (caveAirBlocks.size() < 50) {
-            return false; // Not enough cave air blocks to consider this a cave
-        }
-
-        int torchesPlaced = populateTorches(world, caveAirBlocks, player);
-        int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
-        int stairLength = mineStairs(world, starterPos, player);
-
-        // Store this cave location to prevent future caves from being too close
-        state.addPositionToList("preminedCaveLocations", starterPos);
-
-        HorrorMod129.LOGGER.info("Cave Pre-Miner: Mined " + oresMined + " ores, placed " + torchesPlaced
-                + " torches, extra blocks placed: " + extraBlocksPlaced + ", stair length: " + stairLength);
-        return true;
+            HorrorMod129.LOGGER.info("Successfully pre-mined a cave!");
+        });
+        preMineThread.setName("Pre-mine Thread for "+player.getName().getString());
+        preMineThread.start();
     }
 
 }
