@@ -3,11 +3,11 @@
 ## A Vanilla-Style Slow-Burn Psychological Horror Mod
 #### *Version 0.9.0-beta*
 
-Horror lives in the familiar, and there is no game more familiar than Minecraft. Playing off your own paranoia, ENGRAM is designed to make you question even the most innocuous aspects of your world. 
+Engram (en-gram), an encoding of memories or consciousness onto a physical medium. A memory trace.
 
-This mod takes its time to play with you, letting you stew in your own fears all while something hides just out of sight, just as afraid as you are. There is a reason to all events, all building with one cohesive background narrative.
+This mod is built around the premise of a vanilla experience, all events will take place as if they could happen in the base game. Therefore, you will not be able to tell when your paranoia is justified or not. Tired of modern horror mod clichés, ENGRAM will focus on what makes horror scary and not rely on cheap jump scares, dwellers, or dimensions.
 
-With multiplayer support, this mod will leave you unable to tell where it ends, and your game begins. There are no flashy effects, no overt modded textures. Just subtle, escalating disturbances that make you question whether you did that, or someone else did.
+Fully multiplayer compatible, and designed to be installed and forgotten about. This mod lets something into your world, or you into theirs. Default configurations are set to take place over 30 in game days, but can be adjusted to your liking in the mod's config. Not inspired by any other mod, but rather to be the antithesis of the modern horror mod landscape and contains features you won't find anywhere else.
 
 Join the [Discord](https://discord.gg/hgCNtXbqkC) to report bugs, give feedback, or learn more about the mod's development.
 
