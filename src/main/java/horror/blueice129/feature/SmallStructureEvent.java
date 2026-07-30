@@ -278,6 +278,9 @@ public class SmallStructureEvent {
             if (!LineOfSightUtils.hasLineOfSight(player, pillarPos, 200)) {
                 server.getOverworld().setBlockState(pillarPos, pillarBlock.getDefaultState());
             }
+            else {
+                return false; // If the player can see the pillar being built, abort the event
+            }
         }
         // server.getOverworld().setBlockState(pos.up(height),
         // Blocks.TORCH.getDefaultState());
