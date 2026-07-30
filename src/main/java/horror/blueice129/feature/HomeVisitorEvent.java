@@ -193,7 +193,7 @@ public class HomeVisitorEvent {
                 continue;
             }
 
-            if (world.getBlockState(signPos).isAir() && !world.getBlockState(signPos.down()).isAir()) {
+            if (world.getBlockState(signPos).isAir() && world.getBlockState(signPos.down()).isSideSolid(world, signPos.down(), net.minecraft.util.math.Direction.UP, net.minecraft.block.SideShapeType.FULL)) {
                 int randomRotation = random.nextInt(16);
                 world.setBlockState(signPos, Blocks.OAK_SIGN.getDefaultState().with(Properties.ROTATION, randomRotation));
                 var signEntity = world.getBlockEntity(signPos);
