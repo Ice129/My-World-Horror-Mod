@@ -149,11 +149,11 @@ public class CavePreMiner {
      */
     public static class CaveExplorationResult {
         public final java.util.List<BlockPos> caveAirBlocks;
-        public final int oresMined;
+        public final java.util.List<BlockPos> oreBlocks;
 
-        public CaveExplorationResult(java.util.List<BlockPos> caveAirBlocks, int oresMined) {
+        public CaveExplorationResult(java.util.List<BlockPos> caveAirBlocks, java.util.List<BlockPos> oreBlocks) {
             this.caveAirBlocks = caveAirBlocks;
-            this.oresMined = oresMined;
+            this.oreBlocks = oreBlocks;
         }
     }
 
@@ -170,9 +170,9 @@ public class CavePreMiner {
      */
     public static CaveExplorationResult findCaveAirAndMineOres(World world, BlockPos startPos, PlayerEntity player) {
         java.util.List<BlockPos> caveAirBlocks = new java.util.ArrayList<>();
+        java.util.List<BlockPos> oreBlocks = new java.util.ArrayList<>();
         java.util.Set<BlockPos> visited = new java.util.HashSet<>();
         java.util.Queue<BlockPos> queue = new java.util.LinkedList<>();
-        int oresMined = 0;
 
         // Cache for solid block checks to avoid repeated world access
         java.util.Map<BlockPos, Boolean> solidBelowCache = new java.util.HashMap<>();
@@ -235,12 +235,12 @@ public class CavePreMiner {
                 }
                 // Check if neighbor is an exposed ore block
                 else if (BlockTypes.isOreBlock(neighborState)) {
-                    oresMined += mineOreVein(world, neighborPos, player, processedOres);
+                    collectOreVein(world, neighborPos, processedOres, oreBlocks);
                 }
             }
         }
 
-        return new CaveExplorationResult(caveAirBlocks, oresMined);
+        return new CaveExplorationResult(caveAirBlocks, oreBlocks);
     }
 
     /**
@@ -252,9 +252,8 @@ public class CavePreMiner {
      * @param processedOres Set of already processed ore positions to update
      * @return The number of ore blocks mined in this vein
      */
-    private static int mineOreVein(World world, BlockPos startOre, PlayerEntity player,
-            java.util.Set<BlockPos> processedOres) {
-        int mined = 0;
+        private static void collectOreVein(World world, BlockPos startOre, java.util.Set<BlockPos> processedOres,
+            java.util.List<BlockPos> oreBlocks) {
         java.util.Queue<BlockPos> oreQueue = new java.util.LinkedList<>();
         net.minecraft.util.math.Direction[] DIRECTIONS = net.minecraft.util.math.Direction.values();
 
@@ -266,27 +265,7 @@ public class CavePreMiner {
             BlockState state = world.getBlockState(currentOre);
 
             if (BlockTypes.isOreBlock(state)) {
-                // Mine the ore block if not in view
-                if (!LineOfSightUtils.isBlockRenderedOnScreen(player, currentOre, 16 * 10)) {
-                    world.breakBlock(currentOre, false);
-                    mined++;
-                    // 25% chance to break an adjacent non-ore block
-                    if (random.nextInt(100) < 25) {
-                        java.util.List<net.minecraft.util.math.Direction> shuffledDirs = java.util.Arrays
-                                .asList(DIRECTIONS);
-                        java.util.Collections.shuffle(shuffledDirs);
-                        for (net.minecraft.util.math.Direction dir : shuffledDirs) {
-                            BlockPos adjacentPos = currentOre.offset(dir);
-                            BlockState adjacentState = world.getBlockState(adjacentPos);
-                            if (!BlockTypes.isOreBlock(adjacentState) &&
-                                    !adjacentState.isAir() &&
-                                    !LineOfSightUtils.isBlockRenderedOnScreen(player, adjacentPos, 16 * 10)) {
-                                world.breakBlock(adjacentPos, false);
-                                break; // Only break one adjacent block
-                            }
-                        }
-                    }
-                }
+                oreBlocks.add(currentOre);
 
                 // Check neighboring blocks for connected ores
                 for (net.minecraft.util.math.Direction direction : DIRECTIONS) {
@@ -297,6 +276,39 @@ public class CavePreMiner {
                             oreQueue.add(neighborOre);
                             processedOres.add(neighborOre);
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    private static int mineCollectedOreBlocks(World world, java.util.List<BlockPos> oreBlocks, PlayerEntity player) {
+        int mined = 0;
+
+        for (BlockPos orePos : oreBlocks) {
+            BlockState state = world.getBlockState(orePos);
+            if (!BlockTypes.isOreBlock(state)) {
+                continue;
+            }
+
+            if (LineOfSightUtils.isBlockRenderedOnScreen(player, orePos, 16 * 10)) {
+                continue;
+            }
+
+            world.breakBlock(orePos, false);
+            mined++;
+
+            if (random.nextInt(100) < 25) {
+                net.minecraft.util.math.Direction[] directions = net.minecraft.util.math.Direction.values();
+                java.util.List<net.minecraft.util.math.Direction> shuffledDirs = java.util.Arrays.asList(directions);
+                java.util.Collections.shuffle(shuffledDirs);
+                for (net.minecraft.util.math.Direction dir : shuffledDirs) {
+                    BlockPos adjacentPos = orePos.offset(dir);
+                    BlockState adjacentState = world.getBlockState(adjacentPos);
+                    if (!BlockTypes.isOreBlock(adjacentState) && !adjacentState.isAir()
+                            && !LineOfSightUtils.isBlockRenderedOnScreen(player, adjacentPos, 16 * 10)) {
+                        world.breakBlock(adjacentPos, false);
+                        break;
                     }
                 }
             }
@@ -1085,24 +1097,31 @@ public class CavePreMiner {
                 // Combined cave exploration and ore mining in a single pass
                 CaveExplorationResult result = findCaveAirAndMineOres(world, starterPos, player);
                 java.util.List<BlockPos> caveAirBlocks = result.caveAirBlocks;
-                int oresMined = result.oresMined;
+                java.util.List<BlockPos> oreBlocks = result.oreBlocks;
 
                 if (caveAirBlocks.size() < 50) {
                     continue; // Not enough cave air blocks to consider this a cave
                 }
 
-                int torchesPlaced = populateTorches(world, caveAirBlocks, player);
-                int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
-                int stairLength = mineStairs(world, starterPos, player);
+                serverWorld.getServer().execute(() -> {
+                    if (player == null || !player.isPartOfGame()) {
+                        return;
+                    }
 
-                // Store this cave location to prevent future caves from being too close
-                state.addPositionToList("preminedCaveLocations", starterPos);
+                    int oresMined = mineCollectedOreBlocks(world, oreBlocks, player);
+                    int torchesPlaced = populateTorches(world, caveAirBlocks, player);
+                    int extraBlocksPlaced = placeExtraBlocks(world, caveAirBlocks, player);
+                    int stairLength = mineStairs(world, starterPos, player);
 
-                HorrorMod129.LOGGER.info("Cave Pre-Miner: Mined " + oresMined + " ores, placed " + torchesPlaced
-                        + " torches, extra blocks placed: " + extraBlocksPlaced + ", stair length: " + stairLength);
+                    // Store this cave location to prevent future caves from being too close
+                    state.addPositionToList("preminedCaveLocations", starterPos);
+
+                    HorrorMod129.LOGGER.info("Cave Pre-Miner: Mined " + oresMined + " ores, placed " + torchesPlaced
+                            + " torches, extra blocks placed: " + extraBlocksPlaced + ", stair length: " + stairLength);
+                    HorrorMod129.LOGGER.info("Successfully pre-mined a cave!");
+                });
                 isFinished = true;
             }
-            HorrorMod129.LOGGER.info("Successfully pre-mined a cave!");
         });
         preMineThread.setName("Pre-mine Thread for "+player.getName().getString());
         preMineThread.start();
