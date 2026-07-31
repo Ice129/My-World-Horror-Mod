@@ -250,6 +250,8 @@ public final class UndergroundTunnelEvent {
 
         int x = playerPos.getX() + (int) Math.round(direction.x * HEARING_RADIUS);
         int z = playerPos.getZ() + (int) Math.round(direction.z * HEARING_RADIUS);
+        // replace the block pos with lit candle for debugging
+        player.getWorld().setBlockState(new BlockPos(x, caveAnchor.getY(), z), Blocks.CANDLE.getDefaultState());
         return new BlockPos(x, caveAnchor.getY(), z);
     }
 
