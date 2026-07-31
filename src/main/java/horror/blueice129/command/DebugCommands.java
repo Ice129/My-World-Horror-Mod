@@ -116,6 +116,8 @@ public class DebugCommands {
                                 .executes(context -> executeEvent(context.getSource(), "burning_forest"))))
                             .then(literal("sapling")
                                 .executes(context -> executeEvent(context.getSource(), "sapling")))
+                            .then(literal("creeper_hole")
+                                .executes(context -> executeEvent(context.getSource(), "creeper_hole")))
                         .then(literal("fakefootsteps")
                             .executes(DebugCommands::triggerFakeFootsteps))
                         .then(literal("stalkingfootsteps")

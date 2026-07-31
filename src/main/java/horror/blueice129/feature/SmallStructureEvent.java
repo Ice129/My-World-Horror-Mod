@@ -24,6 +24,7 @@ import net.minecraft.block.entity.BlockEntity;
 // import net.minecraft.entity.EntityType;
 // import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.world.World;
+// import net.minecraft.world.explosion.Explosion;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
 import net.minecraft.block.entity.BannerBlockEntity;
@@ -46,7 +47,8 @@ public class SmallStructureEvent {
             { "flower_patch", "10" },
             { "chunk_deletion", "0" },
             { "burning_forest", "2" },
-            { "sapling", "10" }
+            { "sapling", "10" },
+            { "creeper_hole", "2" }
     };
 
     /**
@@ -162,6 +164,8 @@ public class SmallStructureEvent {
                 adjustedWeight += agroMeter / 3;
             } else if (id.equals("cobblestone_pillar")) {
                 adjustedWeight += agroMeter / 8;
+            } else if (id.equals("creeper_hole")) {
+                adjustedWeight += agroMeter / 6;
             }
             structure[1] = Integer.toString(adjustedWeight);
         }
@@ -220,6 +224,9 @@ public class SmallStructureEvent {
                 break;
             case "sapling":
                 success = saplingPlantedEvent(server, player);
+                break;
+            case "creeper_hole":
+                success = creeperHoleEvent(server, player);
                 break;
             // case "boat_in_water":
             //     success = boatInWaterEvent(server, player);
@@ -755,6 +762,16 @@ public class SmallStructureEvent {
         if (!LineOfSightUtils.hasLineOfSight(player, pos, 200)) {
             server.getOverworld().setBlockState(pos, sapling.getDefaultState());
         }
+        return true;
+    }
+
+    private static boolean creeperHoleEvent(MinecraftServer server, ServerPlayerEntity player) {
+        BlockPos pos = findAndLoadSurfaceLocation(server, player.getBlockPos(), player, 40, 50, true);
+        if (pos == null) {
+            return false;
+        }
+        // blow up a tnt at the position
+        server.getOverworld().createExplosion(null, (double)pos.getX(), (double)pos.getY(), (double)pos.getZ(), 4.0F, World.ExplosionSourceType.MOB);
         return true;
     }
 
