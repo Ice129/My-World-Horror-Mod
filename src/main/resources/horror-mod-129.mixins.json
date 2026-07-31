@@ -7,6 +7,7 @@
     "BodyControlMixin",
     "ExampleMixin",
     "HostileEntitiesMixin",
+    "MobEntityAccessor",
     "ItemEntityAccessor",
     "ServerWorldSleepStatusMixin",
     "SleepManagerMixin"

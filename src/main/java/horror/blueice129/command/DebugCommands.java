@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
 import horror.blueice129.feature.HomeVisitorEvent;
+import horror.blueice129.feature.AnimalFleeEvent;
 import horror.blueice129.feature.PlayerDeathItems;
 import horror.blueice129.feature.SmallStructureEvent;
 import horror.blueice129.feature.LedgePusher;
@@ -29,6 +30,7 @@ import horror.blueice129.scheduler.Blueice129SpawnScheduler;
 import net.minecraft.entity.Entity;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.command.argument.EntityArgumentType;
 import static net.minecraft.server.command.CommandManager.literal;
 import static net.minecraft.server.command.CommandManager.argument;
 import net.minecraft.server.command.CommandManager;
@@ -85,6 +87,12 @@ public class DebugCommands {
                             .executes(context -> triggerPlayerDeathItems(context.getSource())))
                         .then(literal("bridgeoverwater")
                             .executes(context -> triggerBridgeOverWater(context.getSource())))
+                        .then(literal("animal_flee")
+                            .executes(context -> triggerAnimalFlee(context.getSource()))
+                            .then(argument("player", EntityArgumentType.player())
+                                .executes(context -> triggerAnimalFlee(
+                                    context.getSource(),
+                                    EntityArgumentType.getPlayer(context, "player")))))
                         .then(literal("structure")
                             .then(literal("crafting_table")
                                 .executes(context -> executeEvent(context.getSource(), "crafting_table")))
@@ -345,6 +353,27 @@ public class DebugCommands {
             source.sendError(Text.literal("This command must be run by a player"));
             return 0;
         }
+    }
+
+    private static int triggerAnimalFlee(ServerCommandSource source) {
+        try {
+            return triggerAnimalFlee(source, source.getPlayerOrThrow());
+        } catch (CommandSyntaxException e) {
+            source.sendError(Text.literal("This command must be run by a player or given a target player"));
+            return 0;
+        }
+    }
+
+    private static int triggerAnimalFlee(ServerCommandSource source, ServerPlayerEntity player) {
+        boolean success = AnimalFleeEvent.triggerEvent(player);
+
+        if (success) {
+            source.sendFeedback(() -> Text.literal("Animals made to flee around " + player.getName().getString()), false);
+            return 1;
+        }
+
+        source.sendError(Text.literal("Not enough animals near " + player.getName().getString() + " to trigger the event."));
+        return 0;
     }
 
     private static int triggerStalkingFootsteps(CommandContext<ServerCommandSource> context) {
