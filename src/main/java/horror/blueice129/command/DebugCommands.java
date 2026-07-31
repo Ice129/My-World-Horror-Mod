@@ -17,6 +17,7 @@ import horror.blueice129.feature.RenderDistanceChanger;
 import horror.blueice129.feature.MusicVolumeLocker;
 import horror.blueice129.feature.BrightnessChanger;
 import horror.blueice129.feature.FpsLimiter;
+import horror.blueice129.feature.UndergroundTunnelEvent;
 import horror.blueice129.feature.MouseSensitivityChanger;
 import horror.blueice129.feature.SmoothLightingChanger;
 import horror.blueice129.feature.TwoPlayerSleep;
@@ -257,7 +258,9 @@ public class DebugCommands {
                                         StringArgumentType.getString(context, "url"))))))
                         .then(literal("cave")
                             .then(literal("premine")
-                                .executes(context -> premineCave(context.getSource()))))
+                                .executes(context -> premineCave(context.getSource())))
+                            .then(literal("tunnel")
+                                .executes(context -> triggerUndergroundTunnel(context.getSource()))))
                         .then(literal("visualize")
                             .then(literal("fov")
                                 .executes(context -> fillFieldOfViewWithGlass(context.getSource())))
@@ -1100,6 +1103,24 @@ public class DebugCommands {
                 player
         );
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static int triggerUndergroundTunnel(ServerCommandSource source) {
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException e) {
+            source.sendError(Text.literal("This command must be run by a player"));
+            return 0;
+        }
+
+        if (UndergroundTunnelEvent.triggerDebug(player)) {
+            source.sendFeedback(() -> Text.literal("Underground tunnel event started."), false);
+            return 1;
+        }
+
+        source.sendError(Text.literal("Failed to start underground tunnel event."));
+        return 0;
     }
 
     /**

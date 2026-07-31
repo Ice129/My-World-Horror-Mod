@@ -15,6 +15,7 @@ import horror.blueice129.scheduler.StalkingFootstepScheduler;
 import horror.blueice129.scheduler.PlayerDeathItemsScheduler;
 import horror.blueice129.scheduler.SmallStructureScheduler;
 import horror.blueice129.scheduler.LedgePusherScheduler;
+import horror.blueice129.scheduler.UndergroundTunnelScheduler;
 import horror.blueice129.scheduler.SettingsScheduler;
 import horror.blueice129.scheduler.OnWorldCreation;
 import net.fabricmc.api.ModInitializer;
@@ -71,6 +72,7 @@ public class HorrorMod129 implements ModInitializer {
 		StalkingFootstepScheduler.register();
 		HomeEventScheduler.register();
 		FallDamageScheduler.register();
+		UndergroundTunnelScheduler.register();
 		SmallStructureScheduler.register();
 		LedgePusherScheduler.register();
 		PlayerDeathItemsScheduler.register();
