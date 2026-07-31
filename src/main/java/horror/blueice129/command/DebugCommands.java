@@ -114,6 +114,8 @@ public class DebugCommands {
                                 .executes(context -> executeEvent(context.getSource(), "chunk_deletion")))
                             .then(literal("burning_forest")
                                 .executes(context -> executeEvent(context.getSource(), "burning_forest"))))
+                            // .then(literal("boat_in_water")
+                            //     .executes(context -> executeEvent(context.getSource(), "boat_in_water")))
                         .then(literal("fakefootsteps")
                             .executes(DebugCommands::triggerFakeFootsteps))
                         .then(literal("stalkingfootsteps")

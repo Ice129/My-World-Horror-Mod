@@ -22,12 +22,13 @@ public class StructurePlacer {
          * ensuring the location is in a specified biome type and isnt in line of sight
          * of the player.
          * 
-         * @param world       The server world to search in.
-         * @param center      The center position to search around.
-         * @param player      The player to search around.
-         * @param minDistance The minimum distance from the center to consider.
-         * @param maxDistance The maximum distance from the center to consider.
-         * @param treatSnowAsSurface If true, snow blocks are treated as valid surface blocks.
+         * @param world              The server world to search in.
+         * @param center             The center position to search around.
+         * @param player             The player to search around.
+         * @param minDistance        The minimum distance from the center to consider.
+         * @param maxDistance        The maximum distance from the center to consider.
+         * @param treatSnowAsSurface If true, snow blocks are treated as valid surface
+         *                           blocks.
          *                           If false, snow is skipped like other foliage.
          * @return A BlockPos representing a suitable surface location, or null if none
          *         found.
@@ -75,11 +76,12 @@ public class StructurePlacer {
          * Finds a suitable surface location within a specified distance range from a
          * center point without checking line of sight with a player.
          * 
-         * @param world       The server world to search in.
-         * @param center      The center position to search around.
-         * @param minDistance The minimum distance from the center to consider.
-         * @param maxDistance The maximum distance from the center to consider.
-         * @param treatSnowAsSurface If true, snow blocks are treated as valid surface blocks.
+         * @param world              The server world to search in.
+         * @param center             The center position to search around.
+         * @param minDistance        The minimum distance from the center to consider.
+         * @param maxDistance        The maximum distance from the center to consider.
+         * @param treatSnowAsSurface If true, snow blocks are treated as valid surface
+         *                           blocks.
          *                           If false, snow is skipped like other foliage.
          * @return A BlockPos representing a suitable surface location, or null if none
          *         found.

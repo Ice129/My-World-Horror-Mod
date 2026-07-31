@@ -9,14 +9,19 @@ import horror.blueice129.utils.LineOfSightUtils;
 import horror.blueice129.utils.TorchPlacer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+// import net.minecraft.server.world.ServerWorld;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Block;
+// import net.minecraft.block.BlockState;
 import net.minecraft.item.Items;
+// import net.minecraft.registry.tag.BiomeTags;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.item.ItemStack;
 import net.minecraft.block.entity.FurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
+// import net.minecraft.entity.EntityType;
+// import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.world.World;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
@@ -40,6 +45,7 @@ public class SmallStructureEvent {
             { "flower_patch", "10" },
             { "chunk_deletion", "0" },
             { "burning_forest", "2" }
+            // { "boat_in_water", "5" }
     };
 
     /**
@@ -211,6 +217,9 @@ public class SmallStructureEvent {
             case "burning_forest":
                 success = burningForestEvent(server, player);
                 break;
+            // case "boat_in_water":
+            //     success = boatInWaterEvent(server, player);
+            //     break;
             default:
                 break;
         }
@@ -626,7 +635,6 @@ public class SmallStructureEvent {
                     if (spawnPos != null && blockPos.equals(spawnPos)) {
                         return true;
                     }
-
 
                     Block block = world.getBlockState(blockPos).getBlock();
                     String blockName = block.getTranslationKey();
