@@ -14,6 +14,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.Block;
 // import net.minecraft.block.BlockState;
 import net.minecraft.item.Items;
+import net.minecraft.registry.tag.BlockTags;
 // import net.minecraft.registry.tag.BiomeTags;
 import horror.blueice129.utils.StructurePlacer;
 import net.minecraft.util.math.BlockPos;
@@ -44,8 +45,8 @@ public class SmallStructureEvent {
             { "deforestation", "5" },
             { "flower_patch", "10" },
             { "chunk_deletion", "0" },
-            { "burning_forest", "2" }
-            // { "boat_in_water", "5" }
+            { "burning_forest", "2" },
+            { "sapling", "10" }
     };
 
     /**
@@ -216,6 +217,9 @@ public class SmallStructureEvent {
                 break;
             case "burning_forest":
                 success = burningForestEvent(server, player);
+                break;
+            case "sapling":
+                success = saplingPlantedEvent(server, player);
                 break;
             // case "boat_in_water":
             //     success = boatInWaterEvent(server, player);
@@ -730,6 +734,26 @@ public class SmallStructureEvent {
                     }
                 }
             }
+        }
+        return true;
+    }
+
+    private static boolean saplingPlantedEvent(MinecraftServer server, ServerPlayerEntity player) {
+        // only place on grass or dirt blocks
+        BlockPos pos = findAndLoadSurfaceLocation(server, player.getBlockPos(), player, 20, 50, false);
+        if (pos == null) {
+            return false;
+        }
+        if (!server.getOverworld().getBlockState(pos.down()).isIn(BlockTags.DIRT) &&
+                !server.getOverworld().getBlockState(pos.down()).isIn(BlockTags.BAMBOO_PLANTABLE_ON)) {
+            return false;
+        }
+        // place a random sapling
+        Block[] saplings = { Blocks.OAK_SAPLING, Blocks.SPRUCE_SAPLING, Blocks.BIRCH_SAPLING,
+                Blocks.JUNGLE_SAPLING, Blocks.ACACIA_SAPLING };
+        Block sapling = saplings[RANDOM.nextInt(saplings.length)];
+        if (!LineOfSightUtils.hasLineOfSight(player, pos, 200)) {
+            server.getOverworld().setBlockState(pos, sapling.getDefaultState());
         }
         return true;
     }
