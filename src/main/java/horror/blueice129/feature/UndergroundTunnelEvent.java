@@ -1,8 +1,9 @@
 package horror.blueice129.feature;
 
-import horror.blueice129.HorrorMod129;
-import horror.blueice129.utils.ChunkLoader;
+// import horror.blueice129.HorrorMod129;
+// import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.TorchPlacer;
+import horror.blueice129.utils.BlockModificationUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.MinecraftServer;
@@ -16,14 +17,14 @@ import net.minecraft.util.math.random.Random;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+// import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+// import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.UUID;
+// import java.util.UUID;
 
 public final class UndergroundTunnelEvent {
     private static final Random RANDOM = Random.create();
@@ -31,7 +32,7 @@ public final class UndergroundTunnelEvent {
     private static final int AREA_STABLE_TICKS = 20 * 10;
     private static final int EVENT_TICKS = 20 * 30;
     private static final int LOOK_CANCEL_TICKS = 20 * 5;
-    private static final int TORCH_INTERVAL = 7;
+    private static final int TORCH_INTERVAL = 7 * 3; // 
     private static final int MIN_CAVE_VOLUME = 20;
     private static final int SEARCH_RADIUS = 48;
     private static final double HEARING_RADIUS = 24.0;
@@ -105,24 +106,12 @@ public final class UndergroundTunnelEvent {
                 world.setBlockState(belowPos, Blocks.COBBLESTONE.getDefaultState());
             }
             
-            if (world.getBlockState(pos).isOf(Blocks.GRAVEL) || world.getBlockState(pos.up()).isOf(Blocks.GRAVEL)) {
-                world.setBlockState(pos, Blocks.AIR.getDefaultState());
-                world.setBlockState(pos.up(), Blocks.AIR.getDefaultState());
-                for (int j = 0; j < 7; j++) {
-                    if (world.getBlockState(pos.up(j)).isOf(Blocks.GRAVEL)) {
-                        world.setBlockState(pos.up(j), Blocks.AIR.getDefaultState());
-                    } else {
-                        break;
-                    }
-                }
-            } 
-            else if (i % TORCH_INTERVAL == 0) {
-                // place torches every 7 blocks
+            BlockModificationUtils.placeAirBlock(world, pos, Blocks.COBBLESTONE);
+
+            if (i % TORCH_INTERVAL == 0) {
+                // place torches every TORCH_INTERVAL blocks
                 world.setBlockState(pos, Blocks.AIR.getDefaultState());
                 TorchPlacer.placeTorch(world, pos, RANDOM, player);
-            }
-            else {
-                world.setBlockState(pos, Blocks.AIR.getDefaultState());
             }
         }
         return true;
@@ -287,8 +276,8 @@ public final class UndergroundTunnelEvent {
     public static BlockPos findTunnelStart(ServerWorld world, BlockPos playerPos) {
         // 20 attempts
         for (int i = 0; i < 20; i++) {
-            int xOffset = RANDOM.nextInt((int) (SEARCH_RADIUS * 3)) - SEARCH_RADIUS;
-            int zOffset = RANDOM.nextInt((int) (SEARCH_RADIUS * 3)) - SEARCH_RADIUS;
+            int xOffset = RANDOM.nextInt((int) (SEARCH_RADIUS * 2.2)) - SEARCH_RADIUS;
+            int zOffset = RANDOM.nextInt((int) (SEARCH_RADIUS * 2.2)) - SEARCH_RADIUS;
             BlockPos randomPos = playerPos.add(xOffset, 0, zOffset);
             // look 5 blocks up and down to find air/cave air
             for (int yOffset = -5; yOffset <= 5; yOffset++) {
