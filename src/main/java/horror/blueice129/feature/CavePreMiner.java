@@ -20,6 +20,7 @@ import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.BlockTypes;
 import horror.blueice129.utils.StructurePlacer;
 import horror.blueice129.utils.TorchPlacer;
+import horror.blueice129.utils.BlockModificationUtils;
 import horror.blueice129.data.HorrorModPersistentState;
 
 public class CavePreMiner {
@@ -949,7 +950,7 @@ public class CavePreMiner {
                 } else {
                     BlockPos abovePos = stairPos.up(height);
                     if (abovePos.getY() < world.getTopY()) {
-                        world.setBlockState(abovePos, Blocks.AIR.getDefaultState());
+                        BlockModificationUtils.placeAirBlock(world, abovePos, Blocks.COBBLESTONE);
                     }
                 }
             }
