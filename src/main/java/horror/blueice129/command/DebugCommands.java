@@ -1114,7 +1114,7 @@ public class DebugCommands {
             return 0;
         }
 
-        if (UndergroundTunnelEvent.triggerDebug(player)) {
+        if (UndergroundTunnelEvent.triggerEvent(player.getServer(), player)) {
             source.sendFeedback(() -> Text.literal("Underground tunnel event started."), false);
             return 1;
         }
