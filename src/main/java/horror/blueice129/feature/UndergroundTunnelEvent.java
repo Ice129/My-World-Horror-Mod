@@ -15,7 +15,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.text.Text;
+// import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,17 +35,17 @@ public final class UndergroundTunnelEvent {
     private static final Random RANDOM = Random.create();
 
     private static final int AREA_STABLE_TICKS = 20 * 10;
-    private static final int EVENT_TICKS = 20 * 30;
-    private static final int LOOK_CANCEL_TICKS = 20 * 5;
+    // private static final int EVENT_TICKS = 20 * 30;
+    // private static final int LOOK_CANCEL_TICKS = 20 * 5;
     private static final int TORCH_INTERVAL = 7 * 3; //
     private static final int MIN_CAVE_VOLUME = 20;
     private static final int SEARCH_RADIUS = 48;
-    private static final double HEARING_RADIUS = 24.0;
+    private static final double HEARING_RADIUS = 12.0;
     private static final double HEARING_RADIUS_SQ = HEARING_RADIUS * HEARING_RADIUS;
-    private static final double CLOSE_CANCEL_RADIUS = 9.0;
-    private static final double CLOSE_CANCEL_RADIUS_SQ = CLOSE_CANCEL_RADIUS * CLOSE_CANCEL_RADIUS;
+    // private static final double CLOSE_CANCEL_RADIUS = 9.0;
+    // private static final double CLOSE_CANCEL_RADIUS_SQ = CLOSE_CANCEL_RADIUS * CLOSE_CANCEL_RADIUS;
     private static final int MAX_CAVE_FILL = 256;
-    private static final float DYNAMIC_PICKAXE_SPEED = 8.0f;
+    // private static final float DYNAMIC_PICKAXE_SPEED = 8.0f;
     // private static final int MAX_PATH_NODES = 180;
     private static int listPosition = 0;
     private static BlockPos[] previousPlayerLocations = new BlockPos[AREA_STABLE_TICKS / 10];
@@ -89,12 +89,13 @@ public final class UndergroundTunnelEvent {
             return server.getPlayerManager().getPlayer(playerUuid);
         }
 
-        private boolean isTunnelBlockAhead(BlockPos pos) {
-            for (int i = nextIndex; i < tunnelPath.length; i++) {
-                if (tunnelPath[i].equals(pos)) {
+        private boolean playerBrokeNearTunnel(BlockPos brokenPos) {
+            for (int i = 0; i < nextIndex; i++) {
+                if (tunnelPath[i].getSquaredDistance(brokenPos) <= 4) {
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -217,12 +218,11 @@ public final class UndergroundTunnelEvent {
                 return true;
             }
 
-            if (!activeTunnelEvent.isTunnelBlockAhead(pos)) {
-                return true;
+            if (activeTunnelEvent.playerBrokeNearTunnel(pos)) {
+                activeTunnelEvent = null;
             }
 
-            activeTunnelEvent = null;
-            return false;
+            return true;
         });
     }
 
