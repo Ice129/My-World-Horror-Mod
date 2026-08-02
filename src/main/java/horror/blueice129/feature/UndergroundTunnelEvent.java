@@ -77,6 +77,7 @@ public final class UndergroundTunnelEvent {
         private int mineTicksRemaining;
         private BlockPos currentMinePos;
         private int totalMineTicks;
+        private int hitSoundCooldown;
 
         private ActiveTunnelEvent(UUID playerUuid, ServerWorld world, BlockPos[] tunnelPath) {
             this.playerUuid = playerUuid;
@@ -132,7 +133,9 @@ public final class UndergroundTunnelEvent {
                 mineTicksRemaining = getMineTicks(world, nextPos, state);
                 totalMineTicks = mineTicksRemaining;
                 currentMinePos = nextPos;
-                // world.playSound(null, nextPos, state.getSoundGroup().getHitSound(), SoundCategory.BLOCKS, 1.0f, 1.0f);
+                hitSoundCooldown = 0;
+                // world.playSound(null, nextPos, state.getSoundGroup().getHitSound(),
+                // SoundCategory.BLOCKS, 1.0f, 1.0f);
                 return true;
             }
 
@@ -146,15 +149,12 @@ public final class UndergroundTunnelEvent {
                     currentMinePos,
                     progress);
 
-            int previousStage = (int) ((1.0 - (double) (mineTicksRemaining + 1) / totalMineTicks) * 5.0);
-            int currentStage = (int) ((1.0 - (double) mineTicksRemaining / totalMineTicks) * 5.0);
+            if (hitSoundCooldown > 0) {
+                hitSoundCooldown--;
+            }
 
-            if (currentStage > previousStage) {
+            if (hitSoundCooldown <= 0) {
                 BlockState state = world.getBlockState(currentMinePos);
-                // print to the chat the block being mined and the current stage and previous stage
-                // player.sendMessage(
-                //         Text.literal("Mining block: " + state.getBlock().getName().getString() + " Stage: " + currentStage + " Previous Stage: " + previousStage),
-                //         false);
 
                 world.playSound(
                         null,
@@ -162,7 +162,9 @@ public final class UndergroundTunnelEvent {
                         state.getSoundGroup().getHitSound(),
                         SoundCategory.BLOCKS,
                         0.25F,
-                        1.0F);
+                        0.5F + (world.random.nextFloat() * 0.15F));
+
+                hitSoundCooldown = 4;
             }
 
             if (mineTicksRemaining > 0) {
@@ -191,6 +193,7 @@ public final class UndergroundTunnelEvent {
             currentMinePos = null;
             mineTicksRemaining = 0;
             totalMineTicks = 0;
+            hitSoundCooldown = 0;
             nextIndex++;
             return true;
         }
