@@ -1,9 +1,10 @@
 package horror.blueice129.feature;
 
-// import horror.blueice129.HorrorMod129;
 // import horror.blueice129.utils.ChunkLoader;
 import horror.blueice129.utils.TorchPlacer;
 import horror.blueice129.utils.BlockModificationUtils;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.MinecraftServer;
@@ -13,6 +14,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +27,8 @@ import java.util.List;
 // import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.UUID;
+import java.util.Arrays;
 // import java.util.UUID;
 
 public final class UndergroundTunnelEvent {
@@ -32,7 +37,7 @@ public final class UndergroundTunnelEvent {
     private static final int AREA_STABLE_TICKS = 20 * 10;
     private static final int EVENT_TICKS = 20 * 30;
     private static final int LOOK_CANCEL_TICKS = 20 * 5;
-    private static final int TORCH_INTERVAL = 7 * 3; // 
+    private static final int TORCH_INTERVAL = 7 * 3; //
     private static final int MIN_CAVE_VOLUME = 20;
     private static final int SEARCH_RADIUS = 48;
     private static final double HEARING_RADIUS = 24.0;
@@ -40,19 +45,186 @@ public final class UndergroundTunnelEvent {
     private static final double CLOSE_CANCEL_RADIUS = 9.0;
     private static final double CLOSE_CANCEL_RADIUS_SQ = CLOSE_CANCEL_RADIUS * CLOSE_CANCEL_RADIUS;
     private static final int MAX_CAVE_FILL = 256;
+    private static final float DYNAMIC_PICKAXE_SPEED = 8.0f;
     // private static final int MAX_PATH_NODES = 180;
     private static int listPosition = 0;
     private static BlockPos[] previousPlayerLocations = new BlockPos[AREA_STABLE_TICKS / 10];
+    private static ActiveTunnelEvent activeTunnelEvent;
 
-    public static boolean shouldTriggerEvent(MinecraftServer server, ServerPlayerEntity player) {
-        // needs previous player locations to ensure the player is still enough
+    public static void recordPlayerLocation(ServerPlayerEntity player) {
         if (listPosition < previousPlayerLocations.length) {
             previousPlayerLocations[listPosition] = player.getBlockPos();
             listPosition++;
-        } else {
-            listPosition = 0;
-            previousPlayerLocations[listPosition] = player.getBlockPos();
+            return;
         }
+
+        listPosition = 0;
+        previousPlayerLocations[listPosition] = player.getBlockPos();
+        listPosition++;
+    }
+
+    public static void resetPlayerLocationHistory() {
+        Arrays.fill(previousPlayerLocations, null);
+        listPosition = 0;
+    }
+
+    private static final class ActiveTunnelEvent {
+        private final UUID playerUuid;
+        private final ServerWorld world;
+        private final BlockPos[] tunnelPath;
+
+        private int nextIndex;
+        private int mineTicksRemaining;
+        private BlockPos currentMinePos;
+        private int totalMineTicks;
+
+        private ActiveTunnelEvent(UUID playerUuid, ServerWorld world, BlockPos[] tunnelPath) {
+            this.playerUuid = playerUuid;
+            this.world = world;
+            this.tunnelPath = tunnelPath;
+        }
+
+        private ServerPlayerEntity getPlayer(MinecraftServer server) {
+            return server.getPlayerManager().getPlayer(playerUuid);
+        }
+
+        private boolean isTunnelBlockAhead(BlockPos pos) {
+            for (int i = nextIndex; i < tunnelPath.length; i++) {
+                if (tunnelPath[i].equals(pos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean shouldMineInstantly(ServerPlayerEntity player, BlockPos pos) {
+            return player.getBlockPos().getSquaredDistance(Vec3d.ofCenter(pos)) > HEARING_RADIUS_SQ;
+        }
+
+        private boolean tick(MinecraftServer server) {
+            ServerPlayerEntity player = getPlayer(server);
+            if (player == null || player.getWorld() != world) {
+                return false;
+            }
+
+            while (nextIndex < tunnelPath.length) {
+                BlockPos nextPos = tunnelPath[nextIndex];
+                if (!shouldMineInstantly(player, nextPos)) {
+                    break;
+                }
+
+                carveTunnelBlock(world, tunnelPath, nextPos, player, false, nextIndex);
+                nextIndex++;
+            }
+
+            if (nextIndex >= tunnelPath.length) {
+                return false;
+            }
+
+            if (mineTicksRemaining <= 0) {
+                BlockPos nextPos = tunnelPath[nextIndex];
+                BlockState state = world.getBlockState(nextPos);
+                if (state.isAir() || state.isOf(Blocks.CAVE_AIR)) {
+                    nextIndex++;
+                    return true;
+                }
+
+                mineTicksRemaining = getMineTicks(world, nextPos, state);
+                totalMineTicks = mineTicksRemaining;
+                currentMinePos = nextPos;
+                // world.playSound(null, nextPos, state.getSoundGroup().getHitSound(), SoundCategory.BLOCKS, 1.0f, 1.0f);
+                return true;
+            }
+
+            mineTicksRemaining--;
+
+            int progress = (int) ((1.0 - (double) mineTicksRemaining / totalMineTicks) * 10);
+            progress = Math.max(0, Math.min(9, progress));
+
+            world.setBlockBreakingInfo(
+                    currentMinePos.hashCode(),
+                    currentMinePos,
+                    progress);
+
+            int previousStage = (int) ((1.0 - (double) (mineTicksRemaining + 1) / totalMineTicks) * 5.0);
+            int currentStage = (int) ((1.0 - (double) mineTicksRemaining / totalMineTicks) * 5.0);
+
+            if (currentStage > previousStage) {
+                BlockState state = world.getBlockState(currentMinePos);
+                // print to the chat the block being mined and the current stage and previous stage
+                // player.sendMessage(
+                //         Text.literal("Mining block: " + state.getBlock().getName().getString() + " Stage: " + currentStage + " Previous Stage: " + previousStage),
+                //         false);
+
+                world.playSound(
+                        null,
+                        currentMinePos,
+                        state.getSoundGroup().getHitSound(),
+                        SoundCategory.BLOCKS,
+                        0.25F,
+                        1.0F);
+            }
+
+            if (mineTicksRemaining > 0) {
+                return true;
+            }
+
+            BlockPos minedPos = currentMinePos;
+            if (minedPos == null) {
+                minedPos = tunnelPath[nextIndex];
+            }
+
+            BlockState minedState = world.getBlockState(minedPos);
+
+            carveTunnelBlock(world, tunnelPath, minedPos, player, false, nextIndex);
+
+            world.syncWorldEvent(
+                    2001,
+                    minedPos,
+                    Block.getRawIdFromState(minedState));
+
+            world.setBlockBreakingInfo(
+                    minedPos.hashCode(),
+                    minedPos,
+                    -1);
+
+            currentMinePos = null;
+            mineTicksRemaining = 0;
+            totalMineTicks = 0;
+            nextIndex++;
+            return true;
+        }
+    }
+
+    public static void register() {
+        PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
+            if (activeTunnelEvent == null) {
+                return true;
+            }
+
+            if (!(world instanceof ServerWorld serverWorld)) {
+                return true;
+            }
+
+            if (!player.getUuid().equals(activeTunnelEvent.playerUuid)) {
+                return true;
+            }
+
+            if (serverWorld != activeTunnelEvent.world) {
+                return true;
+            }
+
+            if (!activeTunnelEvent.isTunnelBlockAhead(pos)) {
+                return true;
+            }
+
+            activeTunnelEvent = null;
+            return false;
+        });
+    }
+
+    public static boolean shouldTriggerEvent(MinecraftServer server, ServerPlayerEntity player) {
+        recordPlayerLocation(player);
 
         // check if all previous player locations are within 3 x 3 x 3 area
         // done by checking the biggest difference in x, y, and z coordinates
@@ -85,42 +257,83 @@ public final class UndergroundTunnelEvent {
         ServerWorld world = (ServerWorld) player.getWorld();
         BlockPos playerPos = player.getBlockPos();
 
+        if (activeTunnelEvent != null) {
+            return false;
+        }
+
         // Find tunnel start area
         BlockPos tunnelStart = findTunnelStart(world, playerPos);
+        if (tunnelStart == null) {
+            return false;
+        }
+
         BlockPos caveWallPos = findCaveWall(world, tunnelStart, player);
+        if (caveWallPos == null) {
+            return false;
+        }
+
         BlockPos[] tunnelPath = findTunnelPath(world, caveWallPos, playerPos);
         BlockPos[] cleanedTunnelPath = cleanTunnelPath(world, tunnelPath);
-        boolean carveStage1 = carveTunnel(world, cleanedTunnelPath, player);
-        // for (BlockPos pos : cleanedTunnelPath) {
-            // world.setBlockState(pos, Blocks.AIR.getDefaultState());
-        // }
+
+        if (cleanedTunnelPath.length == 0) {
+            return false;
+        }
+
+        activeTunnelEvent = new ActiveTunnelEvent(player.getUuid(), world, cleanedTunnelPath);
         return true;
     }
 
     public static boolean carveTunnel(ServerWorld world, BlockPos[] tunnelPath, ServerPlayerEntity player) {
-        // Carve out the tunnel path, making sure to place blocks on the floor of the path if there is air below the path, torches every 7 blocks, and remove gravel
         for (int i = 0; i < tunnelPath.length; i++) {
-            BlockPos pos = tunnelPath[i];
-            // check if block below is air, and also not within the tunnel path list
-            BlockPos belowPos = pos.down();
-            if ((world.getBlockState(belowPos).isAir() || world.getBlockState(belowPos).isOf(Blocks.CAVE_AIR)) && !List.of(tunnelPath).contains(belowPos)) {
-                world.setBlockState(belowPos, Blocks.COBBLESTONE.getDefaultState());
-            }
-            
-            BlockModificationUtils.placeAirBlock(world, pos, Blocks.COBBLESTONE);
-
-            if (i % TORCH_INTERVAL == 0) {
-                // place torches every TORCH_INTERVAL blocks
-                world.setBlockState(pos, Blocks.AIR.getDefaultState());
-                TorchPlacer.placeTorch(world, pos, RANDOM, player);
-            }
+            carveTunnelBlock(world, tunnelPath, tunnelPath[i], player, false, i);
         }
         return true;
     }
-        
+
+    private static void carveTunnelBlock(ServerWorld world, BlockPos[] tunnelPath, BlockPos pos,
+            ServerPlayerEntity player, boolean playBreakSound, int index) {
+        BlockPos belowPos = pos.down();
+        if ((world.getBlockState(belowPos).isAir() || world.getBlockState(belowPos).isOf(Blocks.CAVE_AIR))
+                && !isTunnelPathPos(tunnelPath, belowPos)) {
+            world.setBlockState(belowPos, Blocks.COBBLESTONE.getDefaultState(), 3);
+        }
+
+        BlockState state = world.getBlockState(pos);
+        if (!state.isAir() && !state.isOf(Blocks.CAVE_AIR)) {
+            BlockModificationUtils.placeAirBlock(world, pos, Blocks.COBBLESTONE);
+            if (playBreakSound) {
+                world.syncWorldEvent(2001, pos, Block.getRawIdFromState(state));
+            }
+        }
+
+        if (index % TORCH_INTERVAL == 0) {
+            world.setBlockState(pos, Blocks.AIR.getDefaultState());
+            TorchPlacer.placeTorch(world, pos, RANDOM, player);
+        }
+    }
+
+    private static int getMineTicks(ServerWorld world, BlockPos pos, BlockState state) {
+        float hardness = state.getHardness(world, pos);
+
+        if (hardness < 0) {
+            return 1;
+        }
+
+        return Math.max(1, Math.round(hardness * 30.0f / 8.0f));
+    }
+
+    private static boolean isTunnelPathPos(BlockPos[] tunnelPath, BlockPos pos) {
+        for (BlockPos tunnelPos : tunnelPath) {
+            if (tunnelPos.equals(pos)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static BlockPos[] cleanTunnelPath(ServerWorld world, BlockPos[] tunnelPath) {
-        // remove the end of the tunnel path until the final few blocks do not have any air conected on any side
+        // remove the end of the tunnel path until the final few blocks do not have any
+        // air conected on any side
         int endIndex = tunnelPath.length - 1;
         while (endIndex >= 0) {
             BlockPos pos = tunnelPath[endIndex];
@@ -323,9 +536,12 @@ public final class UndergroundTunnelEvent {
     }
 
     public static void tick(MinecraftServer server) {
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            // shouldTriggerEvent(server, player);
-            int x = player.getBlockPos().getX();
+        if (activeTunnelEvent == null) {
+            return;
+        }
+
+        if (!activeTunnelEvent.tick(server)) {
+            activeTunnelEvent = null;
         }
     }
 }
