@@ -10,6 +10,9 @@ public class FallDamageEvent {
 
     public static boolean triggerEvent(PlayerEntity player) {
         // returns true if player is inside a building, and is within a ui
+        if (player.getY() < 64) {
+            return false; // don't trigger if player is below y=64
+        }
         boolean isInsideHouse = PlayerUtils.isPlayerInsideHouseOrStructure(player);
         boolean isInUI = PlayerUtils.isPlayerInUI(player);
         BlockPos suitableFallSpot = findSuitableFallSpot(player);
