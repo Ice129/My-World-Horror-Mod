@@ -44,7 +44,7 @@ public final class UndergroundTunnelEvent {
     private static int listPosition = 0;
     private static BlockPos[] previousPlayerLocations = new BlockPos[AREA_STABLE_TICKS / 10];
 
-    public static void shouldTriggerEvent(MinecraftServer server, ServerPlayerEntity player) {
+    public static boolean shouldTriggerEvent(MinecraftServer server, ServerPlayerEntity player) {
         // needs previous player locations to ensure the player is still enough
         if (listPosition < previousPlayerLocations.length) {
             previousPlayerLocations[listPosition] = player.getBlockPos();
@@ -64,7 +64,7 @@ public final class UndergroundTunnelEvent {
         int maxZ = Integer.MIN_VALUE;
         for (BlockPos pos : previousPlayerLocations) {
             if (pos == null) {
-                return;
+                return false;
             }
             minX = Math.min(minX, pos.getX());
             maxX = Math.max(maxX, pos.getX());
@@ -76,8 +76,9 @@ public final class UndergroundTunnelEvent {
 
         // check if the difference in each dimension is within the 3 x 3 x 3 area
         if (maxX - minX <= 3 && maxY - minY <= 3 && maxZ - minZ <= 3) {
-            triggerEvent(server, player);
+            return true;
         }
+        return false;
     }
 
     public static boolean triggerEvent(MinecraftServer server, ServerPlayerEntity player) {
