@@ -8,6 +8,7 @@ import horror.blueice129.mixin.ItemEntityAccessor;
 import horror.blueice129.utils.EntityLoginState;
 import horror.blueice129.HorrorMod129;
 import horror.blueice129.data.HorrorModPersistentState;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.ai.pathing.MobNavigation;
@@ -23,17 +24,25 @@ import net.minecraft.item.ToolItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,6 +71,13 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
     private EntityState previousState = null;
     private int ticksInUnloadedChunk = 0;
     private SimpleInventory inventory;
+    private final Deque<BlockPlacementTask> blockPlacementQueue = new ArrayDeque<>();
+
+    public static record BlockPlacementTask(BlockPos position, BlockState blockState) {
+        public BlockPlacementTask {
+            position = position.toImmutable();
+        }
+    }
 
     @Override
     public SimpleInventory getInventory() {
@@ -408,6 +424,114 @@ public class Blueice129Entity extends PathAwareEntity implements InventoryOwner 
      */
     public EntityState getState() {
         return currentState;
+    }
+
+    public void queueBlockPlacement(BlockPos position, BlockState blockState) {
+        if (position == null || blockState == null) {
+            return;
+        }
+
+        this.blockPlacementQueue.addLast(new BlockPlacementTask(position, blockState));
+    }
+
+    public void queueBlockPlacements(List<BlockPlacementTask> placements) {
+        if (placements == null || placements.isEmpty()) {
+            return;
+        }
+
+        for (BlockPlacementTask placement : placements) {
+            if (placement != null) {
+                this.blockPlacementQueue.addLast(placement);
+            }
+        }
+    }
+
+    @Nullable
+    public BlockPlacementTask peekNextBlockPlacementTask() {
+        return this.blockPlacementQueue.peekFirst();
+    }
+
+    @Nullable
+    public BlockPlacementTask pollNextBlockPlacementTask() {
+        return this.blockPlacementQueue.pollFirst();
+    }
+
+    public boolean hasQueuedBlockPlacements() {
+        return !this.blockPlacementQueue.isEmpty();
+    }
+
+    public void clearQueuedBlockPlacements() {
+        this.blockPlacementQueue.clear();
+    }
+
+    public boolean isHoldingBlockItem(BlockState blockState) {
+        return this.getMainHandStack().isOf(blockState.getBlock().asItem());
+    }
+
+    public boolean equipBlockItemForPlacement(BlockState blockState) {
+        if (this.isHoldingBlockItem(blockState)) {
+            return true;
+        }
+
+        int sourceSlot = findBlockItemSlot(blockState);
+        if (sourceSlot < 0) {
+            return false;
+        }
+
+        if (sourceSlot == MAINHAND_SLOT) {
+            return true;
+        }
+
+        ItemStack mainHandStack = this.inventory.getStack(MAINHAND_SLOT);
+        ItemStack sourceStack = this.inventory.getStack(sourceSlot);
+        this.equipStack(EquipmentSlot.MAINHAND, sourceStack);
+        this.inventory.setStack(sourceSlot, mainHandStack);
+        return true;
+    }
+
+    private int findBlockItemSlot(BlockState blockState) {
+        var targetItem = blockState.getBlock().asItem();
+        for (int i = 0; i < this.inventory.size(); i++) {
+            ItemStack stack = this.inventory.getStack(i);
+            if (stack.isOf(targetItem) && stack.getCount() > 0) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public boolean canPlaceBlockAt(BlockPlacementTask task) {
+        if (task == null) {
+            return false;
+        }
+
+        World world = this.getWorld();
+        BlockPos pos = task.position();
+        BlockState targetState = world.getBlockState(pos);
+        return (targetState.isAir() || targetState.isReplaceable()) && task.blockState().canPlaceAt(world, pos);
+    }
+
+    public boolean hasLineOfSightTo(BlockPos pos) {
+        Vec3d start = this.getEyePos();
+        Vec3d end = Vec3d.ofCenter(pos);
+        BlockHitResult hitResult = this.getWorld().raycast(new RaycastContext(
+                start,
+                end,
+                RaycastContext.ShapeType.COLLIDER,
+                RaycastContext.FluidHandling.NONE,
+                this));
+        return hitResult.getType() == HitResult.Type.MISS || hitResult.getBlockPos().equals(pos);
+    }
+
+    public void playBlockPlacementSound(BlockState blockState, BlockPos pos) {
+        this.getWorld().playSound(null, pos, blockState.getSoundGroup().getPlaceSound(), SoundCategory.BLOCKS, 1.0F, 1.0F);
+    }
+
+    public void consumeMainHandItem() {
+        ItemStack mainHandStack = this.getMainHandStack();
+        if (!mainHandStack.isEmpty()) {
+            mainHandStack.decrement(1);
+        }
     }
 
     /**
